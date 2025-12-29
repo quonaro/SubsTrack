@@ -1,4 +1,3 @@
-from typing import List
 from app.repository.subscription_repository import SubscriptionRepository
 from app.models.subscription import Subscription
 from config import settings

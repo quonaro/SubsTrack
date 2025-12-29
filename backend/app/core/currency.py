@@ -1,5 +1,4 @@
 from decimal import Decimal
-from typing import Dict
 
 # Approximate rates as of late 2025
 # 1 USD = 95 RUB
@@ -22,5 +21,6 @@ def convert_to_rub(amount: Decimal, from_currency: str) -> Decimal:
 def convert_from_rub(amount: Decimal, to_currency: str) -> Decimal:
     """Convert amount from RUB to target currency"""
     rate = CURRENCY_RATES.get(to_currency.upper(), Decimal("1.0"))
-    if rate == 0: return amount
+    if rate == 0:
+        return amount
     return amount / rate

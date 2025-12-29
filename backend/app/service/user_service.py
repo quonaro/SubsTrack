@@ -1,7 +1,6 @@
 from typing import Optional
 from app.repository.user_repository import UserRepository
 from app.schema.auth import UserSchema
-from app.models.user import User
 
 
 class UserService:

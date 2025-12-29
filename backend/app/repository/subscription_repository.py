@@ -3,7 +3,6 @@ from app.models.subscription import Subscription
 from app.models.payment import PaymentHistory
 from app.models.user import User
 from datetime import datetime
-from tortoise.expressions import Q
 
 
 class SubscriptionRepository:
@@ -63,7 +62,7 @@ class SubscriptionRepository:
     @staticmethod
     async def get_next_month_total(user_id: int) -> dict:
         """Calculate total amount for next 30 days for active subscriptions"""
-        from datetime import datetime, timedelta
+        from datetime import timedelta
         from decimal import Decimal
         
         now = datetime.now()
@@ -94,7 +93,7 @@ class SubscriptionRepository:
     @staticmethod
     async def get_subscriptions_for_reminder(days_before: int = 1) -> List[Subscription]:
         """Get subscriptions that need reminders sent"""
-        from datetime import datetime, timedelta
+        from datetime import timedelta
         
         target_date = datetime.now() + timedelta(days=days_before)
         target_date_start = datetime(target_date.year, target_date.month, target_date.day)

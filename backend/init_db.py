@@ -5,7 +5,6 @@ Run with: uv run python init_db.py
 import asyncio
 from tortoise import Tortoise
 from config import get_tortoise_config
-from app.models import User
 
 
 async def init_database():
@@ -14,7 +13,6 @@ async def init_database():
     await Tortoise.init(config=config)
     
     # Create tables using raw SQL (workaround for compatibility issue)
-    from tortoise.backends.sqlite.client import SqliteClient
     
     # Get connection
     conn = Tortoise.get_connection("default")

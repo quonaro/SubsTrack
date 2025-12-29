@@ -221,9 +221,6 @@ class SubscriptionService:
             
             # Calculate occurrences
             current_date = anchor_date
-            
-            # Safety break
-            iteration_limit = 1000 
             iterations = 0
             
             while current_date <= end_date:
@@ -248,7 +245,8 @@ class SubscriptionService:
                      if steps > 1:
                          current_date += timedelta(days=steps * sub.period_days)
 
-                if sub.period_days <= 0: break
+                if sub.period_days <= 0:
+                    break
                 
         # Sort by date
         occurrences.sort(key=lambda x: x.date)

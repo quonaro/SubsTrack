@@ -31,7 +31,7 @@ class TelegramService:
                     logger.error(f"Failed to send Telegram message: {response.text}")
                     return False
                 return True
-        except Exception as e:
+        except Exception:
             logger.exception("Error sending Telegram message")
             return False
 

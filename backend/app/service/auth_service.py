@@ -1,9 +1,8 @@
-from typing import Optional, Dict
+from typing import Optional
 from app.repository.user_repository import UserRepository
 from app.core.security import create_access_token
 from app.core.telegram import validate_telegram_init_data
 from app.schema.auth import AuthResponse, UserSchema
-from app.models.user import User
 
 
 class AuthService:

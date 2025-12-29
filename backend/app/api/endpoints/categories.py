@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, status
 from typing import List
 from app.models.category import Category
 from app.schema.category import CategoryCreate, CategoryResponse
-from tortoise.exceptions import DoesNotExist, IntegrityError
+from tortoise.exceptions import IntegrityError
 
 router = APIRouter()
 

@@ -1,7 +1,6 @@
 from app.repository.subscription_repository import SubscriptionRepository
 from app.schema.statistics import StatisticsResponse
 from app.schema.subscription import SubscriptionResponse
-from typing import List
 from decimal import Decimal
 from app.core.currency import convert_to_rub
 
@@ -20,8 +19,6 @@ class StatisticsService:
         category_totals = {}
         
         for sub in active_subs:
-            # Calculate monthly cost based on period
-            price = float(sub.price)
             # Convert to RUB for consistent stats
             price_rub = float(convert_to_rub(Decimal(str(sub.price)), sub.currency))
             

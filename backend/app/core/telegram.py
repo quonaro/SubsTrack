@@ -56,7 +56,7 @@ def validate_telegram_init_data(init_data: str, bot_token: Optional[str] = None)
         
         # Check auth_date (should be within last 24 hours)
         import json
-        from datetime import datetime, timedelta
+        from datetime import datetime
         
         auth_date = int(parsed_data.get('auth_date', 0))
         if auth_date < (datetime.now().timestamp() - 86400):  # 24 hours
