@@ -119,7 +119,13 @@ async def send_test_notification(
     current_user: User = Depends(get_current_user)
 ):
     """Send a test Telegram notification to the current user"""
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    logger.info(f"User {current_user.id} ({current_user.username}) requested a test notification")
+    
     if not current_user.telegram_id:
+        logger.warning(f"User {current_user.id} has no Telegram ID linked")
         raise HTTPException(status_code=400, detail="User has no Telegram ID linked")
     
     from app.service.telegram_service import TelegramService
@@ -130,8 +136,10 @@ async def send_test_notification(
     )
     
     if not success:
-        raise HTTPException(status_code=500, detail="Failed to send notification. Check bot token.")
+        logger.error(f"Failed to send test notification for user {current_user.id}")
+        raise HTTPException(status_code=500, detail="Failed to send notification. Check bot token and ensure the bot is started by the user.")
         
+    logger.info(f"Test notification successfully sent for user {current_user.id}")
     return {"status": "success", "message": "Test notification sent"}
 
 

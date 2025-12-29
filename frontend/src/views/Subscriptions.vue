@@ -1,39 +1,35 @@
 <template>
   <div class="min-h-screen bg-app-bg pb-24 text-app-text">
     <!-- Header -->
-    <header class="sticky top-0 z-40 border-b border-app-border bg-app-bg/80 px-6 py-4 backdrop-blur-xl">
-      <div class="flex items-center justify-center mb-4">
-        <div class="flex items-center gap-3">
-          <img src="/logo.png" alt="Logo" class="h-8 w-8 object-contain rounded-xl shadow-sm" />
-          <h1 class="text-xl font-bold tracking-tight">SubsTrack</h1>
+    <AppHeader>
+      <template #extension>
+        <div class="px-2">
+          <div class="relative flex w-full rounded-2xl bg-surface-100 p-1.5 shadow-inner">
+            <div 
+              class="absolute h-[calc(100%-12px)] rounded-[0.8rem] bg-surface-300 shadow-premium transition-all duration-300 ease-out border border-app-border"
+              :style="{ 
+                left: activeTab === 'active' ? '6px' : 'calc(50% + 3px)', 
+                width: 'calc(50% - 9px)' 
+              }"
+            ></div>
+            <button 
+              class="relative z-10 w-1/2 py-2.5 text-xs font-bold uppercase tracking-widest transition-all duration-200"
+              :class="activeTab === 'active' ? 'text-app-text' : 'text-app-text-muted hover:text-zinc-300'"
+              @click="activeTab = 'active'"
+            >
+              Активные
+            </button>
+            <button 
+              class="relative z-10 w-1/2 py-2.5 text-xs font-bold uppercase tracking-widest transition-all duration-200"
+              :class="activeTab === 'archived' ? 'text-app-text' : 'text-app-text-muted hover:text-zinc-300'"
+              @click="activeTab = 'archived'"
+            >
+              Архивные
+            </button>
+          </div>
         </div>
-      </div>
-
-      <!-- Segmented Control Tabs -->
-      <div class="relative flex w-full rounded-2xl bg-surface-100 p-1.5 shadow-inner">
-        <div 
-          class="absolute h-[calc(100%-12px)] rounded-[0.8rem] bg-surface-300 shadow- premium transition-all duration-300 ease-out border border-app-border"
-          :style="{ 
-            left: activeTab === 'active' ? '6px' : 'calc(50% + 3px)', 
-            width: 'calc(50% - 9px)' 
-          }"
-        ></div>
-        <button 
-          class="relative z-10 w-1/2 py-2.5 text-xs font-bold uppercase tracking-widest transition-all duration-200"
-          :class="activeTab === 'active' ? 'text-app-text' : 'text-app-text-muted hover:text-zinc-300'"
-          @click="activeTab = 'active'"
-        >
-          Активные
-        </button>
-        <button 
-          class="relative z-10 w-1/2 py-2.5 text-xs font-bold uppercase tracking-widest transition-all duration-200"
-          :class="activeTab === 'archived' ? 'text-app-text' : 'text-app-text-muted hover:text-zinc-300'"
-          @click="activeTab = 'archived'"
-        >
-          Архивные
-        </button>
-      </div>
-    </header>
+      </template>
+    </AppHeader>
 
     <main class="p-6 space-y-8 animate-fade-in">
       <!-- Summary Card -->
@@ -146,6 +142,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import SubscriptionCard from '../components/SubscriptionCard.vue'
 import SubscriptionForm from '../components/SubscriptionForm.vue'
+import AppHeader from '../components/AppHeader.vue'
 import BottomNavigation from '../components/BottomNavigation.vue'
 import PageLoader from '../components/PageLoader.vue'
 import SortMenu from '../components/SortMenu.vue'

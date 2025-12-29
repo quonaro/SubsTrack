@@ -1,9 +1,11 @@
 <template>
   <div class="min-h-screen bg-app-bg pb-24 text-app-text transition-colors duration-500">
     <!-- Header -->
-    <header class="sticky top-0 z-40 border-b border-app-border bg-app-bg/80 px-6 py-4 backdrop-blur-xl">
-      <h1 class="text-xl font-bold tracking-tight">Настройки</h1>
-    </header>
+    <AppHeader>
+      <template #center>
+        <h1 class="text-xs font-bold uppercase tracking-widest text-app-text">Настройки</h1>
+      </template>
+    </AppHeader>
 
     <main class="space-y-10 p-6 animate-fade-in">
       <!-- Theme Selection -->
@@ -185,6 +187,7 @@
 <script setup>
 import { useRouter } from 'vue-router'
 import BottomNavigation from '../components/BottomNavigation.vue'
+import AppHeader from '../components/AppHeader.vue'
 import { useTheme } from '../composables/useTheme'
 import api from '../services/api'
 
@@ -196,7 +199,12 @@ async function testNotification() {
     await api.get('/subscriptions/test-notification')
     alert('Уведомление отправлено! Проверьте свой Telegram.')
   } catch (e) {
-    alert('Ошибка при отправке: ' + (e.response?.data?.detail || e.message))
+    let errorMessage = e.message
+    if (e.response?.data?.detail) {
+      const detail = e.response.data.detail
+      errorMessage = typeof detail === 'string' ? detail : JSON.stringify(detail)
+    }
+    alert('Ошибка при отправке: ' + errorMessage)
   }
 }
 

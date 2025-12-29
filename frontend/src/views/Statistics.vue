@@ -1,9 +1,11 @@
 <template>
   <div class="min-h-screen bg-app-bg pb-24 text-app-text">
     <!-- Header -->
-    <header class="sticky top-0 z-40 border-b border-app-border bg-app-bg/80 px-6 py-4 backdrop-blur-xl">
-      <h1 class="text-xl font-bold">Статистика</h1>
-    </header>
+    <AppHeader>
+      <template #center>
+        <h1 class="text-xs font-bold uppercase tracking-widest text-app-text">Статистика</h1>
+      </template>
+    </AppHeader>
 
     <main class="space-y-8 p-6 animate-fade-in">
       <!-- Loading State -->
@@ -133,6 +135,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import BottomNavigation from '../components/BottomNavigation.vue'
+import AppHeader from '../components/AppHeader.vue'
 import PageLoader from '../components/PageLoader.vue'
 import { getStatistics } from '../services/statistics'
 import { formatPrice, formatPeriod } from '../services/subscriptions'

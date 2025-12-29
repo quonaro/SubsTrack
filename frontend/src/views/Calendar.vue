@@ -1,27 +1,29 @@
 <template>
   <div class="min-h-screen bg-app-bg pb-24 text-app-text">
     <!-- Header -->
-    <header class="sticky top-0 z-40 border-b border-app-border bg-app-bg/80 px-6 py-4 backdrop-blur-xl">
-      <div class="flex items-center justify-between">
-        <button 
-          class="rounded-xl bg-surface-100 p-2 text-app-text-muted hover:bg-surface-200 hover:text-app-text transition-all active:scale-95"
-          @click="previousMonth"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="h-5 w-5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-          </svg>
-        </button>
-        <h1 class="text-lg font-bold capitalize">{{ monthYear }}</h1>
-        <button 
-          class="rounded-xl bg-surface-100 p-2 text-app-text-muted hover:bg-surface-200 hover:text-app-text transition-all active:scale-95"
-          @click="nextMonth"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="h-5 w-5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-          </svg>
-        </button>
-      </div>
-    </header>
+    <AppHeader>
+      <template #center>
+        <div class="flex items-center gap-4">
+          <button 
+            class="rounded-xl bg-surface-100 p-2 text-app-text-muted hover:bg-surface-200 hover:text-app-text transition-all active:scale-95"
+            @click="previousMonth"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="h-4 w-4">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+            </svg>
+          </button>
+          <h1 class="text-xs font-bold uppercase tracking-widest text-app-text min-w-[120px] text-center">{{ monthYear }}</h1>
+          <button 
+            class="rounded-xl bg-surface-100 p-2 text-app-text-muted hover:bg-surface-200 hover:text-app-text transition-all active:scale-95"
+            @click="nextMonth"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="h-4 w-4">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+            </svg>
+          </button>
+        </div>
+      </template>
+    </AppHeader>
 
     <main class="space-y-6 p-6">
       <PageLoader v-if="loading" />
@@ -123,6 +125,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import BottomNavigation from '../components/BottomNavigation.vue'
+import AppHeader from '../components/AppHeader.vue'
 import PageLoader from '../components/PageLoader.vue'
 import { getCalendarOccurrences, formatPrice, formatPeriod } from '../services/subscriptions'
 

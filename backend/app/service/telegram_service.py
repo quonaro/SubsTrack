@@ -28,11 +28,15 @@ class TelegramService:
             async with httpx.AsyncClient() as client:
                 response = await client.post(url, json=payload, timeout=10.0)
                 if response.status_code != 200:
-                    logger.error(f"Failed to send Telegram message: {response.text}")
+                    logger.error(f"Failed to send Telegram message to chat_id {chat_id}. Status: {response.status_code}, Body: {response.text}")
                     return False
+                logger.info(f"Successfully sent Telegram message to chat_id {chat_id}")
                 return True
+        except httpx.TimeoutException:
+            logger.error(f"Timeout while sending Telegram message to chat_id {chat_id}")
+            return False
         except Exception:
-            logger.exception("Error sending Telegram message")
+            logger.exception(f"Unexpected error sending Telegram message to chat_id {chat_id}")
             return False
 
     async def send_reminder(self, telegram_id: int, sub_name: str, price: float, currency: str, days_before: int):
