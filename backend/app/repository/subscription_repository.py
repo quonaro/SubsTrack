@@ -42,7 +42,9 @@ class SubscriptionRepository:
     async def create(user: User, subscription_data: dict) -> Subscription:
         """Create new subscription"""
         subscription_data['user_id'] = user.id
-        return await Subscription.create(**subscription_data)
+        subscription = await Subscription.create(**subscription_data)
+        await subscription.fetch_related('category')
+        return subscription
 
     @staticmethod
     async def update(subscription: Subscription, update_data: dict) -> Subscription:
@@ -51,6 +53,7 @@ class SubscriptionRepository:
             if value is not None:
                 setattr(subscription, key, value)
         await subscription.save()
+        await subscription.fetch_related('category')
         return subscription
 
     @staticmethod
