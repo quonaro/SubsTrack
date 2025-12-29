@@ -98,10 +98,11 @@
             v-for="subscription in filteredSubscriptions"
             :key="subscription.id"
             :subscription="subscription"
-            @click="editSubscription(subscription)"
+            @edit="editSubscription"
             @archive="handleArchive"
             @unarchive="handleUnarchive"
             @paid="handlePaid"
+            @delete="handleDelete"
           />
         </transition-group>
       </div>
@@ -153,7 +154,8 @@ import {
   getNextMonthTotal,
   archiveSubscription,
   unarchiveSubscription,
-  markAsPaid
+  markAsPaid,
+  deleteSubscription
 } from '../services/subscriptions'
 
 const activeTab = ref('active')
@@ -264,6 +266,20 @@ async function handlePaid(id) {
     await loadData()
   } catch (error) {
     alert('Ошибка при подтверждении оплаты')
+  } finally {
+    loading.value = false
+  }
+}
+
+async function handleDelete(id) {
+  if (!confirm('Вы уверены, что хотите ПОЛНОСТЬЮ УДАЛИТЬ эту подписку? Это действие нельзя отменить.')) return
+  
+  try {
+    loading.value = true
+    await deleteSubscription(id)
+    await loadData()
+  } catch (error) {
+    alert('Ошибка при удалении')
   } finally {
     loading.value = false
   }
