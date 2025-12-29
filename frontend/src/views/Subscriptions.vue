@@ -109,6 +109,8 @@
             :key="subscription.id"
             :subscription="subscription"
             @click="editSubscription(subscription)"
+            @archive="handleArchive"
+            @unarchive="handleUnarchive"
           />
         </transition-group>
       </div>
@@ -155,7 +157,9 @@ import {
   getSubscriptions,
   createSubscription,
   updateSubscription,
-  getNextMonthTotal
+  getNextMonthTotal,
+  archiveSubscription,
+  unarchiveSubscription
 } from '../services/subscriptions'
 
 const activeTab = ref('active')
@@ -223,6 +227,32 @@ async function handleFormSubmit(data) {
     // error
 
     alert('Ошибка при сохранении подписки')
+  }
+}
+
+async function handleArchive(id) {
+  if (!confirm('Вы уверены, что хотите архивировать эту подписку?')) return
+  
+  try {
+    loading.value = true
+    await archiveSubscription(id)
+    await loadData()
+  } catch (error) {
+    alert('Ошибка при архивации')
+  } finally {
+    loading.value = false
+  }
+}
+
+async function handleUnarchive(id) {
+  try {
+    loading.value = true
+    await unarchiveSubscription(id)
+    await loadData()
+  } catch (error) {
+    alert('Ошибка при восстановлении')
+  } finally {
+    loading.value = false
   }
 }
 </script>

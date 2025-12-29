@@ -102,6 +102,14 @@ export async function archiveSubscription(id: number): Promise<Subscription> {
 }
 
 /**
+ * Unarchive (restore) subscription
+ */
+export async function unarchiveSubscription(id: number): Promise<Subscription> {
+  const response = await api.put<Subscription>(`/subscriptions/${id}`, { is_active: true } as SubscriptionUpdate)
+  return response.data
+}
+
+/**
  * Get next month total
  */
 export async function getNextMonthTotal(): Promise<NextMonthTotal> {
