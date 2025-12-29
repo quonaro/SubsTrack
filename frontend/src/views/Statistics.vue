@@ -78,17 +78,22 @@
         </section>
 
         <!-- Insights -->
-        <section class="rounded-[2rem] bg-gradient-to-br from-primary-600/10 to-primary-900/20 p-8 border border-primary-500/10 shadow-premium relative overflow-hidden">
+        <section 
+          v-if="currentInsight"
+          class="rounded-[2rem] bg-gradient-to-br from-primary-600/10 to-primary-900/20 p-8 border border-primary-500/10 shadow-premium relative overflow-hidden active:scale-[0.98] transition-all cursor-pointer select-none"
+          @click="nextInsight"
+        >
           <div class="absolute -right-6 -bottom-6 h-32 w-32 rounded-full bg-primary-500/5 blur-3xl"></div>
           <div class="flex flex-col gap-4 relative z-10">
-            <div class="flex items-center gap-3">
-              <div class="h-8 w-8 rounded-xl bg-primary-500/20 flex items-center justify-center text-lg">💡</div>
-              <h3 class="font-bold text-primary-400 text-sm tracking-wide">Умный инсайт</h3>
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="h-8 w-8 rounded-xl bg-primary-500/20 flex items-center justify-center text-lg">{{ currentInsight.icon }}</div>
+                <h3 class="font-bold text-primary-400 text-sm tracking-wide">Умный инсайт</h3>
+              </div>
+              <span class="text-[10px] text-app-text-muted opacity-50">Нажми для следующего</span>
             </div>
-            <p class="text-sm leading-relaxed text-app-text">
-              Ваши годовые расходы на подписки составляют <span class="text-app-text font-bold">{{ formatPrice(stats.total_yearly) }}</span>. 
-              Это эквивалентно примерно <span class="text-primary-400 font-bold">{{ Math.round(stats.total_monthly / 450) }}</span> чашкам кофе каждый месяц! ☕️
-            </p>
+            
+            <p class="text-sm leading-relaxed text-app-text" v-html="currentInsight.text"></p>
           </div>
         </section>
       </template>
@@ -99,7 +104,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import BottomNavigation from '../components/BottomNavigation.vue'
 import PageLoader from '../components/PageLoader.vue'
 import { getStatistics } from '../services/statistics'
@@ -107,13 +112,97 @@ import { formatPrice, formatPeriod } from '../services/subscriptions'
 
 const stats = ref(null)
 const loading = ref(true)
+const currentInsightIndex = ref(0)
+const insights = ref([])
+
+const currentInsight = computed(() => {
+  if (!insights.value.length) return null
+  return insights.value[currentInsightIndex.value]
+})
+
+function generateInsights(data) {
+  const list = []
+  
+  // Coffee
+  const coffeeCups = Math.round(data.total_monthly / 350) 
+  if (coffeeCups > 0) {
+    list.push({
+      icon: '☕️',
+      text: `Ваши месячные расходы эквивалентны примерно <span class="text-primary-400 font-bold">${coffeeCups}</span> чашкам кофе.`
+    })
+  }
+  
+  // Pizza
+  const pizzas = Math.round(data.total_yearly / 800)
+  if (pizzas > 0) {
+    list.push({
+      icon: '🍕',
+      text: `В год вы тратите сумму, на которую можно купить <span class="text-primary-400 font-bold">${pizzas}</span> больших пицц.`
+    })
+  }
+  
+  // Cinema
+  const tickets = Math.round(data.total_monthly / 500)
+  if (tickets > 0) {
+    list.push({
+      icon: '🍿',
+      text: `В месяц это как сходить в кино <span class="text-primary-400 font-bold">${tickets}</span> раз(а).`
+    })
+  }
+
+  // Streaming
+  const netflix = Math.round(data.total_monthly / 1000)
+  if (netflix > 1) {
+    list.push({
+      icon: '🎬',
+      text: `На эти деньги можно оплатить <span class="text-primary-400 font-bold">${netflix}</span> разных стриминговых сервисов одновременно.`
+    })
+  }
+
+  // Work hours (assuming avg 500 rub/hour)
+  const workHours = Math.round(data.total_monthly / 500)
+  if (workHours > 0) {
+    list.push({
+      icon: '💼',
+      text: `Чтобы оплатить все подписки, вам нужно работать примерно <span class="text-primary-400 font-bold">${workHours}</span> часов в месяц.`
+    })
+  }
+  
+  // New IPhone
+  const yearsForIphone = (120000 / data.total_yearly).toFixed(1)
+  if (data.total_yearly > 10000) {
+      list.push({
+      icon: '📱',
+      text: `Если откладывать эти деньги, вы сможете покупать новый iPhone каждые <span class="text-primary-400 font-bold">${yearsForIphone}</span> года.`
+    })
+  }
+
+  // Gym
+  const gymMonths = Math.round(data.total_yearly / 25000)
+  if (gymMonths >= 1) {
+       list.push({
+      icon: '💪',
+      text: `Ваши годовые траты равны стоимости <span class="text-primary-400 font-bold">${gymMonths}</span> годовых абонементов в фитнес-клуб.`
+    })
+  }
+
+  return list
+}
+
+function nextInsight() {
+  if (insights.value.length > 1) {
+    currentInsightIndex.value = (currentInsightIndex.value + 1) % insights.value.length
+  }
+}
 
 onMounted(async () => {
   try {
     stats.value = await getStatistics()
+    if (stats.value) {
+      insights.value = generateInsights(stats.value)
+    }
   } catch (error) {
-      // error
-
+    console.error(error)
   } finally {
     loading.value = false
   }
