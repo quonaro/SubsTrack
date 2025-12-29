@@ -8,7 +8,10 @@
             <path stroke-linecap="round" stroke-linejoin="round" d="M3 4.5h14.25M3 9h9.75M3 13.5h9.75m4.5-4.5v12m0 0l-3.75-3.75M17.25 21L21 17.25" />
           </svg>
         </button>
-        <h1 class="text-xl font-bold tracking-tight">Подписки</h1>
+        <div class="flex items-center gap-3">
+          <img src="/logo.png" alt="Logo" class="h-8 w-8 object-contain rounded-xl shadow-sm" />
+          <h1 class="text-xl font-bold tracking-tight">SubsTrack</h1>
+        </div>
         <div class="w-10"></div> <!-- Spacer for center alignment -->
       </div>
 
