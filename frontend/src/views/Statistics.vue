@@ -7,10 +7,8 @@
 
     <main class="space-y-8 p-6 animate-fade-in">
       <!-- Loading State -->
-      <div v-if="loading" class="flex flex-col items-center justify-center py-20">
-        <div class="h-10 w-10 animate-spin rounded-full border-4 border-primary-500 border-t-transparent"></div>
-        <p class="mt-4 text-app-text-muted font-medium">Считаем ваши траты...</p>
-      </div>
+      <!-- Loading State -->
+      <PageLoader v-if="loading" text="Считаем ваши траты..." />
 
       <template v-else-if="stats">
         <!-- Summary Cards -->
@@ -103,6 +101,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import BottomNavigation from '../components/BottomNavigation.vue'
+import PageLoader from '../components/PageLoader.vue'
 import { getStatistics } from '../services/statistics'
 import { formatPrice, formatPeriod } from '../services/subscriptions'
 

@@ -24,84 +24,88 @@
     </header>
 
     <main class="space-y-6 p-6">
-      <!-- Calendar Card -->
-      <div class="rounded-3xl bg-surface-50 p-4 border border-app-border shadow-premium">
-        <!-- Weekdays -->
-        <div class="grid grid-cols-7 mb-2">
-          <div 
-            v-for="day in weekdays" 
-            :key="day" 
-            class="text-center text-[10px] font-bold uppercase tracking-widest text-app-text-muted py-2"
-          >
-            {{ day }}
-          </div>
-        </div>
-
-        <!-- Days Grid -->
-        <div class="grid grid-cols-7 gap-1">
-          <button
-            v-for="day in calendarDays"
-            :key="day.date.toISOString()"
-            class="relative aspect-square rounded-xl flex flex-col items-center justify-center transition-all active:scale-90"
-            :class="[
-              !day.isCurrentMonth ? 'opacity-20' : '',
-              day.isToday ? 'bg-primary-500/20 ring-1 ring-primary-500/50' : 'hover:bg-surface-100',
-              selectedDay?.date.getTime() === day.date.getTime() ? 'bg-primary-500 text-app-text shadow-accent' : ''
-            ]"
-            @click="selectDay(day)"
-          >
-            <span class="text-sm font-semibold" :class="selectedDay?.date.getTime() === day.date.getTime() ? 'text-app-text' : (day.isToday ? 'text-primary-400' : 'text-app-text')">
-              {{ day.day }}
-            </span>
-            
-            <!-- Indicators -->
-            <div class="absolute bottom-1.5 flex gap-0.5">
-              <div 
-                v-if="day.hasPayment" 
-                class="h-1 w-1 rounded-full"
-                :class="selectedDay?.date.getTime() === day.date.getTime() ? 'bg-white' : 'bg-primary-500'"
-              ></div>
-            </div>
-          </button>
-        </div>
-      </div>
-
-      <!-- Selected Day Details -->
-      <transition
-        enter-active-class="transition duration-300 ease-out"
-        enter-from-class="transform translate-y-4 opacity-0"
-        enter-to-class="transform translate-y-0 opacity-100"
-        mode="out-in"
-      >
-        <div v-if="selectedDay" :key="selectedDay.date.getTime()" class="space-y-4">
-          <h2 class="text-sm font-semibold uppercase tracking-wider text-app-text-muted px-1">
-            {{ formatDate(selectedDay.date) }}
-          </h2>
-
-          <div v-if="selectedDay.subscriptions.length > 0" class="space-y-3">
-            <div
-              v-for="sub in selectedDay.subscriptions"
-              :key="sub.id"
-              class="flex items-center gap-4 rounded-2xl bg-surface-100 p-4 border border-app-border"
+      <PageLoader v-if="loading" />
+      
+      <template v-else>
+        <!-- Calendar Card -->
+        <div class="rounded-3xl bg-surface-50 p-4 border border-app-border shadow-premium">
+          <!-- Weekdays -->
+          <div class="grid grid-cols-7 mb-2">
+            <div 
+              v-for="day in weekdays" 
+              :key="day" 
+              class="text-center text-[10px] font-bold uppercase tracking-widest text-app-text-muted py-2"
             >
-              <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-surface-200 text-2xl shadow-inner">
-                {{ sub.icon }}
-              </div>
-              <div class="flex-1 min-w-0">
-                <h3 class="font-semibold truncate">{{ sub.name }}</h3>
-                <p class="text-xs text-app-text-muted">Ежемесячный платеж</p>
-              </div>
-              <div class="text-right">
-                <p class="font-bold text-primary-400">{{ formatPrice(sub.price, sub.currency) }}</p>
-              </div>
+              {{ day }}
             </div>
           </div>
-          
-          <div v-else class="flex flex-col items-center justify-center py-8 rounded-2xl border border-dashed border-app-border bg-white/2">
-            <p class="text-sm text-app-text-muted">Нет запланированных платежей</p>
+
+          <!-- Days Grid -->
+          <div class="grid grid-cols-7 gap-1">
+            <button
+              v-for="day in calendarDays"
+              :key="day.date.toISOString()"
+              class="relative aspect-square rounded-xl flex flex-col items-center justify-center transition-all active:scale-90"
+              :class="[
+                !day.isCurrentMonth ? 'opacity-20' : '',
+                day.isToday ? 'bg-primary-500/20 ring-1 ring-primary-500/50' : 'hover:bg-surface-100',
+                selectedDay?.date.getTime() === day.date.getTime() ? 'bg-primary-500 text-app-text shadow-accent' : ''
+              ]"
+              @click="selectDay(day)"
+            >
+              <span class="text-sm font-semibold" :class="selectedDay?.date.getTime() === day.date.getTime() ? 'text-app-text' : (day.isToday ? 'text-primary-400' : 'text-app-text')">
+                {{ day.day }}
+              </span>
+              
+              <!-- Indicators -->
+              <div class="absolute bottom-1.5 flex gap-0.5">
+                <div 
+                  v-if="day.hasPayment" 
+                  class="h-1 w-1 rounded-full"
+                  :class="selectedDay?.date.getTime() === day.date.getTime() ? 'bg-white' : 'bg-primary-500'"
+                ></div>
+              </div>
+            </button>
           </div>
         </div>
-      </transition>
+
+        <!-- Selected Day Details -->
+        <transition
+          enter-active-class="transition duration-300 ease-out"
+          enter-from-class="transform translate-y-4 opacity-0"
+          enter-to-class="transform translate-y-0 opacity-100"
+          mode="out-in"
+        >
+          <div v-if="selectedDay" :key="selectedDay.date.getTime()" class="space-y-4">
+            <h2 class="text-sm font-semibold uppercase tracking-wider text-app-text-muted px-1">
+              {{ formatDate(selectedDay.date) }}
+            </h2>
+
+            <div v-if="selectedDay.subscriptions.length > 0" class="space-y-3">
+              <div
+                v-for="sub in selectedDay.subscriptions"
+                :key="sub.id"
+                class="flex items-center gap-4 rounded-2xl bg-surface-100 p-4 border border-app-border"
+              >
+                <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-surface-200 text-2xl shadow-inner">
+                  {{ sub.icon }}
+                </div>
+                <div class="flex-1 min-w-0">
+                  <h3 class="font-semibold truncate">{{ sub.name }}</h3>
+                  <p class="text-xs text-app-text-muted">Ежемесячный платеж</p>
+                </div>
+                <div class="text-right">
+                  <p class="font-bold text-primary-400">{{ formatPrice(sub.price, sub.currency) }}</p>
+                </div>
+              </div>
+            </div>
+            
+            <div v-else class="flex flex-col items-center justify-center py-8 rounded-2xl border border-dashed border-app-border bg-white/2">
+              <p class="text-sm text-app-text-muted">Нет запланированных платежей</p>
+            </div>
+          </div>
+        </transition>
+      </template>
     </main>
 
     <BottomNavigation />
@@ -111,6 +115,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import BottomNavigation from '../components/BottomNavigation.vue'
+import PageLoader from '../components/PageLoader.vue'
 import { getCalendarOccurrences, formatPrice } from '../services/subscriptions'
 
 const currentDate = ref(new Date())

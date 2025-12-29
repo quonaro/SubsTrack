@@ -65,9 +65,7 @@
       </div>
 
       <!-- List Section -->
-      <div v-if="loading" class="flex flex-col items-center justify-center py-20">
-        <div class="h-10 w-10 animate-spin rounded-full border-4 border-primary-500 border-t-transparent shadow-accent"></div>
-      </div>
+      <PageLoader v-if="loading" />
 
       <div v-else-if="subscriptions.length === 0" class="flex flex-col items-center justify-center py-20 text-center space-y-6">
         <div class="relative">
@@ -152,6 +150,7 @@ import { ref, computed, onMounted } from 'vue'
 import SubscriptionCard from '../components/SubscriptionCard.vue'
 import SubscriptionForm from '../components/SubscriptionForm.vue'
 import BottomNavigation from '../components/BottomNavigation.vue'
+import PageLoader from '../components/PageLoader.vue'
 import {
   getSubscriptions,
   createSubscription,
