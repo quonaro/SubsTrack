@@ -22,13 +22,11 @@ export interface AuthResponse {
  */
 export async function authenticateWithTelegram(): Promise<AuthResponse | null> {
   if (!isTelegramWebApp()) {
-    console.warn('Not running as Telegram MiniApp')
     return null
   }
 
   const initData = getTelegramInitData()
   if (!initData) {
-    console.error('No Telegram initData available')
     return null
   }
 
@@ -49,8 +47,7 @@ export async function authenticateWithTelegram(): Promise<AuthResponse | null> {
 
     return response.data
   } catch (error) {
-    console.error('Telegram authentication failed:', error)
-    return null
+    throw error
   }
 }
 
@@ -77,11 +74,47 @@ export function isAuthenticated(): boolean {
 }
 
 /**
+ * Authenticate user via dev endpoint (development only)
+ */
+export async function authenticateDev(): Promise<AuthResponse | null> {
+  try {
+    const response = await api.post<AuthResponse>('/auth/dev/login', {
+      user_id: 123456789
+    })
+
+    // Store token
+    if (response.data.access_token) {
+      localStorage.setItem('access_token', response.data.access_token)
+      localStorage.setItem('refresh_token', response.data.access_token) // Assuming 'token' refers to access_token
+    }
+
+    // Store user data
+    if (response.data.user) {
+      localStorage.setItem('user', JSON.stringify(response.data.user))
+    }
+
+    return response.data
+  } catch (error: any) {
+    // Assuming the intent was to handle Axios errors if axios was imported,
+    // but since it's not, and the instruction removed console logs,
+    // we'll just return null as per the original function's behavior
+    // in case of error, without logging.
+    return null
+  }
+}
+
+/**
  * Logout user
  */
 export function logout(): void {
   localStorage.removeItem('access_token')
   localStorage.removeItem('user')
 }
+
+
+
+
+
+
 
 

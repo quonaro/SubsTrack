@@ -23,3 +23,10 @@ class User(Model):
         return f"User({self.telegram_id}, {self.username or self.first_name})"
 
 
+
+
+
+
+
+
+

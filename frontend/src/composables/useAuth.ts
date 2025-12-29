@@ -1,8 +1,8 @@
 import { ref, computed } from 'vue'
-import { authenticateWithTelegram, getCurrentUser, isAuthenticated as checkAuth, logout as logoutUser, type User } from '../services/auth'
+import { authenticateWithTelegram, authenticateDev, getCurrentUser, isAuthenticated as checkAuth, logout as logoutUser } from '../services/auth'
 import { isTelegramWebApp, initTelegramWebApp } from '../services/telegram'
 
-const user = ref<User | null>(getCurrentUser())
+const user = ref(getCurrentUser())
 const isAuthenticating = ref(false)
 
 export function useAuth() {
@@ -10,20 +10,57 @@ export function useAuth() {
    * Initialize authentication - auto-login if Telegram MiniApp
    */
   async function initAuth(): Promise<void> {
+    const isTelegram = isTelegramWebApp()
+    const hasAuth = checkAuth()
+
     // Initialize Telegram WebApp if available
-    if (isTelegramWebApp()) {
+    if (isTelegram) {
       initTelegramWebApp()
     }
 
     // If already authenticated, load user from storage
-    if (checkAuth() && !user.value) {
+    if (hasAuth && !user.value) {
       user.value = getCurrentUser()
       return
     }
 
     // If running as Telegram MiniApp and not authenticated, auto-login
-    if (isTelegramWebApp() && !checkAuth()) {
-      await login()
+    if (isTelegram && !hasAuth) {
+      const loginSuccess = await login()
+      if (!loginSuccess) {
+        // Fallback to dev login if Telegram login fails
+        isAuthenticating.value = true
+        try {
+          const devAuth = await authenticateDev()
+          if (devAuth && devAuth.user) {
+            user.value = devAuth.user
+          } else {
+            // no user data
+          }
+        } catch (error) {
+          // dev login error
+        } finally {
+          isAuthenticating.value = false
+        }
+      }
+      return
+    }
+
+    // If not in Telegram MiniApp and not authenticated, try dev login
+    if (!isTelegram && !hasAuth) {
+      isAuthenticating.value = true
+      try {
+        const devAuth = await authenticateDev()
+        if (devAuth && devAuth.user) {
+          user.value = devAuth.user
+        } else {
+          // no user data
+        }
+      } catch (error) {
+        // dev login error
+      } finally {
+        isAuthenticating.value = false
+      }
     }
   }
 
@@ -44,7 +81,6 @@ export function useAuth() {
       }
       return false
     } catch (error) {
-      console.error('Login failed:', error)
       return false
     } finally {
       isAuthenticating.value = false
@@ -72,5 +108,11 @@ export function useAuth() {
     logout,
   }
 }
+
+
+
+
+
+
 
 

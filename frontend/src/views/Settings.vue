@@ -1,0 +1,186 @@
+<template>
+  <div class="min-h-screen bg-app-bg pb-24 text-app-text transition-colors duration-500">
+    <!-- Header -->
+    <header class="sticky top-0 z-40 border-b border-app-border bg-app-bg/80 px-6 py-4 backdrop-blur-xl">
+      <h1 class="text-xl font-bold tracking-tight">Настройки</h1>
+    </header>
+
+    <main class="space-y-10 p-6 animate-fade-in">
+      <!-- Theme Selection -->
+      <section class="space-y-6">
+        <div class="flex items-center gap-2 px-1">
+          <div class="h-4 w-1 rounded-full bg-primary-500"></div>
+          <h2 class="text-[10px] font-bold uppercase tracking-[0.2em] text-app-text-muted">Тема оформления ✨</h2>
+        </div>
+        
+        <div class="grid grid-cols-1 gap-8">
+          <!-- Dark Themes Group -->
+          <div class="space-y-4">
+            <h3 class="text-[10px] font-medium text-app-text-muted/40 px-2 uppercase tracking-widest">ТЁМНЫЕ</h3>
+            <div class="grid grid-cols-3 gap-4">
+              <button 
+                v-for="t in darkThemes" 
+                :key="t.id"
+                class="group relative flex flex-col gap-3 transition-transform duration-300 active:scale-95"
+                @click="setTheme(t.id)"
+              >
+                <!-- Theme Preview Card -->
+                <div 
+                  class="aspect-[4/5] w-full overflow-hidden rounded-[1.5rem] border-2 transition-all duration-300 shadow-lg"
+                  :class="theme === t.id ? 'border-primary-500 ring-4 ring-primary-500/10' : 'border-app-border bg-surface-50 group-hover:border-app-text-muted/30'"
+                  :style="{ backgroundColor: t.preview }"
+                >
+                  <!-- Abstract UI Elements in Preview -->
+                  <div class="flex h-full flex-col gap-1.5 p-2">
+                    <div class="h-3 w-2/3 rounded-full bg-primary-500/40"></div>
+                    <div class="mt-auto h-8 w-full rounded-xl" :style="{ backgroundColor: t.surface }"></div>
+                    <div class="h-8 w-full rounded-xl" :style="{ backgroundColor: t.surface }"></div>
+                  </div>
+                  
+                  <!-- Checkmark Overlay -->
+                  <div 
+                    v-if="theme === t.id" 
+                    class="absolute inset-0 flex items-center justify-center bg-primary-500/10 rounded-[1.4rem]"
+                  >
+                    <div class="rounded-full bg-primary-500 p-1.5 text-white shadow-accent animate-scale-in">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4">
+                        <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.124l-3.5-3.5a.75.75 0 011.06-1.06l2.873 2.873 7.42-9.74a.75.75 0 011.051-.15z" clip-rule="evenodd" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+                <span class="text-xs font-bold text-center uppercase tracking-wider transition-colors" :class="theme === t.id ? 'text-primary-500' : 'text-app-text-muted'">{{ t.name }}</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Light Themes Group -->
+          <div class="space-y-4">
+            <h3 class="text-[10px] font-medium text-app-text-muted/40 px-2 uppercase tracking-widest">СВЕТЛЫЕ</h3>
+            <div class="grid grid-cols-3 gap-4">
+              <button 
+                v-for="t in lightThemes" 
+                :key="t.id"
+                class="group relative flex flex-col gap-3 transition-transform duration-300 active:scale-95"
+                @click="setTheme(t.id)"
+              >
+                <!-- Theme Preview Card -->
+                <div 
+                  class="aspect-[4/5] w-full overflow-hidden rounded-[1.5rem] border-2 transition-all duration-300 shadow-md"
+                  :class="theme === t.id ? 'border-primary-500 ring-4 ring-primary-500/10' : 'border-app-border bg-surface-50 group-hover:border-app-text-muted/20'"
+                  :style="{ backgroundColor: t.preview }"
+                >
+                   <!-- Abstract UI Elements in Preview -->
+                   <div class="flex h-full flex-col gap-1.5 p-2">
+                    <div class="h-3 w-2/3 rounded-full bg-primary-500/40"></div>
+                    <div class="mt-auto h-8 w-full rounded-xl border border-black/5 shadow-sm" :style="{ backgroundColor: t.surface }"></div>
+                    <div class="h-8 w-full rounded-xl border border-black/5 shadow-sm" :style="{ backgroundColor: t.surface }"></div>
+                  </div>
+
+                  <div 
+                    v-if="theme === t.id" 
+                    class="absolute inset-0 flex items-center justify-center bg-primary-500/10 rounded-[1.4rem]"
+                  >
+                    <div class="rounded-full bg-primary-500 p-1.5 text-white shadow-accent animate-scale-in">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4">
+                        <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.124l-3.5-3.5a.75.75 0 011.06-1.06l2.873 2.873 7.42-9.74a.75.75 0 011.051-.15z" clip-rule="evenodd" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+                <span class="text-xs font-bold text-center uppercase tracking-wider transition-colors" :class="theme === t.id ? 'text-primary-500' : 'text-app-text-muted'">{{ t.name }}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Accent Color Selection -->
+      <section class="space-y-6">
+        <div class="flex items-center gap-2 px-1">
+          <div class="h-4 w-1 rounded-full bg-primary-500"></div>
+          <h2 class="text-[10px] font-bold uppercase tracking-[0.2em] text-app-text-muted">Цветовой акцент 🎨</h2>
+        </div>
+        
+        <div class="rounded-[2.5rem] bg-surface-50 p-8 border border-app-border shadow-premium relative overflow-hidden group">
+          <div class="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-primary-500/5 blur-3xl transition-all group-hover:scale-150 duration-1000"></div>
+          
+          <div class="relative z-10 grid grid-cols-5 gap-5">
+            <button 
+              v-for="color in accentColors" 
+              :key="color.value"
+              class="group relative flex h-12 w-full items-center justify-center rounded-2xl transition-all active:scale-75"
+              :style="{ backgroundColor: color.value }"
+              @click="setAccentColor(color.value)"
+            >
+              <div 
+                class="absolute inset-0 rounded-2xl shadow-[inset_0_0_15px_rgba(255,255,255,0.15)] group-hover:shadow-[inset_0_0_20px_rgba(255,255,255,0.3)] transition-all"
+              ></div>
+              
+              <transition name="scale">
+                <div v-if="accentColor === color.value" class="rounded-full bg-white/20 p-1 backdrop-blur-md shadow-lg ring-2 ring-white/50">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-5 w-5 text-app-text">
+                    <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.124l-3.5-3.5a.75.75 0 011.06-1.06l2.873 2.873 7.42-9.74a.75.75 0 011.051-.15z" clip-rule="evenodd" />
+                  </svg>
+                </div>
+              </transition>
+            </button>
+          </div>
+        </div>
+      </section>
+
+
+    </main>
+
+    <BottomNavigation />
+  </div>
+</template>
+
+<script setup>
+import { useRouter } from 'vue-router'
+import BottomNavigation from '../components/BottomNavigation.vue'
+import { useTheme } from '../composables/useTheme'
+
+const router = useRouter()
+const { accentColor, setAccentColor, theme, setTheme } = useTheme()
+
+const darkThemes = [
+  { id: 'midnight', name: 'Midnight', preview: '#0f0f13', surface: 'rgba(255,255,255,0.05)' },
+  { id: 'abyss', name: 'Abyss', preview: '#000000', surface: 'rgba(255,255,255,0.04)' },
+  { id: 'deep-sea', name: 'Deep Sea', preview: '#0b1121', surface: 'rgba(59,130,246,0.1)' }
+]
+
+const lightThemes = [
+  { id: 'clean', name: 'Clean', preview: '#ffffff', surface: 'rgba(0,0,0,0.04)' },
+  { id: 'soft-clay', name: 'Soft Clay', preview: '#f4f4f5', surface: '#ffffff' },
+  { id: 'ivory', name: 'Ivory', preview: '#fafaf9', surface: '#ffffff' }
+]
+
+const accentColors = [
+  { name: 'Violet', value: '#8b5cf6' },
+  { name: 'Rose', value: '#f43f5e' },
+  { name: 'Amber', value: '#f59e0b' },
+  { name: 'Emerald', value: '#10b981' },
+  { name: 'Sky', value: '#0ea5e9' }
+]
+
+
+</script>
+
+<style scoped>
+.scale-enter-active, .scale-leave-active {
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.scale-enter-from, .scale-leave-to {
+  transform: scale(0);
+  opacity: 0;
+}
+
+@keyframes scale-in {
+  from { transform: scale(0); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+.animate-scale-in {
+  animation: scale-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+</style>

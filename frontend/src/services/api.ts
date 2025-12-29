@@ -37,19 +37,13 @@ api.interceptors.request.use(
 
         // Log request in development
         // @ts-ignore - Vite env types
-        if (import.meta.env.DEV) {
-            console.log(`[API Request] ${config.method?.toUpperCase()} ${config.url}`, {
-                data: config.data,
-                params: config.params,
-                hasToken: !!token,
-            })
-        }
+
 
         return config
     },
     (error: AxiosError) => {
         // Handle request error
-        console.error('[API Request Error]', error)
+
         return Promise.reject(error)
     }
 )
@@ -58,13 +52,7 @@ api.interceptors.request.use(
 api.interceptors.response.use(
     (response: AxiosResponse) => {
         // Log response in development
-        // @ts-ignore - Vite env types
-        if (import.meta.env.DEV) {
-            console.log(`[API Response] ${response.config.method?.toUpperCase()} ${response.config.url}`, {
-                status: response.status,
-                data: response.data,
-            })
-        }
+        // @ts-ignore        
 
         return response
     },
@@ -76,13 +64,7 @@ api.interceptors.response.use(
             const { status, data } = error.response
 
             // Log error in development
-            // @ts-ignore - Vite env types
-            if (import.meta.env.DEV) {
-                console.error(`[API Error] ${error.config?.method?.toUpperCase()} ${error.config?.url}`, {
-                    status,
-                    data,
-                })
-            }
+            // @ts-ignore            
 
             // Handle 401 Unauthorized - token expired or invalid
             if (status === 401 && !originalRequest._retry) {
@@ -134,25 +116,24 @@ api.interceptors.response.use(
 
             // Handle 403 Forbidden
             if (status === 403) {
-                console.error('[API Error] Access forbidden')
+
                 // You can add custom handling here
             }
 
             // Handle 404 Not Found
             if (status === 404) {
-                console.error('[API Error] Resource not found')
+
             }
 
             // Handle 500 Internal Server Error
             if (status >= 500) {
-                console.error('[API Error] Server error')
+
             }
         } else if (error.request) {
             // Request was made but no response received
-            console.error('[API Error] No response received', error.request)
+
         } else {
             // Something happened in setting up the request
-            console.error('[API Error] Request setup error', error.message)
         }
 
         return Promise.reject(error)

@@ -25,6 +25,9 @@ wheels/
 .venv
 .python-version
 
+db.db
+*.db-shm
+*.db-wal
 # Node.js
 node_modules/
 npm-debug.log*
@@ -71,3 +74,6 @@ htmlcov/
 db.db
 backend/migrations/
 
+.cursorrules
+db.db-wal
+db.db-shm

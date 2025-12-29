@@ -40,6 +40,31 @@ async def init_database():
         CREATE INDEX IF NOT EXISTS "users_telegram_id" ON "users" ("telegram_id")
     """)
     
+    # Create Subscription table
+    await conn.execute_query("""
+        CREATE TABLE IF NOT EXISTS "subscriptions" (
+            "id" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+            "user_id" INTEGER NOT NULL,
+            "name" VARCHAR(255) NOT NULL,
+            "price" DECIMAL(10, 2) NOT NULL,
+            "currency" VARCHAR(10) NOT NULL DEFAULT 'RUB',
+            "period_days" INTEGER NOT NULL,
+            "next_payment_date" TIMESTAMP NOT NULL,
+            "icon" VARCHAR(10) NOT NULL DEFAULT '📦',
+            "is_active" INT NOT NULL DEFAULT 1,
+            "reminder_enabled" INT NOT NULL DEFAULT 1,
+            "reminder_days_before" INTEGER NOT NULL DEFAULT 1,
+            "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY ("user_id") REFERENCES "users" ("id") ON DELETE CASCADE
+        )
+    """)
+    
+    # Create indexes on subscriptions
+    await conn.execute_query("""
+        CREATE INDEX IF NOT EXISTS "subscriptions_user_id_is_active" ON "subscriptions" ("user_id", "is_active")
+    """)
+    
     print("Database initialized successfully!")
     await Tortoise.close_connections()
 
