@@ -78,7 +78,8 @@ const daysUntil = computed(() => getDaysUntilPayment(props.subscription.next_pay
 
 const daysText = computed(() => {
   const days = daysUntil.value
-  if (days <= 0) return 'Сегодня'
+  if (days < 0) return 'Просрочено'
+  if (days === 0) return 'Сегодня'
   if (days === 1) return 'Завтра'
   if (days < 5) return `Через ${days} дня`
   return `Через ${days} дней`

@@ -93,16 +93,6 @@ class SubscriptionService:
     async def create_subscription(self, user: User, subscription_data: SubscriptionCreate) -> SubscriptionResponse:
         """Create new subscription"""
         data = subscription_data.model_dump()
-        
-        # Auto-calculate next payment date if it's in the past
-        if 'next_payment_date' in data:
-            next_payment = data['next_payment_date']
-            if next_payment.date() < datetime.now().date():
-                data['next_payment_date'] = self._calculate_next_occurrence(
-                    data['start_date'], 
-                    data['period_days']
-                )
-
         subscription = await self.repository.create(user, data)
         return SubscriptionResponse.model_validate(subscription)
 
@@ -118,25 +108,6 @@ class SubscriptionService:
             return None
         
         data = update_data.model_dump(exclude_unset=True)
-        
-        # Recalculate next_payment_date if relevant fields change or if it's in the past
-        if 'start_date' in data or 'period_days' in data or 'next_payment_date' in data:
-             start_date = data.get('start_date', subscription.start_date)
-             period_days = data.get('period_days', subscription.period_days)
-             
-             # Check current or new next_payment_date
-             proposed_next = data.get('next_payment_date', subscription.next_payment_date)
-             
-             # Convert to datetime if needed for comparison
-             if isinstance(proposed_next, date) and not isinstance(proposed_next, datetime):
-                  proposed_next = datetime.combine(proposed_next, datetime.min.time())
-             
-             if proposed_next.date() < datetime.now().date():
-                  data['next_payment_date'] = self._calculate_next_occurrence(
-                      start_date, 
-                      period_days
-                  )
-
         updated_subscription = await self.repository.update(subscription, data)
         return SubscriptionResponse.model_validate(updated_subscription)
 

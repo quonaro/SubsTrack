@@ -132,10 +132,10 @@ export async function getCalendarOccurrences(startDate: string, endDate: string)
  */
 export function getDaysUntilPayment(nextPaymentDate: string): number {
   const now = new Date()
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0, 0)
 
   const paymentDateFull = new Date(nextPaymentDate)
-  const paymentDate = new Date(paymentDateFull.getFullYear(), paymentDateFull.getMonth(), paymentDateFull.getDate())
+  const paymentDate = new Date(paymentDateFull.getFullYear(), paymentDateFull.getMonth(), paymentDateFull.getDate(), 12, 0, 0)
 
   const diffTime = paymentDate.getTime() - today.getTime()
   const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24))

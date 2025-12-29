@@ -63,10 +63,13 @@
             />
           </div>
           
-          <!-- Subscription Date (Day + Month) -->
+
+          <!-- Subscription Date (Day + Month + Year) -->
           <div class="space-y-3">
-            <label class="text-[10px] font-bold uppercase tracking-widest text-app-text-muted px-1">Дата следующего платежа</label>
-            <div class="grid grid-cols-5 gap-3">
+            <label class="text-[10px] font-bold uppercase tracking-widest text-app-text-muted px-1">
+              Дата следующего платежа
+            </label>
+            <div class="grid grid-cols-7 gap-3">
               <div class="col-span-2">
                 <CustomSelect
                   v-model="selectedDay"
@@ -79,6 +82,13 @@
                   v-model="selectedMonth"
                   :options="monthOptions"
                   placeholder="Месяц"
+                />
+              </div>
+              <div class="col-span-2">
+                <CustomSelect
+                  v-model="selectedYear"
+                  :options="yearOptions"
+                  placeholder="Год"
                 />
               </div>
             </div>
@@ -241,8 +251,16 @@ const monthOptions = [
 
 const dayOptions = Array.from({ length: 31 }, (_, i) => ({ label: (i + 1).toString(), value: i + 1 }))
 
+const currentYear = new Date().getFullYear()
+// Simple range of years: Current year - 1 to Current year + 5
+const yearOptions = Array.from({ length: 7 }, (_, i) => {
+  const year = currentYear - 1 + i
+  return { label: year.toString(), value: year }
+})
+
 const selectedDay = ref(new Date().getDate())
 const selectedMonth = ref(new Date().getMonth())
+const selectedYear = ref(new Date().getFullYear())
 
 function handleEmojiSelect(emoji) {
   formData.value.icon = emoji
@@ -266,6 +284,7 @@ watch(() => props.subscription, (sub) => {
     const date = new Date(sub.next_payment_date)
     selectedDay.value = date.getDate()
     selectedMonth.value = date.getMonth()
+    selectedYear.value = date.getFullYear()
     
     formData.value = {
       name: sub.name,
@@ -280,11 +299,18 @@ watch(() => props.subscription, (sub) => {
   }
 }, { immediate: true })
 
+function formatLocalYYYYMMDD(date) {
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
 function handleSubmit() {
-  const now = new Date()
-  let year = now.getFullYear()
+  const year = selectedYear.value
   
   // Construct user selected target date for current year
+  // Note: This constructs in LOCAL time
   let targetDate = new Date(year, selectedMonth.value, selectedDay.value)
   
   // Fix month overflow (e.g. Feb 31)
@@ -292,30 +318,14 @@ function handleSubmit() {
     targetDate = new Date(year, selectedMonth.value + 1, 0)
   }
   
-  // If the target date is in the past (ignoring time), bump to next year
-  // Reset time for accurate comparison
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  
-  if (targetDate < today) {
-    year++
-    targetDate = new Date(year, selectedMonth.value, selectedDay.value)
-     // Fix month overflow again for next year (leap year check etc)
-    if (targetDate.getMonth() !== selectedMonth.value) {
-       targetDate = new Date(year, selectedMonth.value + 1, 0)
-    }
-  }
-
-  // Anchor start_date also aligns with this, but can be in previous year if needed for logic, 
-  // but simpler to just use the target date as the fresh new anchor, or keep it same as next payment.
-  // We'll set start_date = next_payment_date effectively re-anchoring the series.
-  // Or, to be safe, stick to what it was, but we are essentially saying "The payment is on X".
-  
   const finalDate = targetDate
   
+  // Use local formatted string instead of toISOString() to avoid timezone shifts
+  const dateStr = formatLocalYYYYMMDD(finalDate)
+  
   // Update form data
-  formData.value.start_date = finalDate.toISOString().split('T')[0]
-  formData.value.next_payment_date = finalDate.toISOString().split('T')[0]
+  formData.value.start_date = dateStr
+  formData.value.next_payment_date = dateStr
   
   emit('submit', { ...formData.value })
 }

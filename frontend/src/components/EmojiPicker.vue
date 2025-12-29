@@ -70,13 +70,13 @@ const allEmojis = ref([])
 const categories = [
   { key: 'smileys-emotion', icon: '😀', label: 'Смайлы и эмоции', group: 0, groupName: 'smileys-emotion' },
   { key: 'people-body', icon: '👋', label: 'Люди и тело', group: 1, groupName: 'people-body' },
-  { key: 'animals-nature', icon: '🐶', label: 'Животные и природа', group: 2, groupName: 'animals-nature' },
-  { key: 'food-drink', icon: '🍕', label: 'Еда и напитки', group: 3, groupName: 'food-drink' },
-  { key: 'travel-places', icon: '✈️', label: 'Путешествия и места', group: 4, groupName: 'travel-places' },
-  { key: 'activities', icon: '⚽', label: 'Активности', group: 5, groupName: 'activities' },
-  { key: 'objects', icon: '💡', label: 'Объекты', group: 6, groupName: 'objects' },
-  { key: 'symbols', icon: '❤️', label: 'Символы', group: 7, groupName: 'symbols' },
-  { key: 'flags', icon: '🏳️', label: 'Флаги', group: 8, groupName: 'flags' }
+  { key: 'animals-nature', icon: '🐶', label: 'Животные и природа', group: 3, groupName: 'animals-nature' },
+  { key: 'food-drink', icon: '🍕', label: 'Еда и напитки', group: 4, groupName: 'food-drink' },
+  { key: 'travel-places', icon: '✈️', label: 'Путешествия и места', group: 5, groupName: 'travel-places' },
+  { key: 'activities', icon: '⚽', label: 'Активности', group: 6, groupName: 'activities' },
+  { key: 'objects', icon: '💡', label: 'Объекты', group: 7, groupName: 'objects' },
+  { key: 'symbols', icon: '❤️', label: 'Символы', group: 8, groupName: 'symbols' },
+  { key: 'flags', icon: '🏳️', label: 'Флаги', group: 9, groupName: 'flags' }
 ]
 
 async function loadEmojis() {
