@@ -55,7 +55,7 @@
       </div>
 
       <!-- List Section -->
-      <PageLoader v-if="loading" />
+      <PageLoader v-if="loading" :show-logo="false" />
 
       <div v-else-if="subscriptions.length === 0" class="flex flex-col items-center justify-center py-20 text-center space-y-6">
         <div class="relative">

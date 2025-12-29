@@ -1,6 +1,6 @@
 <template>
   <div class="flex flex-col items-center justify-center py-20 gap-6">
-    <div class="relative">
+    <div v-if="showLogo" class="relative">
       <!-- Glow effect -->
       <div class="absolute inset-0 bg-primary-500/30 blur-2xl rounded-full animate-pulse-slow"></div>
       
@@ -11,6 +11,9 @@
         class="h-20 w-20 object-contain relative z-10 animate-bounce-slight" 
       />
     </div>
+
+    <!-- Spinner fallback when logo is hidden -->
+    <div v-else class="h-10 w-10 border-4 border-primary-500/20 border-t-primary-500 rounded-full animate-spin"></div>
     
     <!-- Optional Loading Text -->
     <p v-if="text" class="text-sm font-bold uppercase tracking-widest text-app-text-muted animate-pulse">
@@ -24,6 +27,10 @@ defineProps({
   text: {
     type: String,
     default: ''
+  },
+  showLogo: {
+    type: Boolean,
+    default: true
   }
 })
 </script>

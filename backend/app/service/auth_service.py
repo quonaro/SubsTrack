@@ -41,6 +41,7 @@ class AuthService:
                 'language_code': user_data.get('language_code'),
                 'is_bot': user_data.get('is_bot', False),
                 'is_premium': user_data.get('is_premium', False),
+                'photo_url': user_data.get('photo_url'),
             }
         )
         
@@ -57,6 +58,8 @@ class AuthService:
                 update_data['language_code'] = user_data.get('language_code')
             if 'is_premium' in user_data:
                 update_data['is_premium'] = user_data.get('is_premium', False)
+            if user_data.get('photo_url') is not None:
+                update_data['photo_url'] = user_data.get('photo_url')
             
             if update_data:
                 user = await self.user_repository.update(user, update_data)
@@ -75,6 +78,7 @@ class AuthService:
             last_name=user.last_name,
             language_code=user.language_code,
             is_premium=user.is_premium,
+            photo_url=user.photo_url,
         )
         
         return AuthResponse(

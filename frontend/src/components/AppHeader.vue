@@ -26,8 +26,9 @@
             Premium
           </span>
         </div>
-        <div class="h-8 w-8 rounded-full bg-gradient-to-br from-primary-500/20 to-primary-500/5 border border-primary-500/20 flex items-center justify-center text-xs font-bold text-primary-400 shadow-inner">
-          {{ userInitial }}
+        <div class="h-8 w-8 rounded-full bg-gradient-to-br from-primary-500/20 to-primary-500/5 border border-primary-500/20 flex items-center justify-center text-xs font-bold text-primary-400 shadow-inner overflow-hidden">
+          <img v-if="user?.photo_url" :src="user.photo_url" alt="Avatar" class="h-full w-full object-cover" />
+          <span v-else>{{ userInitial }}</span>
         </div>
       </div>
     </div>

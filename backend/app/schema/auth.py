@@ -16,6 +16,7 @@ class UserSchema(BaseModel):
     last_name: Optional[str] = None
     language_code: Optional[str] = None
     is_premium: bool = False
+    photo_url: Optional[str] = None
 
     class Config:
         from_attributes = True

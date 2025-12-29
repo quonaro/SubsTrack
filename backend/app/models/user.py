@@ -12,6 +12,7 @@ class User(Model):
     language_code = fields.CharField(max_length=10, null=True, description="User's language code")
     is_bot = fields.BooleanField(default=False, description="Whether the user is a bot")
     is_premium = fields.BooleanField(default=False, description="Whether the user has Telegram Premium")
+    photo_url = fields.CharField(max_length=1024, null=True, description="Telegram user avatar URL")
     created_at = fields.DatetimeField(auto_now_add=True, description="Account creation timestamp")
     updated_at = fields.DatetimeField(auto_now=True, description="Last update timestamp")
 

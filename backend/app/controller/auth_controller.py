@@ -36,6 +36,7 @@ async def get_current_user_info(current_user: User = Depends(get_current_user)):
         last_name=current_user.last_name,
         language_code=current_user.language_code,
         is_premium=current_user.is_premium,
+        photo_url=current_user.photo_url,
     )
 
 
@@ -75,6 +76,7 @@ async def dev_login():
             'language_code': 'ru',
             'is_bot': False,
             'is_premium': False,
+            'photo_url': 'https://avatars.githubusercontent.com/u/12345678?v=4', # Mock photo for testing
         }
     )
     
@@ -91,6 +93,7 @@ async def dev_login():
         last_name=user.last_name,
         language_code=user.language_code,
         is_premium=user.is_premium,
+        photo_url=user.photo_url,
     )
     
     return AuthResponse(
