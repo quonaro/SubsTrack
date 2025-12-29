@@ -2,13 +2,11 @@
   <div class="min-h-screen bg-app-bg pb-24 text-app-text">
     <!-- Header -->
     <header class="sticky top-0 z-40 border-b border-app-border bg-app-bg/80 px-6 py-4 backdrop-blur-xl">
-      <div class="flex items-center justify-between mb-4">
-
+      <div class="flex items-center justify-center mb-4">
         <div class="flex items-center gap-3">
           <img src="/logo.png" alt="Logo" class="h-8 w-8 object-contain rounded-xl shadow-sm" />
           <h1 class="text-xl font-bold tracking-tight">SubsTrack</h1>
         </div>
-        <div class="w-10"></div> <!-- Spacer for center alignment -->
       </div>
 
       <!-- Segmented Control Tabs -->
@@ -144,7 +142,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import SubscriptionCard from '../components/SubscriptionCard.vue'
 import SubscriptionForm from '../components/SubscriptionForm.vue'
 import BottomNavigation from '../components/BottomNavigation.vue'

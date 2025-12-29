@@ -57,6 +57,14 @@
                 {{ day.day }}
               </span>
               
+              <!-- Subscription Count Badge -->
+              <div 
+                v-if="day.paymentCount > 0" 
+                class="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary-500 text-[8px] font-bold text-white shadow-sm"
+              >
+                {{ day.paymentCount }}
+              </div>
+
               <!-- Indicators -->
               <div class="absolute bottom-1.5 flex gap-0.5">
                 <div 
@@ -92,7 +100,7 @@
                 </div>
                 <div class="flex-1 min-w-0">
                   <h3 class="font-semibold truncate">{{ sub.name }}</h3>
-                  <p class="text-xs text-app-text-muted">Ежемесячный платеж</p>
+                  <p class="text-xs text-app-text-muted">{{ formatPeriod(sub.period_days) }}</p>
                 </div>
                 <div class="text-right">
                   <p class="font-bold text-primary-400">{{ formatPrice(sub.price, sub.currency) }}</p>
@@ -116,7 +124,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import BottomNavigation from '../components/BottomNavigation.vue'
 import PageLoader from '../components/PageLoader.vue'
-import { getCalendarOccurrences, formatPrice } from '../services/subscriptions'
+import { getCalendarOccurrences, formatPrice, formatPeriod } from '../services/subscriptions'
 
 const currentDate = ref(new Date())
 const selectedDay = ref(null)

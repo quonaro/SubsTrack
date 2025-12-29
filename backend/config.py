@@ -47,3 +47,6 @@ def get_tortoise_config() -> dict:
     """Get Tortoise ORM configuration for Aerich"""
     return settings.tortoise_orm_config
 
+
+TORTOISE_ORM = settings.tortoise_orm_config
+

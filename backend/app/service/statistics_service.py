@@ -16,9 +16,22 @@ class StatisticsService:
         
         total_monthly = 0.0
         for sub in active_subs:
-            # period_days is used to normalize to monthly
-            # Assuming average month is 30 days
-            monthly_price = float(sub.price) * (30 / sub.period_days)
+            # Calculate monthly cost based on period
+            monthly_price = 0.0
+            price = float(sub.price)
+            
+            if sub.period_days == 7: # Weekly
+                monthly_price = price * 4
+            elif sub.period_days == 14: # Bi-weekly
+                monthly_price = price * 2
+            elif sub.period_days == 30: # Monthly
+                monthly_price = price
+            elif sub.period_days == 365: # Yearly
+                monthly_price = price / 12
+            else:
+                # Fallback for custom periods
+                monthly_price = price * (30 / sub.period_days)
+            
             total_monthly += monthly_price
             
         total_yearly = total_monthly * 12

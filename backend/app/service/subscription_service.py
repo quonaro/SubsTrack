@@ -3,7 +3,7 @@ from app.repository.subscription_repository import SubscriptionRepository
 from app.models.user import User
 from app.models.subscription import Subscription
 from app.schema.subscription import SubscriptionCreate, SubscriptionUpdate, SubscriptionResponse, NextMonthTotalResponse, SubscriptionOccurrence
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 
 
 class SubscriptionService:
@@ -24,9 +24,85 @@ class SubscriptionService:
             return None
         return SubscriptionResponse.model_validate(subscription)
 
+    def _add_months(self, source_date: datetime, months: int) -> datetime:
+        """Add months to a date, handling end-of-month clamping"""
+        month = source_date.month - 1 + months
+        year = source_date.year + month // 12
+        month = month % 12 + 1
+        
+        # Days in month lookup (handling leap year for Feb)
+        days_in_months = [31, 29 if year % 4 == 0 and (year % 100 != 0 or year % 400 == 0) else 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+        day = min(source_date.day, days_in_months[month-1])
+        
+        return source_date.replace(year=year, month=month, day=day)
+
+    def _get_semantic_period(self, period_days: int) -> int:
+        """Return number of months if period is semantic, else 0"""
+        mapping = {
+            30: 1,    # Monthly
+            60: 2,    # 2 Months
+            90: 3,    # 3 Months
+            180: 6,   # 6 Months
+            365: 12   # Yearly
+        }
+        return mapping.get(period_days, 0)
+
+    def _calculate_next_occurrence(self, start_date: datetime, period_days: int) -> datetime:
+        """Calculate next valid occurrence >= today"""
+        today = datetime.now().date()
+        current = start_date
+        
+        # Ensure we work with datetime for arithmetic
+        if isinstance(current, date) and not isinstance(current, datetime):
+            current = datetime.combine(current, datetime.min.time())
+            
+        if current.date() >= today:
+            return current
+            
+        if period_days <= 0:
+            return current
+
+        months_to_add = self._get_semantic_period(period_days)
+
+        if months_to_add > 0:
+            # Semantic calculation (Monthly/Yearly)
+            # We iterate from start_date to avoid drift
+            iteration = 1
+            while True:
+                 next_date = self._add_months(current, months_to_add * iteration)
+                 if next_date.date() >= today:
+                     return next_date
+                 iteration += 1
+                 # Safety break (approx 100 years)
+                 if iteration > 1200: 
+                     return next_date
+        else:
+            # Simple day-based calculation
+            diff = (today - current.date()).days
+            cycles = diff // period_days
+            
+            # Jump ahead
+            current = current + timedelta(days=cycles * period_days)
+            
+            # Ensure it's >= today
+            while current.date() < today:
+                current += timedelta(days=period_days)
+            
+        return current
+
     async def create_subscription(self, user: User, subscription_data: SubscriptionCreate) -> SubscriptionResponse:
         """Create new subscription"""
         data = subscription_data.model_dump()
+        
+        # Auto-calculate next payment date if it's in the past
+        if 'next_payment_date' in data:
+            next_payment = data['next_payment_date']
+            if next_payment.date() < datetime.now().date():
+                data['next_payment_date'] = self._calculate_next_occurrence(
+                    data['start_date'], 
+                    data['period_days']
+                )
+
         subscription = await self.repository.create(user, data)
         return SubscriptionResponse.model_validate(subscription)
 
@@ -42,6 +118,25 @@ class SubscriptionService:
             return None
         
         data = update_data.model_dump(exclude_unset=True)
+        
+        # Recalculate next_payment_date if relevant fields change or if it's in the past
+        if 'start_date' in data or 'period_days' in data or 'next_payment_date' in data:
+             start_date = data.get('start_date', subscription.start_date)
+             period_days = data.get('period_days', subscription.period_days)
+             
+             # Check current or new next_payment_date
+             proposed_next = data.get('next_payment_date', subscription.next_payment_date)
+             
+             # Convert to datetime if needed for comparison
+             if isinstance(proposed_next, date) and not isinstance(proposed_next, datetime):
+                  proposed_next = datetime.combine(proposed_next, datetime.min.time())
+             
+             if proposed_next.date() < datetime.now().date():
+                  data['next_payment_date'] = self._calculate_next_occurrence(
+                      start_date, 
+                      period_days
+                  )
+
         updated_subscription = await self.repository.update(subscription, data)
         return SubscriptionResponse.model_validate(updated_subscription)
 
@@ -84,25 +179,45 @@ class SubscriptionService:
         
         for sub in subscriptions:
             # Anchor from the start date and make it naive datetime
-            # Convert date to datetime at midnight
             if isinstance(sub.start_date, datetime):
                 anchor_date = sub.start_date.replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
             else:
-                # It is a date object
                 anchor_date = datetime.combine(sub.start_date, datetime.min.time())
             
-            period = timedelta(days=sub.period_days)
+            # Determine semantic interval
+            months_to_add = self._get_semantic_period(sub.period_days)
+            is_semantic = months_to_add > 0
             
-            # Go forward from anchor_date to find all occurrences within range
+            # Calculate occurrences
             current_date = anchor_date
+            
+            # Safety break
+            iteration_limit = 1000 
+            iterations = 0
+            
             while current_date <= end_date:
                 if current_date >= start_date:
-                    occurrences.append(SubscriptionOccurrence(
+                     occurrences.append(SubscriptionOccurrence(
                         date=current_date,
                         subscription=SubscriptionResponse.model_validate(sub)
                     ))
-                current_date += period
-                if sub.period_days <= 0: break # Safety check
+                
+                # Next date
+                if is_semantic:
+                    iterations += 1
+                    current_date = self._add_months(anchor_date, months_to_add * iterations)
+                else:
+                    current_date += timedelta(days=sub.period_days)
+                
+                # Optimization to skip ahead if very far behind
+                if current_date < start_date and not is_semantic:
+                     # Calculate remaining days to start_date
+                     diff = (start_date - current_date).days
+                     steps = diff // sub.period_days
+                     if steps > 1:
+                         current_date += timedelta(days=steps * sub.period_days)
+
+                if sub.period_days <= 0: break
                 
         # Sort by date
         occurrences.sort(key=lambda x: x.date)

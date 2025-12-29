@@ -65,7 +65,7 @@
           
           <!-- Subscription Date (Day + Month) -->
           <div class="space-y-3">
-            <label class="text-[10px] font-bold uppercase tracking-widest text-app-text-muted px-1">Дата платежа</label>
+            <label class="text-[10px] font-bold uppercase tracking-widest text-app-text-muted px-1">Дата следующего платежа</label>
             <div class="grid grid-cols-5 gap-3">
               <div class="col-span-2">
                 <CustomSelect
@@ -281,28 +281,42 @@ watch(() => props.subscription, (sub) => {
 }, { immediate: true })
 
 function handleSubmit() {
-  // Construct date for the current/next year
   const now = new Date()
   let year = now.getFullYear()
   
-  // If the date has already passed this year, set it for the next year
-  const targetDate = new Date(year, selectedMonth.value, selectedDay.value)
-  if (targetDate < now && !isEdit.value) {
+  // Construct user selected target date for current year
+  let targetDate = new Date(year, selectedMonth.value, selectedDay.value)
+  
+  // Fix month overflow (e.g. Feb 31)
+  if (targetDate.getMonth() !== selectedMonth.value) {
+    targetDate = new Date(year, selectedMonth.value + 1, 0)
+  }
+  
+  // If the target date is in the past (ignoring time), bump to next year
+  // Reset time for accurate comparison
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  
+  if (targetDate < today) {
     year++
+    targetDate = new Date(year, selectedMonth.value, selectedDay.value)
+     // Fix month overflow again for next year (leap year check etc)
+    if (targetDate.getMonth() !== selectedMonth.value) {
+       targetDate = new Date(year, selectedMonth.value + 1, 0)
+    }
   }
-  
-  
-  const finalDate = new Date(year, selectedMonth.value, selectedDay.value)
-  // Ensure date is valid (e.g. Feb 31 -> Feb 28/29)
-  if (finalDate.getMonth() !== selectedMonth.value) {
-    finalDate.setDate(0) // Last day of intended month
-  }
-  
-  const startDate = new Date(now.getFullYear(), selectedMonth.value, selectedDay.value)
-  if (startDate.getMonth() !== selectedMonth.value) startDate.setDate(0)
 
-  formData.value.start_date = startDate.toISOString().split('T')[0]
+  // Anchor start_date also aligns with this, but can be in previous year if needed for logic, 
+  // but simpler to just use the target date as the fresh new anchor, or keep it same as next payment.
+  // We'll set start_date = next_payment_date effectively re-anchoring the series.
+  // Or, to be safe, stick to what it was, but we are essentially saying "The payment is on X".
+  
+  const finalDate = targetDate
+  
+  // Update form data
+  formData.value.start_date = finalDate.toISOString().split('T')[0]
   formData.value.next_payment_date = finalDate.toISOString().split('T')[0]
+  
   emit('submit', { ...formData.value })
 }
 </script>
