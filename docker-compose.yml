@@ -14,6 +14,8 @@ services:
     build: ./backend
     container_name: substrack-backend
     restart: always
+    ports:
+      - "8000:8000"
     environment:
       DB_TYPE: postgres
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
