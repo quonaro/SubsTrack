@@ -3,11 +3,7 @@
     <!-- Header -->
     <header class="sticky top-0 z-40 border-b border-app-border bg-app-bg/80 px-6 py-4 backdrop-blur-xl">
       <div class="flex items-center justify-between mb-4">
-        <button class="rounded-xl bg-surface-100 p-2.5 text-app-text-muted hover:bg-surface-200 hover:text-app-text transition-all active:scale-95 shadow- premium">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="h-5 w-5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M3 4.5h14.25M3 9h9.75M3 13.5h9.75m4.5-4.5v12m0 0l-3.75-3.75M17.25 21L21 17.25" />
-          </svg>
-        </button>
+
         <div class="flex items-center gap-3">
           <img src="/logo.png" alt="Logo" class="h-8 w-8 object-contain rounded-xl shadow-sm" />
           <h1 class="text-xl font-bold tracking-tight">SubsTrack</h1>
@@ -91,7 +87,7 @@
       <div v-else class="space-y-4">
         <div class="flex items-center justify-between px-1">
           <h2 class="text-[10px] font-bold uppercase tracking-[0.15em] text-app-text-muted">{{ activeTab === 'active' ? 'Ближайшие списания' : 'Архивированные' }}</h2>
-          <span class="text-[10px] font-bold text-primary-400">Сортировка</span>
+          <SortMenu v-model="sortBy" />
         </div>
         
         <transition-group 
@@ -153,6 +149,7 @@ import SubscriptionCard from '../components/SubscriptionCard.vue'
 import SubscriptionForm from '../components/SubscriptionForm.vue'
 import BottomNavigation from '../components/BottomNavigation.vue'
 import PageLoader from '../components/PageLoader.vue'
+import SortMenu from '../components/SortMenu.vue'
 import {
   getSubscriptions,
   createSubscription,
@@ -169,12 +166,32 @@ const loading = ref(false)
 const showForm = ref(false)
 const editingSubscription = ref(null)
 
+const sortBy = ref('date_asc')
+
 const filteredSubscriptions = computed(() => {
-  return subscriptions.value.filter(sub => {
+  const filtered = subscriptions.value.filter(sub => {
     if (activeTab.value === 'active') {
       return sub.is_active
     } else {
       return !sub.is_active
+    }
+  })
+
+  // Sort logic
+  return filtered.sort((a, b) => {
+    switch (sortBy.value) {
+      case 'date_asc':
+        return new Date(a.next_payment_date) - new Date(b.next_payment_date)
+      case 'date_desc':
+        return new Date(b.next_payment_date) - new Date(a.next_payment_date)
+      case 'price_asc':
+        return a.price - b.price
+      case 'price_desc':
+        return b.price - a.price
+      case 'name_asc':
+        return a.name.localeCompare(b.name)
+      default:
+        return 0
     }
   })
 })
