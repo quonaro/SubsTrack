@@ -33,18 +33,20 @@ jobs:
       with:
         python-version: '3.12'
         
-    - name: Install uv
-      run: curl -LsSf https://astral.sh/uv/install.sh | sh
+    - name: Set up uv
+      uses: astral-sh/setup-uv@v5
+      with:
+        enable-cache: true
       
     - name: Install dependencies
       working-directory: ./backend
       run: |
-        /home/runner/.cargo/bin/uv sync --frozen
+        uv sync --frozen
         
     - name: Lint with Ruff
       working-directory: ./backend
       run: |
-        /home/runner/.cargo/bin/uv run ruff check .
+        uv run ruff check .
         
     # Add tests here when available
     
