@@ -5,13 +5,37 @@ from app.controller.routes import router
 from app.core.database import init_db, close_db
 
 
+import asyncio
+import logging
+from app.service.subscription_service import SubscriptionService
+
+logger = logging.getLogger(__name__)
+
+async def reminder_task():
+    """Background task to check for reminders every hour"""
+    # Wait a bit after startup
+    await asyncio.sleep(10)
+    while True:
+        try:
+            logger.info("Checking for subscription reminders...")
+            service = SubscriptionService()
+            await service.check_reminders()
+        except Exception as e:
+            logger.error(f"Error in reminder background task: {e}")
+        
+        # Check every hour (3600 seconds)
+        await asyncio.sleep(3600)
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Lifespan context manager for startup and shutdown events"""
     # Startup
     await init_db()
+    # Start background task
+    bg_task = asyncio.create_task(reminder_task())
     yield
     # Shutdown
+    bg_task.cancel()
     await close_db()
 
 

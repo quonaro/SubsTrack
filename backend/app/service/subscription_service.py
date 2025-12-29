@@ -4,6 +4,9 @@ from app.models.user import User
 from app.models.subscription import Subscription
 from app.schema.subscription import SubscriptionCreate, SubscriptionUpdate, SubscriptionResponse, NextMonthTotalResponse, SubscriptionOccurrence
 from datetime import datetime, timedelta, date
+from app.models.payment import PaymentHistory
+from app.schema.payment import PaymentHistoryResponse
+from app.service.telegram_service import TelegramService
 
 
 class SubscriptionService:
@@ -129,13 +132,70 @@ class SubscriptionService:
         await subscription.save()
         return SubscriptionResponse.model_validate(subscription)
 
+    async def _create_payment_history(self, subscription: Subscription, date_paid: datetime) -> PaymentHistory:
+        """Create a payment history record"""
+        return await PaymentHistory.create(
+            subscription=subscription,
+            amount=subscription.price,
+            currency=subscription.currency,
+            date=date_paid.date()
+        )
+
+    async def mark_as_paid(self, subscription_id: int, user_id: int) -> Optional[SubscriptionResponse]:
+        """Mark subscription as paid, record history, and advance next payment date"""
+        subscription = await self.repository.get_by_id(subscription_id, user_id)
+        if not subscription:
+            return None
+            
+        # 1. Record History
+        now = datetime.now()
+        await self._create_payment_history(subscription, now)
+        
+        # 2. Advance Date
+        current_next = subscription.next_payment_date
+        if isinstance(current_next, date) and not isinstance(current_next, datetime):
+             current_next = datetime.combine(current_next, datetime.min.time())
+             
+        months_to_add = self._get_semantic_period(subscription.period_days)
+        
+        if months_to_add > 0:
+            next_date = self._add_months(current_next, months_to_add)
+        else:
+            next_date = current_next + timedelta(days=subscription.period_days)
+            
+        subscription.next_payment_date = next_date.date()
+        await subscription.save()
+        
+        return SubscriptionResponse.model_validate(subscription)
+
     async def get_next_month_total(self, user_id: int) -> NextMonthTotalResponse:
         """Get total amount for next month"""
         result = await self.repository.get_next_month_total(user_id)
         return NextMonthTotalResponse(**result)
 
-    async def get_calendar_occurrences(
-        self, 
+    async def get_history(self, user_id: int, subscription_id: Optional[int] = None) -> List[PaymentHistoryResponse]:
+        """Get payment history"""
+        history = await self.repository.get_history(user_id, subscription_id)
+        return [PaymentHistoryResponse.model_validate(h) for h in history]
+
+    async def check_reminders(self):
+        """Check for subscriptions that need reminders and send them"""
+        # We check for reminders due 1 day before (default)
+        # In a real app we might check for multiple intervals (0, 1, 3 days)
+        subs = await self.repository.get_subscriptions_for_reminder(days_before=1)
+        
+        tg_service = TelegramService()
+        for sub in subs:
+            if sub.user and sub.user.telegram_id:
+                await tg_service.send_reminder(
+                    telegram_id=sub.user.telegram_id,
+                    sub_name=sub.name,
+                    price=float(sub.price),
+                    currency=sub.currency,
+                    days_before=sub.reminder_days_before or 1
+                )
+
+    async def get_calendar_occurrences(self, 
         user_id: int, 
         start_date: datetime, 
         end_date: datetime

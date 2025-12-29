@@ -50,6 +50,15 @@ export interface SubscriptionOccurrence {
   subscription: Subscription
 }
 
+export interface PaymentHistory {
+  id: number
+  subscription_id: number
+  amount: number
+  currency: string
+  date: string
+  subscription?: Subscription
+}
+
 /**
  * Get all subscriptions for current user
  */
@@ -124,6 +133,25 @@ export async function getNextMonthTotal(): Promise<NextMonthTotal> {
 export async function getCalendarOccurrences(startDate: string, endDate: string): Promise<SubscriptionOccurrence[]> {
   const params = { start_date: startDate, end_date: endDate }
   const response = await api.get<SubscriptionOccurrence[]>('/subscriptions/calendar', { params })
+  return response.data
+}
+
+/**
+ * Get payment history (global or for a subscription)
+ */
+export async function getHistory(subscriptionId?: number): Promise<PaymentHistory[]> {
+  const url = subscriptionId
+    ? `/subscriptions/${subscriptionId}/history`
+    : '/subscriptions/history' // I need to make sure this exists in backend!
+  const response = await api.get<PaymentHistory[]>(url)
+  return response.data
+}
+
+/**
+ * Mark subscription as paid
+ */
+export async function markAsPaid(id: number): Promise<Subscription> {
+  const response = await api.post<Subscription>(`/subscriptions/${id}/paid`)
   return response.data
 }
 

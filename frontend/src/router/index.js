@@ -3,6 +3,7 @@ import Subscriptions from '../views/Subscriptions.vue'
 import Calendar from '../views/Calendar.vue'
 import Settings from '../views/Settings.vue'
 import Statistics from '../views/Statistics.vue'
+import History from '../views/History.vue'
 import { isAuthenticated } from '../services/auth'
 
 const routes = [
@@ -22,6 +23,12 @@ const routes = [
     path: '/settings',
     name: 'Settings',
     component: Settings,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/history',
+    name: 'History',
+    component: History,
     meta: { requiresAuth: true }
   },
   {

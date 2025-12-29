@@ -6,12 +6,24 @@ class Settings(BaseSettings):
     app_name: str = "SubsTrack API"
     debug: bool = False
     
-    # Database settings for Tortoise ORM (SQLite)
+    # Database settings
+    db_type: str = "sqlite" # sqlite or postgres
+    
+    # SQLite
     db_path: str = "db.db"  # Path to SQLite database file (in project root)
+    
+    # PostgreSQL
+    postgres_user: str = "postgres"
+    postgres_password: str = "postgres"
+    postgres_db: str = "substrack"
+    postgres_host: str = "db"
+    postgres_port: int = 5432
     
     # Security settings
     secret_key: str = "your-secret-key-change-in-production"
-    telegram_bot_token: str = ""  # Telegram bot token for validating initData
+    
+    # Telegram settings
+    telegram_bot_token: str = ""
     
     class Config:
         env_file = ".env"
@@ -19,18 +31,20 @@ class Settings(BaseSettings):
 
     @property
     def tortoise_orm_config(self) -> dict:
-        """Generate Tortoise ORM configuration dictionary for SQLite"""
-        # Get database file path in project root (one level up from backend directory)
-        backend_dir = os.path.dirname(__file__)
-        project_root = os.path.dirname(backend_dir)  # Go up one level to project root
-        db_file = os.path.join(project_root, self.db_path)
+        """Generate Tortoise ORM configuration"""
         
-        # For Tortoise ORM with SQLite, use simple relative path
-        # The format should be: sqlite://path/to/file (no slashes after sqlite://)
-        db_file_normalized = os.path.normpath(db_file).replace("\\", "/")
+        if self.db_type == "postgres":
+            db_url = f"postgres://{self.postgres_user}:{self.postgres_password}@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
+        else:
+            # SQLite fallback
+            backend_dir = os.path.dirname(__file__)
+            project_root = os.path.dirname(backend_dir)  # Go up one level to project root
+            db_file = os.path.join(project_root, self.db_path)
+            db_file_normalized = os.path.normpath(db_file).replace("\\", "/")
+            db_url = f"sqlite://{db_file_normalized}"
         
         return {
-            "connections": {"default": f"sqlite://{db_file_normalized}"},
+            "connections": {"default": db_url},
             "apps": {
                 "models": {
                     "models": ["app.models", "aerich.models"],

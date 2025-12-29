@@ -63,6 +63,32 @@
             />
           </div>
           
+          <!-- Category -->
+          <div class="space-y-3">
+             <CustomSelect
+               v-model="formData.category_id"
+               :options="categoryOptions"
+               label="Категория"
+               :searchable="true"
+             />
+             <div v-if="formData.category_id === 'new'" class="animate-fade-in space-y-3 pt-2">
+                <input 
+                  v-model="newCategoryName"
+                  type="text" 
+                  placeholder="Название новой категории" 
+                  class="w-full rounded-2xl bg-surface-50 border border-app-border px-5 py-4 text-app-text placeholder-zinc-700 focus:border-primary-500/50 focus:bg-surface-100 focus:outline-none focus:ring-4 focus:ring-primary-500/10 transition-all center-placeholder"
+                  @keydown.enter.prevent="createNewCategory"
+                />
+                <button 
+                  type="button"
+                  class="w-full rounded-2xl bg-primary-500/10 px-4 py-3 text-sm font-bold text-primary-400 hover:bg-primary-500/20 active:scale-95 transition-all"
+                  @click="createNewCategory"
+                >
+                  Создать категорию
+                </button>
+             </div>
+          </div>
+          
 
           <!-- Subscription Date (Day + Month + Year) -->
           <div class="space-y-3">
@@ -201,9 +227,10 @@
 </template>
 
 <script setup>
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed, onMounted } from 'vue'
 import EmojiPicker from './EmojiPicker.vue'
 import CustomSelect from './CustomSelect.vue'
+import { getCategories, createCategory as apiCreateCategory } from '../services/categories'
 
 const props = defineProps({
   subscription: {
@@ -267,6 +294,51 @@ function handleEmojiSelect(emoji) {
   showEmojiPicker.value = false
 }
 
+const categories = ref([])
+const newCategoryName = ref('')
+
+const categoryOptions = computed(() => {
+  const opts = categories.value.map(c => ({
+    label: c.icon + ' ' + c.name,
+    value: c.id
+  }))
+  opts.push({ label: '➕ Создать новую...', value: 'new' })
+  return opts
+})
+
+async function fetchCategories() {
+  try {
+    categories.value = await getCategories()
+  } catch (e) {
+    console.error('Failed to fetch categories', e)
+  }
+}
+
+async function createNewCategory() {
+  if (!newCategoryName.value) return
+  
+  try {
+    const defaultIcons = ['🍿', '🎮', '💡', '🏠', '🛒', '🎓']
+    const randomIcon = defaultIcons[Math.floor(Math.random() * defaultIcons.length)]
+    
+    const newCat = await apiCreateCategory({
+      name: newCategoryName.value,
+      color: '#8b5cf6',
+      icon: randomIcon
+    })
+    
+    categories.value.push(newCat)
+    formData.value.category_id = newCat.id
+    newCategoryName.value = ''
+  } catch (e) {
+    console.error('Failed to create category', e)
+  }
+}
+
+onMounted(() => {
+  fetchCategories()
+})
+
 const formData = ref({
   name: '',
   price: 0,
@@ -276,7 +348,8 @@ const formData = ref({
   next_payment_date: '',
   icon: '📦',
   reminder_enabled: true,
-  reminder_days_before: 1
+  reminder_days_before: 1,
+  category_id: null
 })
 
 watch(() => props.subscription, (sub) => {
@@ -294,7 +367,8 @@ watch(() => props.subscription, (sub) => {
       next_payment_date: sub.next_payment_date.split('T')[0],
       icon: sub.icon,
       reminder_enabled: sub.reminder_enabled,
-      reminder_days_before: sub.reminder_days_before
+      reminder_days_before: sub.reminder_days_before,
+      category_id: sub.category ? sub.category.id : null
     }
   }
 }, { immediate: true })

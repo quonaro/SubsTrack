@@ -51,6 +51,33 @@
           </div>
         </section>
 
+        <!-- Category Breakdown -->
+        <section class="space-y-4">
+          <h2 class="text-[10px] font-bold uppercase tracking-[0.15em] text-app-text-muted px-1">По категориям</h2>
+          <div class="grid grid-cols-1 gap-3">
+             <div 
+              v-for="cat in categoryStats" 
+              :key="cat.name"
+              class="rounded-3xl bg-surface-50 p-4 border border-app-border relative overflow-hidden"
+             >
+                <div class="flex items-center justify-between relative z-10">
+                   <div class="flex items-center gap-3">
+                      <div class="h-10 w-10 rounded-xl bg-surface-200 flex items-center justify-center text-xl">{{ cat.icon }}</div>
+                      <div>
+                        <p class="text-xs font-bold text-app-text uppercase tracking-wider">{{ cat.name }}</p>
+                        <p class="text-[10px] text-app-text-muted font-bold">{{ cat.percent }}%</p>
+                      </div>
+                   </div>
+                   <p class="text-sm font-bold text-app-text">{{ formatPrice(cat.total) }}</p>
+                </div>
+                <!-- Progress bar bg -->
+                <div class="absolute bottom-0 left-0 h-1 bg-primary-500/20 w-full">
+                   <div class="h-full bg-primary-500" :style="{ width: cat.percent + '%' }"></div>
+                </div>
+             </div>
+          </div>
+        </section>
+
         <!-- Top Expenses -->
         <section class="space-y-4">
           <div class="flex items-center justify-between px-1">
@@ -114,6 +141,22 @@ const stats = ref(null)
 const loading = ref(true)
 const currentInsightIndex = ref(0)
 const insights = ref([])
+
+const categoryStats = computed(() => {
+  if (!stats.value || !stats.value.top_subscriptions) return []
+  
+  // Note: effectively we need all subscriptions to calculate full category stats
+  // For now we will assume the backend returns enough info or we accept approximation based on top subs
+  // Ideally backend should return category breakdown. 
+  // TODO: Add category_stats to backend response. 
+  
+  // Checking if we have category stats in response (if backend is updated)
+  if (stats.value.category_stats) {
+    return stats.value.category_stats
+  }
+  
+  return [] 
+})
 
 const currentInsight = computed(() => {
   if (!insights.value.length) return null

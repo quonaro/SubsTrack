@@ -18,6 +18,7 @@ class Subscription(Model):
     is_active = fields.BooleanField(default=True, description="Whether subscription is active")
     reminder_enabled = fields.BooleanField(default=True, description="Whether reminders are enabled")
     reminder_days_before = fields.IntField(default=1, description="Days before payment to send reminder")
+    category = fields.ForeignKeyField('models.Category', related_name='subscriptions', null=True, description="Subscription category")
     created_at = fields.DatetimeField(auto_now_add=True, description="Creation timestamp")
     updated_at = fields.DatetimeField(auto_now=True, description="Last update timestamp")
 

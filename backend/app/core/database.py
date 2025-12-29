@@ -12,18 +12,18 @@ def get_db_file_path() -> str:
 
 async def init_db() -> None:
     """Initialize database connection and create tables if database doesn't exist"""
-    db_file = get_db_file_path()
-    db_exists = os.path.exists(db_file)
-
     # Initialize Tortoise ORM
     await Tortoise.init(config=settings.tortoise_orm_config)
 
-    # Create database and tables if they don't exist
-    if not db_exists:
-        print(f"Database file not found. Creating new database at {db_file}")
-        # Create empty database file
-        os.makedirs(os.path.dirname(db_file) or ".", exist_ok=True)
-        open(db_file, "a").close()
+    # SQLite specific logic
+    if settings.db_type == "sqlite":
+        db_file = get_db_file_path()
+        db_exists = os.path.exists(db_file)
+        if not db_exists:
+            print(f"Database file not found. Creating new database at {db_file}")
+            # Create empty database file
+            os.makedirs(os.path.dirname(db_file) or ".", exist_ok=True)
+            open(db_file, "a").close()
 
     # Generate schemas using Tortoise ORM (safe=True won't fail if tables exist)
     try:

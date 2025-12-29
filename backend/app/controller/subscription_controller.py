@@ -11,6 +11,7 @@ from app.schema.subscription import (
     NextMonthTotalResponse,
     SubscriptionOccurrence
 )
+from app.schema.payment import PaymentHistoryResponse
 
 router = APIRouter(prefix="/subscriptions", tags=["subscriptions"])
 
@@ -111,5 +112,99 @@ async def archive_subscription(
     if not subscription:
         raise HTTPException(status_code=404, detail="Subscription not found")
     return subscription
+
+
+@router.get("/test-notification")
+async def send_test_notification(
+    current_user: User = Depends(get_current_user)
+):
+    """Send a test Telegram notification to the current user"""
+    if not current_user.telegram_id:
+        raise HTTPException(status_code=400, detail="User has no Telegram ID linked")
+    
+    from app.service.telegram_service import TelegramService
+    service = TelegramService()
+    success = await service.send_message(
+        current_user.telegram_id, 
+        "🚀 <b>SubsTrack:</b> Это тестовое уведомление! Ваша настройка уведомлений работает корректно."
+    )
+    
+    if not success:
+        raise HTTPException(status_code=500, detail="Failed to send notification. Check bot token.")
+        
+    return {"status": "success", "message": "Test notification sent"}
+
+
+@router.get("/export")
+async def export_subscriptions(
+    current_user: User = Depends(get_current_user)
+):
+    """Export subscriptions to CSV"""
+    import csv
+    import io
+    from fastapi.responses import StreamingResponse
+    
+    service = SubscriptionService()
+    subscriptions = await service.get_user_subscriptions(current_user.id)
+    
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # Header
+    writer.writerow(["ID", "Status", "Name", "Price", "Currency", "Period (days)", "Next Payment", "Category"])
+    
+    for sub in subscriptions:
+        status = "Active" if sub.is_active else "Inactive"
+        category = sub.category.name if sub.category else ""
+        writer.writerow([
+            sub.id,
+            status,
+            sub.name,
+            sub.price,
+            sub.currency,
+            sub.period_days,
+            sub.next_payment_date,
+            category
+        ])
+    
+    output.seek(0)
+    
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=subscriptions.csv"}
+    )
+
+
+@router.post("/{subscription_id}/paid", response_model=SubscriptionResponse)
+async def mark_as_paid(
+    subscription_id: int,
+    current_user: User = Depends(get_current_user)
+):
+    """Mark subscription as paid and record history"""
+    service = SubscriptionService()
+    subscription = await service.mark_as_paid(subscription_id, current_user.id)
+    if not subscription:
+        raise HTTPException(status_code=404, detail="Subscription not found")
+    return subscription
+
+
+@router.get("/history", response_model=List[PaymentHistoryResponse])
+async def get_all_history(
+    current_user: User = Depends(get_current_user)
+):
+    """Get all payment history for current user"""
+    service = SubscriptionService()
+    return await service.get_history(current_user.id)
+
+
+@router.get("/{subscription_id}/history", response_model=List[PaymentHistoryResponse])
+async def get_subscription_history(
+    subscription_id: int,
+    current_user: User = Depends(get_current_user)
+):
+    """Get payment history for a specific subscription"""
+    service = SubscriptionService()
+    return await service.get_history(current_user.id, subscription_id)
 
 

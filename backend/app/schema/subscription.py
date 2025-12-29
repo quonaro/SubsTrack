@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime
+from app.schema.category import CategoryResponse
 
 
 class SubscriptionCreate(BaseModel):
@@ -14,6 +15,7 @@ class SubscriptionCreate(BaseModel):
     icon: str = Field(default="📦", max_length=10, description="Emoji icon")
     reminder_enabled: bool = Field(default=True, description="Whether reminders are enabled")
     reminder_days_before: int = Field(default=1, ge=0, description="Days before payment to send reminder")
+    category_id: Optional[int] = Field(None, description="Category ID")
 
 
 class SubscriptionUpdate(BaseModel):
@@ -28,6 +30,7 @@ class SubscriptionUpdate(BaseModel):
     is_active: Optional[bool] = Field(None, description="Whether subscription is active")
     reminder_enabled: Optional[bool] = Field(None, description="Whether reminders are enabled")
     reminder_days_before: Optional[int] = Field(None, ge=0, description="Days before payment to send reminder")
+    category_id: Optional[int] = Field(None, description="Category ID")
 
 
 class SubscriptionResponse(BaseModel):
@@ -44,6 +47,7 @@ class SubscriptionResponse(BaseModel):
     is_active: bool
     reminder_enabled: bool
     reminder_days_before: int
+    category: Optional[CategoryResponse] = None
     created_at: datetime
     updated_at: datetime
 

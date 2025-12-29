@@ -105,6 +105,7 @@
             @click="editSubscription(subscription)"
             @archive="handleArchive"
             @unarchive="handleUnarchive"
+            @paid="handlePaid"
           />
         </transition-group>
       </div>
@@ -154,7 +155,8 @@ import {
   updateSubscription,
   getNextMonthTotal,
   archiveSubscription,
-  unarchiveSubscription
+  unarchiveSubscription,
+  markAsPaid
 } from '../services/subscriptions'
 
 const activeTab = ref('active')
@@ -181,26 +183,7 @@ watch(sortBy, () => {
 })
 
 watch(activeTab, () => {
-  loadData() // Reload to apply sort correctly if needed, though client filter handles active/archive for now. 
-  // Wait, if we fetch all and filter client side...
-  // The backend `get_subscriptions` has `is_active` filter.
-  // Currently `loadData` calls `getSubscriptions()` without arguments, which implies `isActive` is undefined (all subs? or none?).
-  // Let's check logic.
-  // Old logic: `getSubscriptions` called in loadData. `filteredSubscriptions` filtered by active/inactive.
-  // Backend `get_all_by_user` returns ALL subs if `is_active` is None.
-  // So client has all subs.
-  // If we sort on backend, we sort mixed active/inactive. 
-  // If we want correct sort for active tab, we should probably fetch per tab.
-  // But let's stick to current architecture: fetch all, client filter.
-  // BUT: backend sort will sort the whole list.
-  // Example: 
-  // Sub A (Active) - Date: 2025
-  // Sub B (Archived) - Date: 2024
-  // Sort Date ASC -> B, A.
-  // Client filters: Active -> A. Archived -> B.
-  // The relative order within Active list is correct because B is filtered out.
-  // And A is correctly placed relative to other active items.
-  // Yes, sorting the superset works for subsets if the sort key is independent of the subset condition.
+  loadData()
 })
 
 onMounted(async () => {
@@ -218,7 +201,6 @@ async function loadData() {
     nextMonthTotal.value = total
   } catch (error) {
     // error
-
   } finally {
     loading.value = false
   }
@@ -248,8 +230,6 @@ async function handleFormSubmit(data) {
     await loadData()
     closeForm()
   } catch (error) {
-    // error
-
     alert('Ошибка при сохранении подписки')
   }
 }
@@ -275,6 +255,18 @@ async function handleUnarchive(id) {
     await loadData()
   } catch (error) {
     alert('Ошибка при восстановлении')
+  } finally {
+    loading.value = false
+  }
+}
+
+async function handlePaid(id) {
+  try {
+    loading.value = true
+    await markAsPaid(id)
+    await loadData()
+  } catch (error) {
+    alert('Ошибка при подтверждении оплаты')
   } finally {
     loading.value = false
   }

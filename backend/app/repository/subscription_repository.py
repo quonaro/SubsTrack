@@ -1,5 +1,6 @@
 from typing import Optional, List
 from app.models.subscription import Subscription
+from app.models.payment import PaymentHistory
 from app.models.user import User
 from datetime import datetime
 from tortoise.expressions import Q
@@ -12,14 +13,14 @@ class SubscriptionRepository:
     async def get_by_id(subscription_id: int, user_id: int) -> Optional[Subscription]:
         """Get subscription by ID for specific user"""
         try:
-            return await Subscription.get(id=subscription_id, user_id=user_id)
+            return await Subscription.get(id=subscription_id, user_id=user_id).prefetch_related('category')
         except Subscription.DoesNotExist:
             return None
 
     @staticmethod
     async def get_all_by_user(user_id: int, is_active: Optional[bool] = None, sort_by: str = 'date_asc') -> List[Subscription]:
         """Get all subscriptions for user, optionally filtered by active status and sorted"""
-        query = Subscription.filter(user_id=user_id)
+        query = Subscription.filter(user_id=user_id).prefetch_related('category')
         if is_active is not None:
             query = query.filter(is_active=is_active)
         
@@ -107,4 +108,10 @@ class SubscriptionRepository:
             next_payment_date__lt=target_date_end
         ).prefetch_related('user')
 
-
+    @staticmethod
+    async def get_history(user_id: int, subscription_id: Optional[int] = None) -> List[PaymentHistory]:
+        """Get payment history for user, optionally filtered by subscription"""
+        query = PaymentHistory.filter(subscription__user_id=user_id)
+        if subscription_id:
+            query = query.filter(subscription_id=subscription_id)
+        return await query.order_by("-date").prefetch_related("subscription")

@@ -34,6 +34,17 @@
       <div class="flex items-center gap-2">
         <button 
           v-if="subscription.is_active"
+          class="h-10 w-10 flex items-center justify-center rounded-full bg-green-500/10 text-green-500 transition-all hover:bg-green-500/20 hover:scale-110 active:scale-95 shadow-sm"
+          title="Отметить как оплачено"
+          @click.stop="$emit('paid', subscription.id)"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor" class="h-5 w-5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+          </svg>
+        </button>
+
+        <button 
+          v-if="subscription.is_active"
           class="h-10 w-10 flex items-center justify-center rounded-full bg-white/0 text-zinc-600 transition-all hover:bg-red-500/10 hover:text-red-500 hover:scale-110 active:scale-95"
           title="Архивировать"
           @click.stop="$emit('archive', subscription.id)"

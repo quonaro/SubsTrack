@@ -14,6 +14,10 @@ router.include_router(subscription_router)
 # Include statistics routes
 router.include_router(statistics_router)
 
+# Include category routes
+from app.api.endpoints.categories import router as category_router
+router.include_router(category_router, prefix="/categories", tags=["categories"])
+
 
 @router.get("/test")
 async def test_endpoint():

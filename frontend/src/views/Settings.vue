@@ -129,7 +129,53 @@
         </div>
       </section>
 
+      <!-- System Section -->
+      <section class="space-y-6">
+        <div class="flex items-center gap-2 px-1">
+          <div class="h-4 w-1 rounded-full bg-primary-500"></div>
+          <h2 class="text-[10px] font-bold uppercase tracking-[0.2em] text-app-text-muted">Система ⚙️</h2>
+        </div>
+        
+        <div class="space-y-3">
+          <!-- Test Notification -->
+          <button 
+            class="flex w-full items-center justify-between rounded-3xl bg-surface-50 p-6 border border-app-border transition-all active:scale-[0.98] hover:bg-surface-100 group shadow-premium"
+            @click="testNotification"
+          >
+            <div class="flex items-center gap-4">
+              <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-surface-100 text-xl shadow-inner group-hover:scale-110 duration-500">🔔</div>
+              <div class="text-left">
+                <p class="text-xs font-black uppercase tracking-widest">Проверить уведомления</p>
+                <p class="text-[10px] font-medium text-app-text-muted mt-0.5">Отправить тестовое сообщение в Telegram</p>
+              </div>
+            </div>
+            <div class="h-10 w-10 flex items-center justify-center rounded-full bg-white/0 text-zinc-600 transition-all group-hover:bg-primary-500/10 group-hover:text-primary-500">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+              </svg>
+            </div>
+          </button>
 
+          <!-- Export CSV -->
+          <button 
+            class="flex w-full items-center justify-between rounded-3xl bg-surface-50 p-6 border border-app-border transition-all active:scale-[0.98] hover:bg-surface-100 group shadow-premium"
+            @click="exportCSV"
+          >
+            <div class="flex items-center gap-4">
+              <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-surface-100 text-xl shadow-inner group-hover:scale-110 duration-500">📊</div>
+              <div class="text-left">
+                <p class="text-xs font-black uppercase tracking-widest">Экспорт данных</p>
+                <p class="text-[10px] font-medium text-app-text-muted mt-0.5">Скачать все подписки в формате CSV</p>
+              </div>
+            </div>
+            <div class="h-10 w-10 flex items-center justify-center rounded-full bg-white/0 text-zinc-600 transition-all group-hover:bg-primary-500/10 group-hover:text-primary-500">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M7.5 12l4.5 4.5m0 0l4.5-4.5M12 3v13.5" />
+              </svg>
+            </div>
+          </button>
+        </div>
+      </section>
     </main>
 
     <BottomNavigation />
@@ -140,9 +186,36 @@
 import { useRouter } from 'vue-router'
 import BottomNavigation from '../components/BottomNavigation.vue'
 import { useTheme } from '../composables/useTheme'
+import api from '../services/api'
 
 const router = useRouter()
 const { accentColor, setAccentColor, theme, setTheme } = useTheme()
+
+async function testNotification() {
+  try {
+    await api.get('/subscriptions/test-notification')
+    alert('Уведомление отправлено! Проверьте свой Telegram.')
+  } catch (e) {
+    alert('Ошибка при отправке: ' + (e.response?.data?.detail || e.message))
+  }
+}
+
+async function exportCSVBlob() {
+  try {
+    const response = await api.get('/subscriptions/export', { responseType: 'blob' })
+    const url = window.URL.createObjectURL(new Blob([response.data]))
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', 'subscriptions.csv')
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  } catch (e) {
+    alert('Ошибка при экспорте: ' + e.message)
+  }
+}
+
+const exportCSV = exportCSVBlob
 
 const darkThemes = [
   { id: 'midnight', name: 'Midnight', preview: '#0f0f13', surface: 'rgba(255,255,255,0.05)' },

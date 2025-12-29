@@ -42,6 +42,19 @@
       </router-link>
 
       <router-link 
+        to="/history" 
+        class="group flex flex-col items-center gap-1 text-app-text-muted transition-colors hover:text-primary-400" 
+        active-class="!text-primary-500"
+      >
+        <div class="rounded-full p-1 transition-all group-active:scale-90">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="h-6 w-6">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+          </svg>
+        </div>
+        <span class="text-[10px] font-medium">История</span>
+      </router-link>
+
+      <router-link 
         to="/settings" 
         class="group flex flex-col items-center gap-1 text-app-text-muted transition-colors hover:text-primary-400" 
         active-class="!text-primary-500"
