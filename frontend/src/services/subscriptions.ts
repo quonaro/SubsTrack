@@ -53,8 +53,9 @@ export interface SubscriptionOccurrence {
 /**
  * Get all subscriptions for current user
  */
-export async function getSubscriptions(isActive?: boolean): Promise<Subscription[]> {
-  const params = isActive !== undefined ? { is_active: isActive } : {}
+export async function getSubscriptions(isActive?: boolean, sortBy: string = 'date_asc'): Promise<Subscription[]> {
+  const params: any = { sort_by: sortBy }
+  if (isActive !== undefined) params.is_active = isActive
   const response = await api.get<Subscription[]>('/subscriptions', { params })
   return response.data
 }

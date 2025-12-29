@@ -17,12 +17,26 @@ class SubscriptionRepository:
             return None
 
     @staticmethod
-    async def get_all_by_user(user_id: int, is_active: Optional[bool] = None) -> List[Subscription]:
-        """Get all subscriptions for user, optionally filtered by active status"""
+    async def get_all_by_user(user_id: int, is_active: Optional[bool] = None, sort_by: str = 'date_asc') -> List[Subscription]:
+        """Get all subscriptions for user, optionally filtered by active status and sorted"""
         query = Subscription.filter(user_id=user_id)
         if is_active is not None:
             query = query.filter(is_active=is_active)
-        return await query.order_by('next_payment_date')
+        
+        if sort_by == 'date_asc':
+            query = query.order_by('next_payment_date')
+        elif sort_by == 'date_desc':
+            query = query.order_by('-next_payment_date')
+        elif sort_by == 'price_asc':
+            query = query.order_by('price')
+        elif sort_by == 'price_desc':
+            query = query.order_by('-price')
+        elif sort_by == 'name_asc':
+            query = query.order_by('name')
+        else:
+            query = query.order_by('next_payment_date')
+            
+        return await query
 
     @staticmethod
     async def create(user: User, subscription_data: dict) -> Subscription:

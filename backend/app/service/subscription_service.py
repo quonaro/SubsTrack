@@ -12,9 +12,9 @@ class SubscriptionService:
     def __init__(self):
         self.repository = SubscriptionRepository()
 
-    async def get_user_subscriptions(self, user_id: int, is_active: Optional[bool] = None) -> List[SubscriptionResponse]:
+    async def get_user_subscriptions(self, user_id: int, is_active: Optional[bool] = None, sort_by: str = 'date_asc') -> List[SubscriptionResponse]:
         """Get all subscriptions for user"""
-        subscriptions = await self.repository.get_all_by_user(user_id, is_active)
+        subscriptions = await self.repository.get_all_by_user(user_id, is_active, sort_by)
         return [SubscriptionResponse.model_validate(sub) for sub in subscriptions]
 
     async def get_subscription(self, subscription_id: int, user_id: int) -> Optional[SubscriptionResponse]:

@@ -169,31 +169,40 @@ const editingSubscription = ref(null)
 const sortBy = ref('date_asc')
 
 const filteredSubscriptions = computed(() => {
-  const filtered = subscriptions.value.filter(sub => {
+  return subscriptions.value.filter(sub => {
     if (activeTab.value === 'active') {
       return sub.is_active
     } else {
       return !sub.is_active
     }
   })
+})
 
-  // Sort logic
-  return filtered.sort((a, b) => {
-    switch (sortBy.value) {
-      case 'date_asc':
-        return new Date(a.next_payment_date) - new Date(b.next_payment_date)
-      case 'date_desc':
-        return new Date(b.next_payment_date) - new Date(a.next_payment_date)
-      case 'price_asc':
-        return a.price - b.price
-      case 'price_desc':
-        return b.price - a.price
-      case 'name_asc':
-        return a.name.localeCompare(b.name)
-      default:
-        return 0
-    }
-  })
+watch(sortBy, () => {
+  loadData()
+})
+
+watch(activeTab, () => {
+  loadData() // Reload to apply sort correctly if needed, though client filter handles active/archive for now. 
+  // Wait, if we fetch all and filter client side...
+  // The backend `get_subscriptions` has `is_active` filter.
+  // Currently `loadData` calls `getSubscriptions()` without arguments, which implies `isActive` is undefined (all subs? or none?).
+  // Let's check logic.
+  // Old logic: `getSubscriptions` called in loadData. `filteredSubscriptions` filtered by active/inactive.
+  // Backend `get_all_by_user` returns ALL subs if `is_active` is None.
+  // So client has all subs.
+  // If we sort on backend, we sort mixed active/inactive. 
+  // If we want correct sort for active tab, we should probably fetch per tab.
+  // But let's stick to current architecture: fetch all, client filter.
+  // BUT: backend sort will sort the whole list.
+  // Example: 
+  // Sub A (Active) - Date: 2025
+  // Sub B (Archived) - Date: 2024
+  // Sort Date ASC -> B, A.
+  // Client filters: Active -> A. Archived -> B.
+  // The relative order within Active list is correct because B is filtered out.
+  // And A is correctly placed relative to other active items.
+  // Yes, sorting the superset works for subsets if the sort key is independent of the subset condition.
 })
 
 onMounted(async () => {
@@ -204,7 +213,7 @@ async function loadData() {
   loading.value = true
   try {
     const [subs, total] = await Promise.all([
-      getSubscriptions(),
+      getSubscriptions(undefined, sortBy.value),
       getNextMonthTotal()
     ])
     subscriptions.value = subs

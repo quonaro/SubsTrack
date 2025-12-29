@@ -18,11 +18,12 @@ router = APIRouter(prefix="/subscriptions", tags=["subscriptions"])
 @router.get("", response_model=List[SubscriptionResponse])
 async def get_subscriptions(
     is_active: Optional[bool] = Query(None, description="Filter by active status"),
+    sort_by: str = Query("date_asc", description="Sort by field"),
     current_user: User = Depends(get_current_user)
 ):
     """Get all subscriptions for current user"""
     service = SubscriptionService()
-    return await service.get_user_subscriptions(current_user.id, is_active)
+    return await service.get_user_subscriptions(current_user.id, is_active, sort_by)
 
 
 @router.get("/next-month-total", response_model=NextMonthTotalResponse)
