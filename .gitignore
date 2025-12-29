@@ -25,9 +25,8 @@ wheels/
 .venv
 .python-version
 
-db.db
-*.db-shm
-*.db-wal
+*-shm
+*-wal
 # Node.js
 node_modules/
 npm-debug.log*
