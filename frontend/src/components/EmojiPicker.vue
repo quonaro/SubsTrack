@@ -24,7 +24,10 @@
 
       </div>
 
-      <div class="emoji-categories px-6 py-4 flex gap-2 overflow-x-auto scrollbar-hide">
+      <div 
+        class="emoji-categories px-6 py-4 flex gap-2 overflow-x-auto scrollbar-hide"
+        :class="{ 'opacity-50 pointer-events-none grayscale': searchQuery }"
+      >
         <button
           v-for="category in categories"
           :key="category.key"
@@ -82,9 +85,11 @@ const categories = [
 async function loadEmojis() {
   try {
     const { fetchFromCDN } = await import('emojibase')
-    const emojis = await fetchFromCDN('en/data.json')
+    // Load Russian data
+    const emojis = await fetchFromCDN('ru/data.json')
     allEmojis.value = emojis.filter(emoji => !emoji.skinTone && emoji.emoji && emoji.group !== undefined)
   } catch (error) {
+    console.error('Failed to load emojis:', error)
     allEmojis.value = []
   }
 }
@@ -96,6 +101,18 @@ onMounted(() => {
 const filteredEmojis = computed(() => {
   let emojis = allEmojis.value
 
+  // Apply search filter first
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase()
+    return emojis.filter(emoji => {
+      const label = (emoji.label || '').toLowerCase()
+      const tags = (emoji.tags || []).join(' ').toLowerCase()
+      const emojiChar = emoji.emoji || ''
+      return label.includes(query) || tags.includes(query) || emojiChar.includes(query)
+    })
+  }
+
+  // If no search, apply category filter
   if (selectedCategory.value && selectedCategory.value !== 'all') {
     const category = categories.find(c => c.key === selectedCategory.value)
     if (category) {
@@ -108,16 +125,6 @@ const filteredEmojis = computed(() => {
         return false
       })
     }
-  }
-
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase()
-    emojis = emojis.filter(emoji => {
-      const label = (emoji.label || '').toLowerCase()
-      const tags = (emoji.tags || []).join(' ').toLowerCase()
-      const emojiChar = emoji.emoji || ''
-      return label.includes(query) || tags.includes(query) || emojiChar.includes(query)
-    })
   }
 
   return emojis

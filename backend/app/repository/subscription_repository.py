@@ -24,7 +24,7 @@ class SubscriptionRepository:
             query = query.filter(is_active=is_active)
         
         if sort_by == 'date_asc':
-            query = query.order_by('next_payment_date')
+            query = query.order_by('next_payment_date', 'id')
         elif sort_by == 'date_desc':
             query = query.order_by('-next_payment_date')
         elif sort_by == 'price_asc':

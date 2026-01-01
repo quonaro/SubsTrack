@@ -1,4 +1,5 @@
-FROM python:3.12-slim
+# Base stage
+FROM python:3.12-slim as base
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
@@ -21,9 +22,20 @@ WORKDIR /app
 # Copy dependency files
 COPY pyproject.toml uv.lock ./
 
-# Install dependencies (only)
+# Install dependencies
 RUN uv sync --frozen --no-install-project --no-dev
 
+# Development stage
+FROM base as development
+ENV DEV=true
+# Copy the rest of the application for dev, though volumes usually override this
+COPY . .
+# Install project in dev mode
+RUN uv sync --frozen
+CMD ["uv", "run", "app/main.py"]
+
+# Production stage
+FROM base as production
 # Copy the rest of the application
 COPY . .
 

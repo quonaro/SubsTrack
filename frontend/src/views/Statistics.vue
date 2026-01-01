@@ -1,11 +1,7 @@
 <template>
   <div class="min-h-screen bg-app-bg pb-24 text-app-text">
     <!-- Header -->
-    <AppHeader>
-      <template #center>
-        <h1 class="text-xs font-bold uppercase tracking-widest text-app-text">Статистика</h1>
-      </template>
-    </AppHeader>
+    <AppHeader />
 
     <main class="space-y-8 p-6 animate-fade-in">
       <!-- Loading State -->
@@ -138,7 +134,11 @@ import BottomNavigation from '../components/BottomNavigation.vue'
 import AppHeader from '../components/AppHeader.vue'
 import PageLoader from '../components/PageLoader.vue'
 import { getStatistics } from '../services/statistics'
-import { formatPrice, formatPeriod } from '../services/subscriptions'
+import { formatPeriod } from '../services/subscriptions'
+
+function formatPrice(price) {
+  return Math.round(price).toLocaleString('ru-RU') + ' ₽'
+}
 
 const stats = ref(null)
 const loading = ref(true)

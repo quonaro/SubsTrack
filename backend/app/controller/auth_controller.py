@@ -48,9 +48,10 @@ async def dev_login():
     """
     from config import settings
     
-    # Check both debug and DEBUG (case-insensitive)
+    # Check both debug and DEBUG (case-insensitive), and DEV
     debug_env = os.getenv("DEBUG", "").lower() in ("true", "1", "yes")
-    debug_enabled = settings.debug or debug_env
+    dev_env = os.getenv("DEV", "").lower() in ("true", "1", "yes")
+    debug_enabled = settings.debug or debug_env or dev_env
     
     print(f"[DEV LOGIN] settings.debug={settings.debug}, DEBUG env={debug_env}, enabled={debug_enabled}")
     
