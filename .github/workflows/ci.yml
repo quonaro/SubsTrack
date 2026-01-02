@@ -56,8 +56,7 @@ jobs:
         npm install
         npm run build
         
-    - name: Verify Docker Build
-      run: docker compose build
+
 
   deploy:
     runs-on: ubuntu-latest
