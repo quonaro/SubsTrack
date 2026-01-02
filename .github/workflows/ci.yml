@@ -74,10 +74,9 @@ jobs:
         script: |
           # Install nest
           curl -fsSL https://raw.githubusercontent.com/quonaro/nest/main/install.static.sh | bash
-          source ~/.bashrc
           
           cd ${{ secrets.PROJECT_PATH }}
           git pull origin main || git pull origin master
           
           # Run application using nest
-          nest app prod run
+          ~/.local/bin/nest app prod run
