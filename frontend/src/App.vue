@@ -19,11 +19,13 @@
         <component :is="Component" />
       </transition>
     </router-view>
+    <BottomNavigation v-if="isAuthenticated" />
   </div>
 </template>
 
 <script setup>
 import { onMounted } from 'vue'
+import BottomNavigation from './components/BottomNavigation.vue'
 import { useAuth } from './composables/useAuth'
 import { useTheme } from './composables/useTheme'
 

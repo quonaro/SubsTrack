@@ -124,13 +124,12 @@
       </template>
     </main>
 
-    <BottomNavigation />
+
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import BottomNavigation from '../components/BottomNavigation.vue'
 import AppHeader from '../components/AppHeader.vue'
 import PageLoader from '../components/PageLoader.vue'
 import { getStatistics } from '../services/statistics'

@@ -1,0 +1,149 @@
+db:
+    > desc: Database commands
+    > env: TZ=UTC+7
+    
+    backup(!backup_path|p: str = "./backups", !host|H: str = $DB_HOST):
+        @var filename = {{current_time}}_$DB_NAME.sql
+        @var current_time = $(date -u +"%d-%m-%Y__%H:%M")
+        > env: .env 
+        > env: PGPASSWORD=$DB_PASSWORD
+        > desc: Backup database
+        > before: echo "🔄 Backuping database $DB_NAME to {{backup_path}}/{{filename}}"
+        > after: echo "✅ Backuped database $DB_NAME to {{backup_path}}/{{filename}}"
+        > script: |
+            pg_dump -U $DB_USER -h {{host}} -p $DB_PORT -d $DB_NAME -f {{backup_path}}/{{filename}}
+
+    restore(backup_file: str, !host|H: str = $DB_HOST, !force:bool = false):
+        > env: .env
+        > env: PGPASSWORD=$DB_PASSWORD
+        > desc: Restore database
+        > before: echo "🔄 Restoring database $DB_NAME from {{backup_file}}"
+        > after: echo "✅ Restored database $DB_NAME from {{backup_file}}"
+        > if: {{force}} == "false"
+        > script: |
+            echo "Running restore script without delete database"
+            # Шаг 1: Очистка схемы
+            psql \
+            -U "$DB_USER" \
+            -h "{{host}}" \
+            -p "$DB_PORT" \
+            -d "$DB_NAME" \
+            -c "DO \$\$ 
+                DECLARE r RECORD;
+                BEGIN
+                FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = 'public') LOOP
+                    EXECUTE 'DROP TABLE IF EXISTS ' || quote_ident(r.tablename) || ' CASCADE';
+                END LOOP;
+                FOR r IN (SELECT sequence_name FROM information_schema.sequences WHERE sequence_schema = 'public') LOOP
+                    EXECUTE 'DROP SEQUENCE IF EXISTS ' || quote_ident(r.sequence_name) || ' CASCADE';
+                END LOOP;
+                FOR r IN (SELECT viewname FROM pg_views WHERE schemaname = 'public') LOOP
+                    EXECUTE 'DROP VIEW IF EXISTS ' || quote_ident(r.viewname) || ' CASCADE';
+                END LOOP;
+                END \$\$;"
+
+            # Шаг 2: Восстановление из SQL файла
+            psql \
+            -U "$DB_USER" \
+            -h "{{host}}" \
+            -p "$DB_PORT" \
+            -d "$DB_NAME" \
+            -f {{backup_file}}
+        > else:
+        > script: |
+            # Шаг 1: Завершение подключений
+            psql \
+            -U "$DB_USER" \
+            -h "{{host}}" \
+            -p "$DB_PORT" \
+            -d "postgres" \
+            -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '$DB_NAME' AND pid <> pg_backend_pid();"
+
+            # Шаг 2: Удаление БД
+            psql \
+            -U "$DB_USER" \
+            -h "{{host}}" \
+            -p "$DB_PORT" \
+            -d "postgres" \
+            -c "DROP DATABASE IF EXISTS $DB_NAME;"
+
+            # Шаг 3: Создание БД
+            psql \
+            -U "$DB_USER" \
+            -h "{{host}}" \
+            -p "$DB_PORT" \
+            -d "postgres" \
+            -c "CREATE DATABASE $DB_NAME;"
+
+            # Шаг 4: Восстановление из SQL файла
+            psql \
+            -U "$DB_USER" \
+            -h "{{host}}" \
+            -p "$DB_PORT" \
+            -d "$DB_NAME" \
+            -f {{backup_file}}
+                            
+    list(!backup_path|p: str = "./backups"):
+        > desc: List database backups
+        > script: find {{backup_path}} -maxdepth 1 -type f -name "*.sql" -printf '%T@ %TY-%Tm-%Td %TH:%TM | %f\n' | sort -nr | cut -d' ' -f2-
+
+    migrate():
+        > desc: Migrations with Aerich (Dev Mode)
+        > env: .env
+        > env: DB_HOST=localhost
+        > env: DB_PORT=25003
+        > if: $DEV == true
+        > script: |
+            PYTHONPATH=./src uv run aerich migrate 2>/dev/null
+        > else:
+        > script: |
+            echo "Skipping migrations (DEV != true)"
+        > fallback: |
+            echo "Not found migrations"
+        
+    upgrade(type: str = "dev"):
+        > desc: Upgrade with Aerich
+        > env: .env
+        > if: {{type}} == dev
+        > script: |
+            PYTHONPATH=./src DB_HOST=localhost DB_PORT=25003 uv run aerich upgrade
+        > elif: {{type}} == prod
+        > script: | 
+            PYTHONPATH=./src uv run aerich upgrade
+
+    aerich(*):
+        > desc: Aerich
+        > env: .env
+        > env: DB_HOST=localhost
+        > env: DB_PORT=25003
+        > script: |
+            PYTHONPATH=./src uv run aerich {{*}}
+
+        
+
+app(type: str = "dev"):
+    > desc: Control Application
+    > env: DOCKER_CMD="docker compose -f {{type}}.yml"
+
+    logs(*):
+        > desc: Logs Application
+        > script: $DOCKER_CMD logs {{*}}
+
+    list:
+        > desc: List Application
+        > script: $DOCKER_CMD config --services
+
+    run(!build:bool=true, !include: arr = [] ):
+        > desc: Run Application (prod | dev) with build option
+        > env: .env
+        > script: |
+            $DOCKER_CMD up {{include}} -d $( [ "{{build}}" = "true" ] && echo "--build" ) --force-recreate
+
+    down:
+        > desc: Down Services
+        > script: $DOCKER_CMD down 
+
+    exec(app: str, *commands):
+        > desc: Execute commands in Container
+        > script: | 
+            $DOCKER_CMD exec {{app}} {{*commands}} 

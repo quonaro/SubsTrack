@@ -206,3 +206,10 @@ function getMonthWord(months: number): string {
 }
 
 
+export function formatDaysUntil(days: number): string {
+  if (days < 0) return 'Просрочено'
+  if (days === 0) return 'Сегодня'
+  if (days === 1) return 'Завтра'
+  if (days < 5) return `Через ${days} дня`
+  return `Через ${days} дней`
+}

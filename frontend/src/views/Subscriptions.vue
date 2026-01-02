@@ -84,27 +84,31 @@
           <SortMenu v-model="sortBy" />
         </div>
         
-        <transition-group 
-          enter-active-class="transition duration-500 ease-out"
-          enter-from-class="transform translate-y-8 opacity-0"
-          enter-to-class="transform translate-y-0 opacity-100"
-          leave-active-class="transition duration-300 ease-in absolute w-full"
-          leave-from-class="transform translate-y-0 opacity-100"
-          leave-to-class="transform scale-95 opacity-0"
-          tag="div"
-          class="space-y-4"
-        >
-          <SubscriptionCard
-            v-for="subscription in filteredSubscriptions"
-            :key="subscription.id"
-            :subscription="subscription"
-            @edit="editSubscription"
-            @archive="handleArchive"
-            @unarchive="handleUnarchive"
-            @paid="handlePaid"
-            @delete="handleDelete"
-          />
-        </transition-group>
+        <div v-for="group in groupedSubscriptions" :key="group.title" class="space-y-3">
+          <h3 class="px-1 text-[10px] font-bold uppercase tracking-[0.15em] text-app-text-muted/60">{{ group.title }}</h3>
+          <transition-group 
+            enter-active-class="transition duration-500 ease-out"
+            enter-from-class="transform translate-y-8 opacity-0"
+            enter-to-class="transform translate-y-0 opacity-100"
+            leave-active-class="transition duration-300 ease-in absolute w-full"
+            leave-from-class="transform translate-y-0 opacity-100"
+            leave-to-class="transform scale-95 opacity-0"
+            tag="div"
+            class="space-y-3"
+          >
+            <SubscriptionCard
+              v-for="subscription in group.items"
+              :key="subscription.id"
+              :subscription="subscription"
+              :show-days-label="false"
+              @edit="editSubscription"
+              @archive="handleArchive"
+              @unarchive="handleUnarchive"
+              @paid="handlePaid"
+              @delete="handleDelete"
+            />
+          </transition-group>
+        </div>
       </div>
     </main>
 
@@ -118,7 +122,7 @@
       </svg>
     </button>
 
-    <BottomNavigation />
+
 
     <!-- Form Transition Overlay -->
     <transition
@@ -144,7 +148,6 @@ import { ref, computed, onMounted, watch } from 'vue'
 import SubscriptionCard from '../components/SubscriptionCard.vue'
 import SubscriptionForm from '../components/SubscriptionForm.vue'
 import AppHeader from '../components/AppHeader.vue'
-import BottomNavigation from '../components/BottomNavigation.vue'
 import PageLoader from '../components/PageLoader.vue'
 import SortMenu from '../components/SortMenu.vue'
 import {
@@ -155,7 +158,9 @@ import {
   archiveSubscription,
   unarchiveSubscription,
   markAsPaid,
-  deleteSubscription
+  deleteSubscription,
+  getDaysUntilPayment,
+  formatDaysUntil
 } from '../services/subscriptions'
 
 const activeTab = ref('active')
@@ -175,6 +180,34 @@ const filteredSubscriptions = computed(() => {
       return !sub.is_active
     }
   })
+})
+
+const groupedSubscriptions = computed(() => {
+  const groups = {}
+  
+  filteredSubscriptions.value.forEach(sub => {
+    const days = getDaysUntilPayment(sub.next_payment_date)
+    const label = formatDaysUntil(days)
+    
+    if (!groups[label]) {
+      groups[label] = {
+        title: label,
+        days: days, // use first item's days for sorting
+        items: []
+      }
+    }
+    groups[label].items.push(sub)
+  })
+
+  // Sort groups by importance/days
+  // Overdue (negative days) -> Today (0) -> Future (positive)
+  const sortedGroups = Object.values(groups).sort((a, b) => a.days - b.days)
+  
+  if (sortBy.value === 'date_desc') {
+    return sortedGroups.reverse()
+  }
+  
+  return sortedGroups
 })
 
 watch(sortBy, () => {
