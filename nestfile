@@ -90,8 +90,6 @@ db:
     migrate():
         > desc: Migrations with Aerich (Dev Mode)
         > env: .env
-        > env: DB_HOST=localhost
-        > env: DB_PORT=25003
         > if: $DEV == true
         > script: |
             PYTHONPATH=./src uv run aerich migrate 2>/dev/null
@@ -103,47 +101,39 @@ db:
         
     upgrade(type: str = "dev"):
         > desc: Upgrade with Aerich
+        > cwd: backend
         > env: .env
         > if: {{type}} == dev
-        > script: |
-            PYTHONPATH=./src DB_HOST=localhost DB_PORT=25003 uv run aerich upgrade
+        > script: uv run aerich upgrade
         > elif: {{type}} == prod
-        > script: | 
-            PYTHONPATH=./src uv run aerich upgrade
+        > script: uv run aerich upgrade
 
-    aerich(*):
-        > desc: Aerich
-        > env: .env
-        > env: DB_HOST=localhost
-        > env: DB_PORT=25003
-        > script: |
-            PYTHONPATH=./src uv run aerich {{*}}
 
-        
+
 
 app(type: str = "dev"):
     > desc: Control Application
-    > env: DOCKER_CMD="docker compose -f {{type}}.yml"
+    > env: DOCKER_CMD="docker compose"
 
     logs(*):
         > desc: Logs Application
-        > script: $DOCKER_CMD logs {{*}}
+        > script: $DOCKER_CMD -f {{type}}.yml logs {{*}}
 
     list:
         > desc: List Application
-        > script: $DOCKER_CMD config --services
+        > script: $DOCKER_CMD -f {{type}}.yml config --services
 
     run(!build:bool=true, !include: arr = [] ):
         > desc: Run Application (prod | dev) with build option
         > env: .env
         > script: |
-            $DOCKER_CMD up {{include}} -d $( [ "{{build}}" = "true" ] && echo "--build" ) --force-recreate
+            $DOCKER_CMD -f {{type}}.yml up {{include}} -d $( [ "{{build}}" = "true" ] && echo "--build" ) --force-recreate
 
     down:
         > desc: Down Services
-        > script: $DOCKER_CMD down 
+        > script: $DOCKER_CMD -f {{type}}.yml down 
 
     exec(app: str, *commands):
         > desc: Execute commands in Container
         > script: | 
-            $DOCKER_CMD exec {{app}} {{*commands}} 
+            $DOCKER_CMD -f {{type}}.yml exec {{app}} {{*commands}} 

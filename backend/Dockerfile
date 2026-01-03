@@ -17,6 +17,8 @@ RUN apt-get update \
 # Install uv
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 
+ENV UV_PROJECT_ENVIRONMENT=/venv
+
 WORKDIR /app
 
 # Copy dependency files
@@ -45,5 +47,6 @@ RUN uv sync --frozen --no-dev
 # Copy entrypoint
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
+
 
 ENTRYPOINT ["/entrypoint.sh"]

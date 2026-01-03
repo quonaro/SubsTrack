@@ -833,7 +833,6 @@ version = "1.0.0"
 source = { editable = "." }
 dependencies = [
     { name = "aerich" },
-    { name = "aiosqlite" },
     { name = "asyncpg" },
     { name = "cryptography" },
     { name = "fastapi" },
@@ -851,7 +850,6 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "aerich", specifier = ">=0.7.2" },
-    { name = "aiosqlite", specifier = "==0.19.0" },
     { name = "asyncpg", specifier = ">=0.31.0" },
     { name = "cryptography", specifier = ">=41.0.0" },
     { name = "fastapi", specifier = "==0.104.1" },

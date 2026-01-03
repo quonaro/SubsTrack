@@ -1,5 +1,6 @@
 from app.repository.subscription_repository import SubscriptionRepository
 from app.models.subscription import Subscription
+from app.models.notification_log import NotificationLog
 from config import settings
 import asyncio
 from datetime import datetime
@@ -67,8 +68,24 @@ class ReminderService:
         
         sent_count = 0
         for subscription in subscriptions:
+            # Check if reminder already sent today
+            today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+            existing_log = await NotificationLog.filter(
+                subscription=subscription,
+                type='reminder',
+                sent_at__gte=today_start
+            ).first()
+
+            if existing_log:
+                continue
+
             success = await self.send_reminder(subscription)
             if success:
+                # Log the notification
+                await NotificationLog.create(
+                    subscription=subscription,
+                    type='reminder'
+                )
                 sent_count += 1
             # Small delay to avoid rate limiting
             await asyncio.sleep(0.1)

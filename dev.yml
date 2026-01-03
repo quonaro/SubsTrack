@@ -24,6 +24,7 @@ services:
     volumes:
       - ./backend:/app
     environment:
+      UV_PROJECT_ENVIRONMENT: /venv
       DB_TYPE: postgres
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}

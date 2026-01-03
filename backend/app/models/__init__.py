@@ -5,5 +5,7 @@ from app.models.category import Category
 from app.models.payment import PaymentHistory
 from app.models.subscription import Subscription
 
-__all__ = ["User", "Subscription", "Category", "PaymentHistory"]
+from app.models.notification_log import NotificationLog
+
+__all__ = ["User", "Subscription", "Category", "PaymentHistory", "NotificationLog"]
 
