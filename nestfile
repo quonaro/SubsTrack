@@ -1,10 +1,8 @@
 db:
     > desc: Database commands
-    > env: TZ=UTC+7
     
     backup(!backup_path|p: str = "./backups", !host|H: str = $DB_HOST):
-        @var filename = {{current_time}}_$DB_NAME.sql
-        @var current_time = $(date -u +"%d-%m-%Y__%H:%M")
+        @var filename = $(date -u +"%d-%m-%Y__%H:%M")_$DB_NAME.sql
         > env: .env 
         > env: PGPASSWORD=$DB_PASSWORD
         > desc: Backup database
