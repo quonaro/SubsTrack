@@ -2,7 +2,9 @@ services:
   backend:
     build:
       target: production
-
+    environment:
+      POSTGRES_HOST: db
+      DEV: "false"
 
   frontend:
     build:
