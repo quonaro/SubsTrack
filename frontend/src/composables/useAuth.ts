@@ -46,15 +46,14 @@ export function useAuth() {
       return
     }
 
-    // If not in Telegram MiniApp and not authenticated, try dev login
-    if (!isTelegram && !hasAuth) {
+    // If not in Telegram MiniApp and not authenticated, try dev login only in DEV mode
+    // @ts-ignore - Vite env types
+    if (!isTelegram && !hasAuth && import.meta.env.DEV) {
       isAuthenticating.value = true
       try {
         const devAuth = await authenticateDev()
         if (devAuth && devAuth.user) {
           user.value = devAuth.user
-        } else {
-          // no user data
         }
       } catch (error) {
         // dev login error

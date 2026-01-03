@@ -11,38 +11,38 @@
       <template v-else-if="stats">
         <!-- Summary Cards -->
         <div class="grid grid-cols-2 gap-4">
-          <div class="rounded-3xl bg-surface-50 p-5 border border-app-border shadow-premium overflow-hidden relative">
-            <div class="absolute -right-4 -top-4 h-16 w-16 rounded-full bg-primary-500/5 blur-xl"></div>
+          <div class="rounded-2xl bg-gradient-to-br from-surface-50 to-surface-100 p-5 border border-app-border shadow-premium overflow-hidden relative group transition-transform active:scale-95">
+            <div class="absolute -right-4 -top-4 h-16 w-16 rounded-full bg-primary-500/10 blur-xl group-hover:bg-primary-500/20 transition-colors"></div>
             <p class="text-[10px] font-bold uppercase tracking-widest text-app-text-muted">В месяц</p>
-            <p class="mt-2 text-xl font-bold text-app-text">{{ formatPrice(stats.total_monthly) }}</p>
+            <p class="mt-2 text-2xl font-black text-app-text tracking-tight">{{ formatPrice(stats.total_monthly) }}</p>
           </div>
-          <div class="rounded-3xl bg-surface-50 p-5 border border-app-border shadow-premium overflow-hidden relative">
-            <div class="absolute -right-4 -top-4 h-16 w-16 rounded-full bg-primary-500/5 blur-xl"></div>
+          <div class="rounded-2xl bg-gradient-to-br from-surface-50 to-surface-100 p-5 border border-app-border shadow-premium overflow-hidden relative group transition-transform active:scale-95">
+            <div class="absolute -right-4 -top-4 h-16 w-16 rounded-full bg-primary-500/10 blur-xl group-hover:bg-primary-500/20 transition-colors"></div>
             <p class="text-[10px] font-bold uppercase tracking-widest text-app-text-muted">В год</p>
-            <p class="mt-2 text-xl font-bold text-app-text">{{ formatPrice(stats.total_yearly) }}</p>
+            <p class="mt-2 text-2xl font-black text-app-text tracking-tight">{{ formatPrice(stats.total_yearly) }}</p>
           </div>
         </div>
 
         <!-- Activity Overview -->
         <section class="space-y-4">
-          <h2 class="text-[10px] font-bold uppercase tracking-[0.15em] text-app-text-muted px-1">Общий обзор</h2>
-          <div class="rounded-3xl bg-surface-50 p-6 border border-app-border shadow-premium">
+          <h2 class="text-[10px] font-black uppercase tracking-[0.2em] text-app-text-muted/60 px-1">Общий обзор</h2>
+          <div class="rounded-2xl bg-surface-50 p-6 border border-app-border shadow-premium">
             <div class="flex items-center justify-between px-2">
               <div class="text-center">
-                <p class="text-3xl font-bold text-primary-400 tracking-tight">{{ stats.active_count }}</p>
+                <p class="text-3xl font-black text-primary-400 tracking-tighter">{{ stats.active_count }}</p>
                 <p class="text-[10px] font-bold uppercase tracking-widest text-app-text-muted mt-1">Активных</p>
               </div>
-              <div class="h-8 w-[1px] bg-surface-200"></div>
+              <div class="h-8 w-[1px] bg-white/5"></div>
               <div class="text-center">
-                <p class="text-3xl font-bold text-app-text-muted tracking-tight">{{ stats.inactive_count }}</p>
+                <p class="text-3xl font-black text-app-text-muted/40 tracking-tighter">{{ stats.inactive_count }}</p>
                 <p class="text-[10px] font-bold uppercase tracking-widest text-app-text-muted mt-1">В архиве</p>
               </div>
             </div>
             
             <!-- Premium Progress Bar -->
-            <div class="relative mt-8 h-3 w-full overflow-hidden rounded-full bg-surface-100">
+            <div class="relative mt-8 h-2 w-full overflow-hidden rounded-full bg-surface-200/50">
               <div 
-                class="absolute inset-y-0 left-0 bg-gradient-to-r from-primary-600 to-primary-400 transition-all duration-1000 ease-out shadow-[0_0_15px_rgba(139,92,246,0.3)]"
+                class="absolute inset-y-0 left-0 bg-gradient-to-r from-primary-600 to-primary-400 transition-all duration-1000 ease-out shadow-[0_0_15px_rgba(139,92,246,0.5)]"
                 :style="{ width: (stats.active_count / Math.max(1, (stats.active_count + stats.inactive_count)) * 100) + '%' }"
               ></div>
             </div>
@@ -51,26 +51,26 @@
 
         <!-- Category Breakdown -->
         <section class="space-y-4">
-          <h2 class="text-[10px] font-bold uppercase tracking-[0.15em] text-app-text-muted px-1">По категориям</h2>
+          <h2 class="text-[10px] font-black uppercase tracking-[0.2em] text-app-text-muted/60 px-1">По категориям</h2>
           <div class="grid grid-cols-1 gap-3">
              <div 
               v-for="cat in categoryStats" 
               :key="cat.name"
-              class="rounded-3xl bg-surface-50 p-4 border border-app-border relative overflow-hidden"
+              class="rounded-2xl bg-surface-50 p-4 border border-app-border relative overflow-hidden group hover:bg-surface-100/50 transition-colors"
              >
                 <div class="flex items-center justify-between relative z-10">
-                   <div class="flex items-center gap-3">
-                      <div class="h-10 w-10 rounded-xl bg-surface-200 flex items-center justify-center text-xl">{{ cat.icon }}</div>
+                   <div class="flex items-center gap-4">
+                      <div class="h-11 w-11 rounded-xl bg-surface-200/50 flex items-center justify-center text-xl shadow-inner group-hover:scale-110 transition-transform">{{ cat.icon }}</div>
                       <div>
-                        <p class="text-xs font-bold text-app-text uppercase tracking-wider">{{ cat.name }}</p>
-                        <p class="text-[10px] text-app-text-muted font-bold">{{ cat.percent }}%</p>
+                        <p class="text-xs font-black text-app-text uppercase tracking-widest">{{ cat.name }}</p>
+                        <p class="text-[10px] text-app-text-muted font-bold mt-0.5">{{ cat.percent }}%</p>
                       </div>
                    </div>
-                   <p class="text-sm font-bold text-app-text">{{ formatPrice(cat.total) }}</p>
+                   <p class="text-base font-black text-app-text">{{ formatPrice(cat.total) }}</p>
                 </div>
                 <!-- Progress bar bg -->
-                <div class="absolute bottom-0 left-0 h-1 bg-primary-500/20 w-full">
-                   <div class="h-full bg-primary-500" :style="{ width: cat.percent + '%' }"></div>
+                <div class="absolute bottom-0 left-0 h-1 bg-surface-200/30 w-full overflow-hidden">
+                   <div class="h-full bg-gradient-to-r from-primary-600 to-primary-400 shadow-[0_0_10px_rgba(139,92,246,0.3)] transition-all duration-1000 delay-300" :style="{ width: cat.percent + '%' }"></div>
                 </div>
              </div>
           </div>
@@ -79,24 +79,30 @@
         <!-- Top Expenses -->
         <section class="space-y-4">
           <div class="flex items-center justify-between px-1">
-            <h2 class="text-[10px] font-bold uppercase tracking-[0.15em] text-app-text-muted">Топ расходов</h2>
-            <span class="text-[10px] font-bold text-primary-400">Смотреть все</span>
+            <h2 class="text-[10px] font-black uppercase tracking-[0.2em] text-app-text-muted/60">Топ расходов</h2>
+            <button 
+              v-if="stats.top_subscriptions.length > 3"
+              @click="isExpanded = !isExpanded"
+              class="text-[10px] font-black uppercase tracking-widest text-primary-400 hover:text-primary-300 transition-colors"
+            >
+              {{ isExpanded ? 'Свернуть' : 'Смотреть все' }}
+            </button>
           </div>
           <div class="space-y-3">
             <div 
-              v-for="sub in stats.top_subscriptions" 
+              v-for="sub in visibleSubscriptions" 
               :key="sub.id"
-              class="flex items-center gap-4 rounded-3xl bg-surface-100 p-5 border border-app-border transition-transform active:scale-[0.98]"
+              class="flex items-center gap-4 rounded-2xl bg-surface-50 p-5 border border-app-border transition-all hover:bg-surface-100/50 active:scale-[0.98] group"
             >
-              <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-surface-200 text-3xl shadow-inner">
+              <div class="flex h-14 w-14 items-center justify-center rounded-xl bg-surface-200/50 text-3xl shadow-inner group-hover:bg-surface-200 transition-colors">
                 {{ sub.icon }}
               </div>
               <div class="flex-1 min-w-0">
-                <h3 class="font-bold truncate text-app-text uppercase text-xs tracking-wider">{{ sub.name }}</h3>
-                <p class="text-[10px] font-bold text-app-text-muted mt-1">{{ formatPeriod(sub.period_days) }}</p>
+                <h3 class="font-black truncate text-app-text uppercase text-[11px] tracking-widest">{{ sub.name }}</h3>
+                <p class="text-[10px] font-bold text-app-text-muted mt-1 uppercase tracking-tight">{{ formatPeriod(sub.period_days) }}</p>
               </div>
               <div class="text-right">
-                <p class="text-lg font-bold text-primary-400">{{ formatPrice(sub.price) }}</p>
+                <p class="text-lg font-black text-primary-400">{{ formatPrice(sub.price) }}</p>
               </div>
             </div>
           </div>
@@ -105,20 +111,20 @@
         <!-- Insights -->
         <section 
           v-if="currentInsight"
-          class="rounded-[2rem] bg-gradient-to-br from-primary-600/10 to-primary-900/20 p-8 border border-primary-500/10 shadow-premium relative overflow-hidden active:scale-[0.98] transition-all cursor-pointer select-none"
+          class="rounded-[1.5rem] bg-gradient-to-br from-primary-600/10 via-primary-900/10 to-transparent p-8 border border-primary-500/15 shadow-premium relative overflow-hidden hover:border-primary-500/30 active:scale-[0.98] transition-all cursor-pointer group"
           @click="nextInsight"
         >
-          <div class="absolute -right-6 -bottom-6 h-32 w-32 rounded-full bg-primary-500/5 blur-3xl"></div>
-          <div class="flex flex-col gap-4 relative z-10">
+          <div class="absolute -right-6 -bottom-6 h-32 w-32 rounded-full bg-primary-500/10 blur-3xl group-hover:bg-primary-500/20 transition-colors"></div>
+          <div class="flex flex-col gap-5 relative z-10">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-3">
-                <div class="h-8 w-8 rounded-xl bg-primary-500/20 flex items-center justify-center text-lg">{{ currentInsight.icon }}</div>
-                <h3 class="font-bold text-primary-400 text-sm tracking-wide">Умный инсайт</h3>
+                <div class="h-9 w-9 rounded-xl bg-primary-500/20 flex items-center justify-center text-lg shadow-accent/20">{{ currentInsight.icon }}</div>
+                <h3 class="font-black text-primary-400 text-[11px] uppercase tracking-[0.15em]">Умный инсайт</h3>
               </div>
-              <span class="text-[10px] text-app-text-muted opacity-50">Нажми для следующего</span>
+              <span class="text-[9px] font-bold uppercase tracking-widest text-app-text-muted/40">Далее</span>
             </div>
             
-            <p class="text-sm leading-relaxed text-app-text" v-html="currentInsight.text"></p>
+            <p class="text-sm leading-relaxed text-app-text/90 font-medium" v-html="currentInsight.text"></p>
           </div>
         </section>
       </template>
@@ -143,6 +149,13 @@ const stats = ref(null)
 const loading = ref(true)
 const currentInsightIndex = ref(0)
 const insights = ref([])
+const isExpanded = ref(false)
+
+const visibleSubscriptions = computed(() => {
+  if (!stats.value || !stats.value.top_subscriptions) return []
+  if (isExpanded.value) return stats.value.top_subscriptions
+  return stats.value.top_subscriptions.slice(0, 3)
+})
 
 const categoryStats = computed(() => {
   if (!stats.value || !stats.value.top_subscriptions) return []

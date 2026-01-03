@@ -43,49 +43,54 @@ async def get_current_user_info(current_user: User = Depends(get_current_user)):
 @router.post("/dev/login", response_model=AuthResponse)
 async def dev_login():
     """
-    Development-only endpoint to create test user and get token
-    Only works when debug=True in settings
+    Development-only endpoint to create test user (ID 1) and get token.
+    Strictly restricted to debug/dev environments.
     """
     from config import settings
-    
+
     # Check both debug and DEBUG (case-insensitive), and DEV
     debug_env = os.getenv("DEBUG", "").lower() in ("true", "1", "yes")
     dev_env = os.getenv("DEV", "").lower() in ("true", "1", "yes")
     debug_enabled = settings.debug or debug_env or dev_env
-    
-    print(f"[DEV LOGIN] settings.debug={settings.debug}, DEBUG env={debug_env}, enabled={debug_enabled}")
-    
+
     if not debug_enabled:
         raise HTTPException(
-            status_code=403, 
-            detail="Development endpoint is disabled. Set DEBUG=true in .env to enable."
+            status_code=403,
+            detail="Development endpoint is disabled. Set DEBUG=true in .env to enable.",
         )
-    
+
     from app.repository.user_repository import UserRepository
     from app.core.security import create_access_token
-    
-    # Create or get test user
-    test_telegram_id = 123456789  # Test Telegram ID
+    from app.models.user import User
+
     user_repo = UserRepository()
-    
-    user, created = await user_repo.get_or_create(
-        telegram_id=test_telegram_id,
-        defaults={
-            'username': 'test_user',
-            'first_name': 'Test',
-            'last_name': 'User',
-            'language_code': 'ru',
-            'is_bot': False,
-            'is_premium': False,
-            'photo_url': 'https://avatars.githubusercontent.com/u/12345678?v=4', # Mock photo for testing
-        }
-    )
-    
+
+    # Try to find user with ID 1
+    user = await user_repo.get_by_id(1)
+
+    if not user:
+        # Create user with ID 1
+        test_telegram_id = 123456789  # Default test Telegram ID
+        user = await User.create(
+            id=1,
+            telegram_id=test_telegram_id,
+            username="admin",
+            first_name="Dev",
+            last_name="Admin",
+            language_code="en",
+            is_bot=False,
+            is_premium=True,
+            photo_url="https://avatars.githubusercontent.com/u/1?v=4",
+        )
+        print("[DEV LOGIN] Created new dev user with ID 1")
+    else:
+        print("[DEV LOGIN] Authenticated existing dev user with ID 1")
+
     # Create JWT token
     access_token = create_access_token(
         data={"sub": str(user.id), "telegram_id": str(user.telegram_id)}
     )
-    
+
     user_schema = UserSchema(
         id=user.id,
         telegram_id=user.telegram_id,
@@ -96,8 +101,5 @@ async def dev_login():
         is_premium=user.is_premium,
         photo_url=user.photo_url,
     )
-    
-    return AuthResponse(
-        access_token=access_token,
-        user=user_schema
-    )
+
+    return AuthResponse(access_token=access_token, user=user_schema)

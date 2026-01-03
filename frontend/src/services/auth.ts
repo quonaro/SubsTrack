@@ -79,9 +79,7 @@ export function isAuthenticated(): boolean {
  */
 export async function authenticateDev(): Promise<AuthResponse | null> {
   try {
-    const response = await api.post<AuthResponse>('/auth/dev/login', {
-      user_id: 123456789
-    })
+    const response = await api.post<AuthResponse>('/auth/dev/login', {})
 
     // Store token
     if (response.data.access_token) {
