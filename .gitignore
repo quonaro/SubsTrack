@@ -73,7 +73,6 @@ htmlcov/
 *.sqlite3
 *.db
 db.db
-backend/migrations/
 
 .cursorrules
 db.db-wal
