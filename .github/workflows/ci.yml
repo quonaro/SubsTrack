@@ -79,4 +79,5 @@ jobs:
           git pull origin main || git pull origin master
           
           # Run application using nest
-          ~/.local/bin/nest app prod run
+          export PATH="${HOME}/.local/bin:${PATH}"
+          nest app run && nest db update && sleep 10 && nest app prod run
