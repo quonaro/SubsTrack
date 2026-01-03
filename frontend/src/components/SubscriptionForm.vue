@@ -148,7 +148,7 @@
             <div class="flex items-center justify-between">
               <div class="flex flex-col">
                 <span class="text-sm font-bold text-app-text">Напоминания</span>
-                <span class="text-xs text-app-text-muted mt-0.5">Присылать уведомление об оплате</span>
+                <span class="text-xs text-app-text-muted mt-0.5">Гибкое управление уведомлениями</span>
               </div>
               <button 
                 type="button"
@@ -168,18 +168,58 @@
               enter-from-class="transform -translate-y-4 opacity-0"
               enter-to-class="transform translate-y-0 opacity-100"
             >
-              <div v-if="formData.reminder_enabled" class="space-y-3 pt-4 border-t border-app-border">
-                <label class="text-[10px] font-bold uppercase tracking-widest text-app-text-muted">Дней до оплаты</label>
-                <div class="flex items-center gap-4">
-                  <input 
-                    v-model.number="formData.reminder_days_before" 
-                    type="range" 
-                    min="0" 
-                    max="14" 
-                    class="flex-1 h-1.5 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-primary-500"
-                  />
-                  <span class="min-w-[2rem] text-center font-bold text-primary-400">{{ formData.reminder_days_before }}</span>
+              <div v-if="formData.reminder_enabled" class="space-y-6 pt-4 border-t border-app-border">
+                <div v-for="(rule, index) in formData.notification_rules" :key="index" class="relative p-4 rounded-2xl bg-surface-100 border border-app-border space-y-4">
+                  <button 
+                    type="button"
+                    class="absolute top-2 right-2 p-2 text-app-text-muted hover:text-red-400 transition-colors"
+                    @click="removeNotificationRule(index)"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="h-4 w-4">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+
+                  <div class="space-y-3">
+                    <label class="text-[9px] font-bold uppercase tracking-widest text-app-text-muted">Тип правила</label>
+                    <CustomSelect v-model="rule.rule_type" :options="ruleTypeOptions" placeholder="Выберите тип" />
+                  </div>
+
+                  <!-- Conditional fields -->
+                  <div v-if="rule.rule_type === 'before_payment'" class="animate-fade-in space-y-3">
+                    <label class="text-[9px] font-bold uppercase tracking-widest text-app-text-muted">За сколько дней</label>
+                    <div class="flex items-center gap-3">
+                      <input v-model.number="rule.days_before" type="number" min="0" max="30" class="flex-1 rounded-xl bg-surface-50 border border-app-border px-4 py-3 text-sm text-app-text" />
+                      <input v-model="rule.at_time" type="time" class="rounded-xl bg-surface-50 border border-app-border px-4 py-3 text-sm text-app-text uppercase" />
+                    </div>
+                  </div>
+
+                  <div v-if="rule.rule_type === 'recurring_nag'" class="animate-fade-in space-y-3">
+                    <label class="text-[9px] font-bold uppercase tracking-widest text-app-text-muted">Интервал (в часах)</label>
+                    <input v-model.number="rule.interval_hours" type="number" min="1" max="24" class="w-full rounded-xl bg-surface-50 border border-app-border px-4 py-3 text-sm text-app-text" />
+                  </div>
+
+                  <div v-if="rule.rule_type === 'day_of_payment'" class="animate-fade-in space-y-3">
+                    <label class="text-[9px] font-bold uppercase tracking-widest text-app-text-muted">В какое время</label>
+                    <input v-model="rule.at_time" type="time" class="w-full rounded-xl bg-surface-50 border border-app-border px-4 py-3 text-sm text-app-text" />
+                  </div>
+
+                  <div v-if="rule.rule_type === 'weekly_digest'" class="animate-fade-in space-y-3">
+                    <label class="text-[9px] font-bold uppercase tracking-widest text-app-text-muted">Время дайджеста (Пн)</label>
+                    <input v-model="rule.at_time" type="time" class="w-full rounded-xl bg-surface-50 border border-app-border px-4 py-3 text-sm text-app-text" />
+                  </div>
                 </div>
+
+                <button 
+                  type="button" 
+                  class="w-full p-4 rounded-2xl border-2 border-dashed border-app-border text-app-text-muted hover:border-primary-500/50 hover:text-primary-400 transition-all flex items-center justify-center gap-2"
+                  @click="addNotificationRule"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="h-4 w-4">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                  </svg>
+                  <span class="text-xs font-bold uppercase tracking-widest">Добавить правило</span>
+                </button>
               </div>
             </transition>
           </div>
@@ -244,6 +284,14 @@ const emit = defineEmits(['close', 'submit'])
 const isEdit = computed(() => !!props.subscription)
 const loading = ref(false)
 const showEmojiPicker = ref(false)
+
+const ruleTypeOptions = [
+  { label: '🔔 За X дней до оплаты', value: 'before_payment' },
+  { label: '🔁 Дожималка (интервал)', value: 'recurring_nag' },
+  { label: '🌅 Утро дня оплаты', value: 'day_of_payment' },
+  { label: '🧨 Вечерний алярм (после 18:00)', value: 'due_date_aggressive' },
+  { label: '📅 Дайджест на неделю', value: 'weekly_digest' }
+]
 
 const currencyOptions = [
   { label: 'RUB ₽', value: 'RUB' },
@@ -339,6 +387,14 @@ onMounted(() => {
   fetchCategories()
 })
 
+const ruleTypeLabels = {
+  'before_payment': 'За X дней',
+  'recurring_nag': 'Дожималка',
+  'day_of_payment': 'День оплаты',
+  'due_date_aggressive': 'Вечерний алярм',
+  'weekly_digest': 'Дайджест'
+}
+
 const formData = ref({
   name: '',
   price: 0,
@@ -349,7 +405,8 @@ const formData = ref({
   icon: '📦',
   reminder_enabled: true,
   reminder_days_before: 1,
-  category_id: null
+  category_id: null,
+  notification_rules: []
 })
 
 watch(() => props.subscription, (sub) => {
@@ -368,7 +425,8 @@ watch(() => props.subscription, (sub) => {
       icon: sub.icon,
       reminder_enabled: sub.reminder_enabled,
       reminder_days_before: sub.reminder_days_before,
-      category_id: sub.category ? sub.category.id : null
+      category_id: sub.category ? sub.category.id : null,
+      notification_rules: sub.notification_rules ? [...sub.notification_rules] : []
     }
   }
 }, { immediate: true })
@@ -378,6 +436,18 @@ function formatLocalYYYYMMDD(date) {
   const m = String(date.getMonth() + 1).padStart(2, '0')
   const d = String(date.getDate()).padStart(2, '0')
   return `${y}-${m}-${d}`
+}
+
+function addNotificationRule() {
+  formData.value.notification_rules.push({
+    rule_type: 'before_payment',
+    days_before: 1,
+    at_time: '10:00'
+  })
+}
+
+function removeNotificationRule(index) {
+  formData.value.notification_rules.splice(index, 1)
 }
 
 function handleSubmit() {

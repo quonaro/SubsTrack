@@ -6,6 +6,13 @@ from app.models.payment import PaymentHistory
 from app.models.subscription import Subscription
 
 from app.models.notification_log import NotificationLog
+from app.models.notification_rule import NotificationRule
 
-__all__ = ["User", "Subscription", "Category", "PaymentHistory", "NotificationLog"]
-
+__all__ = [
+    "User",
+    "Subscription",
+    "Category",
+    "PaymentHistory",
+    "NotificationLog",
+    "NotificationRule",
+]

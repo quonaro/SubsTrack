@@ -80,7 +80,7 @@ jobs:
           
           # Run application using nest
           export PATH="${HOME}/.local/bin:${PATH}"
-          nest app run && nest db upgrade && sleep 10 && nest app prod run
+          nest db upgrade && nest app prod run
 
 
   notify:

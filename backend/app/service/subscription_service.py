@@ -2,11 +2,16 @@ from typing import Optional, List
 from app.repository.subscription_repository import SubscriptionRepository
 from app.models.user import User
 from app.models.subscription import Subscription
-from app.schema.subscription import SubscriptionCreate, SubscriptionUpdate, SubscriptionResponse, NextMonthTotalResponse, SubscriptionOccurrence
+from app.schema.subscription import (
+    SubscriptionCreate,
+    SubscriptionUpdate,
+    SubscriptionResponse,
+    NextMonthTotalResponse,
+    SubscriptionOccurrence,
+)
 from datetime import datetime, timedelta, date
 from app.models.payment import PaymentHistory
 from app.schema.payment import PaymentHistoryResponse
-from app.service.telegram_service import TelegramService
 
 
 class SubscriptionService:
@@ -15,12 +20,18 @@ class SubscriptionService:
     def __init__(self):
         self.repository = SubscriptionRepository()
 
-    async def get_user_subscriptions(self, user_id: int, is_active: Optional[bool] = None, sort_by: str = 'date_asc') -> List[SubscriptionResponse]:
+    async def get_user_subscriptions(
+        self, user_id: int, is_active: Optional[bool] = None, sort_by: str = "date_asc"
+    ) -> List[SubscriptionResponse]:
         """Get all subscriptions for user"""
-        subscriptions = await self.repository.get_all_by_user(user_id, is_active, sort_by)
+        subscriptions = await self.repository.get_all_by_user(
+            user_id, is_active, sort_by
+        )
         return [SubscriptionResponse.model_validate(sub) for sub in subscriptions]
 
-    async def get_subscription(self, subscription_id: int, user_id: int) -> Optional[SubscriptionResponse]:
+    async def get_subscription(
+        self, subscription_id: int, user_id: int
+    ) -> Optional[SubscriptionResponse]:
         """Get subscription by ID"""
         subscription = await self.repository.get_by_id(subscription_id, user_id)
         if not subscription:
@@ -32,36 +43,51 @@ class SubscriptionService:
         month = source_date.month - 1 + months
         year = source_date.year + month // 12
         month = month % 12 + 1
-        
+
         # Days in month lookup (handling leap year for Feb)
-        days_in_months = [31, 29 if year % 4 == 0 and (year % 100 != 0 or year % 400 == 0) else 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
-        day = min(source_date.day, days_in_months[month-1])
-        
+        days_in_months = [
+            31,
+            29 if year % 4 == 0 and (year % 100 != 0 or year % 400 == 0) else 28,
+            31,
+            30,
+            31,
+            30,
+            31,
+            31,
+            30,
+            31,
+            30,
+            31,
+        ]
+        day = min(source_date.day, days_in_months[month - 1])
+
         return source_date.replace(year=year, month=month, day=day)
 
     def _get_semantic_period(self, period_days: int) -> int:
         """Return number of months if period is semantic, else 0"""
         mapping = {
-            30: 1,    # Monthly
-            60: 2,    # 2 Months
-            90: 3,    # 3 Months
-            180: 6,   # 6 Months
-            365: 12   # Yearly
+            30: 1,  # Monthly
+            60: 2,  # 2 Months
+            90: 3,  # 3 Months
+            180: 6,  # 6 Months
+            365: 12,  # Yearly
         }
         return mapping.get(period_days, 0)
 
-    def _calculate_next_occurrence(self, start_date: datetime, period_days: int) -> datetime:
+    def _calculate_next_occurrence(
+        self, start_date: datetime, period_days: int
+    ) -> datetime:
         """Calculate next valid occurrence >= today"""
         today = datetime.now().date()
         current = start_date
-        
+
         # Ensure we work with datetime for arithmetic
         if isinstance(current, date) and not isinstance(current, datetime):
             current = datetime.combine(current, datetime.min.time())
-            
+
         if current.date() >= today:
             return current
-            
+
         if period_days <= 0:
             return current
 
@@ -72,44 +98,43 @@ class SubscriptionService:
             # We iterate from start_date to avoid drift
             iteration = 1
             while True:
-                 next_date = self._add_months(current, months_to_add * iteration)
-                 if next_date.date() >= today:
-                     return next_date
-                 iteration += 1
-                 # Safety break (approx 100 years)
-                 if iteration > 1200: 
-                     return next_date
+                next_date = self._add_months(current, months_to_add * iteration)
+                if next_date.date() >= today:
+                    return next_date
+                iteration += 1
+                # Safety break (approx 100 years)
+                if iteration > 1200:
+                    return next_date
         else:
             # Simple day-based calculation
             diff = (today - current.date()).days
             cycles = diff // period_days
-            
+
             # Jump ahead
             current = current + timedelta(days=cycles * period_days)
-            
+
             # Ensure it's >= today
             while current.date() < today:
                 current += timedelta(days=period_days)
-            
+
         return current
 
-    async def create_subscription(self, user: User, subscription_data: SubscriptionCreate) -> SubscriptionResponse:
+    async def create_subscription(
+        self, user: User, subscription_data: SubscriptionCreate
+    ) -> SubscriptionResponse:
         """Create new subscription"""
         data = subscription_data.model_dump()
         subscription = await self.repository.create(user, data)
         return SubscriptionResponse.model_validate(subscription)
 
     async def update_subscription(
-        self, 
-        subscription_id: int, 
-        user_id: int, 
-        update_data: SubscriptionUpdate
+        self, subscription_id: int, user_id: int, update_data: SubscriptionUpdate
     ) -> Optional[SubscriptionResponse]:
         """Update subscription"""
         subscription = await self.repository.get_by_id(subscription_id, user_id)
         if not subscription:
             return None
-        
+
         data = update_data.model_dump(exclude_unset=True)
         updated_subscription = await self.repository.update(subscription, data)
         return SubscriptionResponse.model_validate(updated_subscription)
@@ -122,50 +147,63 @@ class SubscriptionService:
         await self.repository.delete(subscription)
         return True
 
-    async def archive_subscription(self, subscription_id: int, user_id: int) -> Optional[SubscriptionResponse]:
+    async def archive_subscription(
+        self, subscription_id: int, user_id: int
+    ) -> Optional[SubscriptionResponse]:
         """Archive subscription (set is_active=False)"""
         subscription = await self.repository.get_by_id(subscription_id, user_id)
         if not subscription:
             return None
-        
+
         subscription.is_active = False
         await subscription.save()
         return SubscriptionResponse.model_validate(subscription)
 
-    async def _create_payment_history(self, subscription: Subscription, date_paid: datetime) -> PaymentHistory:
+    async def _create_payment_history(
+        self, subscription: Subscription, date_paid: datetime
+    ) -> PaymentHistory:
         """Create a payment history record"""
         return await PaymentHistory.create(
             subscription=subscription,
             amount=subscription.price,
             currency=subscription.currency,
-            date=date_paid.date()
+            date=date_paid.date(),
         )
 
-    async def mark_as_paid(self, subscription_id: int, user_id: int) -> Optional[SubscriptionResponse]:
+    async def mark_as_paid(
+        self, subscription_id: int, user_id: int
+    ) -> Optional[SubscriptionResponse]:
         """Mark subscription as paid, record history, and advance next payment date"""
         subscription = await self.repository.get_by_id(subscription_id, user_id)
         if not subscription:
             return None
-            
+
         # 1. Record History
         now = datetime.now()
         await self._create_payment_history(subscription, now)
-        
+
         # 2. Advance Date
         current_next = subscription.next_payment_date
         if isinstance(current_next, date) and not isinstance(current_next, datetime):
-             current_next = datetime.combine(current_next, datetime.min.time())
-             
+            current_next = datetime.combine(current_next, datetime.min.time())
+
         months_to_add = self._get_semantic_period(subscription.period_days)
-        
+
         if months_to_add > 0:
             next_date = self._add_months(current_next, months_to_add)
         else:
             next_date = current_next + timedelta(days=subscription.period_days)
-            
+
         subscription.next_payment_date = next_date.date()
         await subscription.save()
-        
+
+        # Reset notification rules for the next cycle
+        from app.models.notification_rule import NotificationRule
+
+        await NotificationRule.filter(subscription=subscription).update(
+            last_sent_at=None
+        )
+
         return SubscriptionResponse.model_validate(subscription)
 
     async def get_next_month_total(self, user_id: int) -> NextMonthTotalResponse:
@@ -173,83 +211,81 @@ class SubscriptionService:
         result = await self.repository.get_next_month_total(user_id)
         return NextMonthTotalResponse(**result)
 
-    async def get_history(self, user_id: int, subscription_id: Optional[int] = None) -> List[PaymentHistoryResponse]:
+    async def get_history(
+        self, user_id: int, subscription_id: Optional[int] = None
+    ) -> List[PaymentHistoryResponse]:
         """Get payment history"""
         history = await self.repository.get_history(user_id, subscription_id)
         return [PaymentHistoryResponse.model_validate(h) for h in history]
 
     async def check_reminders(self):
-        """Check for subscriptions that need reminders and send them"""
-        # We check for reminders due 1 day before (default)
-        # In a real app we might check for multiple intervals (0, 1, 3 days)
-        subs = await self.repository.get_subscriptions_for_reminder(days_before=1)
-        
-        tg_service = TelegramService()
-        for sub in subs:
-            if sub.user and sub.user.telegram_id:
-                await tg_service.send_reminder(
-                    telegram_id=sub.user.telegram_id,
-                    sub_name=sub.name,
-                    price=float(sub.price),
-                    currency=sub.currency,
-                    days_before=sub.reminder_days_before or 1
-                )
+        """Check for subscriptions that need reminders and send them using granular rules"""
+        from app.service.reminder_service import ReminderService
 
-    async def get_calendar_occurrences(self, 
-        user_id: int, 
-        start_date: datetime, 
-        end_date: datetime
+        reminder_service = ReminderService()
+        await reminder_service.process_all_reminders()
+
+    async def get_calendar_occurrences(
+        self, user_id: int, start_date: datetime, end_date: datetime
     ) -> List[SubscriptionOccurrence]:
         """Get all subscription occurrences in a date range"""
         subscriptions = await self.repository.get_all_by_user(user_id, is_active=True)
         occurrences = []
-        
+
         # Normalize dates to start of day for comparison and make them naive
-        start_date = start_date.replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
-        end_date = end_date.replace(hour=23, minute=59, second=59, microsecond=999999, tzinfo=None)
-        
+        start_date = start_date.replace(
+            hour=0, minute=0, second=0, microsecond=0, tzinfo=None
+        )
+        end_date = end_date.replace(
+            hour=23, minute=59, second=59, microsecond=999999, tzinfo=None
+        )
+
         for sub in subscriptions:
             # Anchor from the start date and make it naive datetime
             if isinstance(sub.start_date, datetime):
-                anchor_date = sub.start_date.replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
+                anchor_date = sub.start_date.replace(
+                    hour=0, minute=0, second=0, microsecond=0, tzinfo=None
+                )
             else:
                 anchor_date = datetime.combine(sub.start_date, datetime.min.time())
-            
+
             # Determine semantic interval
             months_to_add = self._get_semantic_period(sub.period_days)
             is_semantic = months_to_add > 0
-            
+
             # Calculate occurrences
             current_date = anchor_date
             iterations = 0
-            
+
             while current_date <= end_date:
                 if current_date >= start_date:
-                     occurrences.append(SubscriptionOccurrence(
-                        date=current_date,
-                        subscription=SubscriptionResponse.model_validate(sub)
-                    ))
-                
+                    occurrences.append(
+                        SubscriptionOccurrence(
+                            date=current_date,
+                            subscription=SubscriptionResponse.model_validate(sub),
+                        )
+                    )
+
                 # Next date
                 if is_semantic:
                     iterations += 1
-                    current_date = self._add_months(anchor_date, months_to_add * iterations)
+                    current_date = self._add_months(
+                        anchor_date, months_to_add * iterations
+                    )
                 else:
                     current_date += timedelta(days=sub.period_days)
-                
+
                 # Optimization to skip ahead if very far behind
                 if current_date < start_date and not is_semantic:
-                     # Calculate remaining days to start_date
-                     diff = (start_date - current_date).days
-                     steps = diff // sub.period_days
-                     if steps > 1:
-                         current_date += timedelta(days=steps * sub.period_days)
+                    # Calculate remaining days to start_date
+                    diff = (start_date - current_date).days
+                    steps = diff // sub.period_days
+                    if steps > 1:
+                        current_date += timedelta(days=steps * sub.period_days)
 
                 if sub.period_days <= 0:
                     break
-                
+
         # Sort by date
         occurrences.sort(key=lambda x: x.date)
         return occurrences
-
-

@@ -1,107 +1,151 @@
 from app.repository.subscription_repository import SubscriptionRepository
 from app.models.subscription import Subscription
-from app.models.notification_log import NotificationLog
+from app.models.notification_rule import NotificationRuleType
 from config import settings
 import asyncio
-from datetime import datetime
+from datetime import datetime, timedelta, time
 import httpx
 
 
 class ReminderService:
-    """Service for sending subscription reminders via Telegram bot"""
+    """Service for sending subscription reminders via Telegram bot using granular rules"""
 
     def __init__(self):
         self.repository = SubscriptionRepository()
         self.bot_token = settings.telegram_bot_token
         self.api_url = "https://api.telegram.org/bot"
 
-    async def send_reminder(self, subscription: Subscription) -> bool:
+    async def send_reminder(
+        self, subscription: Subscription, rule_type: str = "reminder"
+    ) -> bool:
         """
-        Send reminder message to user via Telegram bot using direct HTTP request
+        Send reminder message to user via Telegram bot
         """
         if not self.bot_token:
-            print("Warning: Telegram bot token not configured, skipping reminder")
             return False
 
         try:
+            now = datetime.now()
+            days_until = (subscription.next_payment_date - now.date()).days
+
             # Format message
-            days_until = (subscription.next_payment_date - datetime.now()).days
+            header = "🔔 Напоминание о подписке"
+            if rule_type == NotificationRuleType.RECURRING_NAG:
+                header = "⚠️ ОПЛАТИТЕ ПОДПИСКУ"
+            elif rule_type == NotificationRuleType.DUE_DATE_AGGRESSIVE:
+                header = "‼️ СРОЧНО: ОПЛАТА СЕГОДНЯ"
+
             message = (
-                f"🔔 Напоминание о подписке\n\n"
+                f"{header}\n\n"
                 f"{subscription.icon} {subscription.name}\n"
                 f"💰 {subscription.price} {subscription.currency}\n"
-                f"📅 Платеж через {days_until} {'день' if days_until == 1 else 'дня' if days_until < 5 else 'дней'}\n"
-                f"📆 Дата платежа: {subscription.next_payment_date.strftime('%d.%m.%Y')}"
             )
+
+            if days_until == 0:
+                message += "📅 Платеж сегодня!"
+            elif days_until > 0:
+                message += f"📅 Платеж через {days_until} {'день' if days_until == 1 else 'дня' if days_until < 5 else 'дней'}\n"
+                message += f"📆 Дата платежа: {subscription.next_payment_date.strftime('%d.%m.%Y')}"
+            else:
+                message += f"❌ Платеж просрочен на {abs(days_until)} {'день' if abs(days_until) == 1 else 'дня' if abs(days_until) < 5 else 'дней'}!"
 
             # Send message via Telegram Bot API
             url = f"{self.api_url}{self.bot_token}/sendMessage"
-            payload = {
-                "chat_id": subscription.user.telegram_id,
-                "text": message
-            }
+            payload = {"chat_id": subscription.user.telegram_id, "text": message}
 
             async with httpx.AsyncClient(timeout=10.0) as client:
                 response = await client.post(url, json=payload)
-                response.raise_for_status()
-                result = response.json()
-                
-                if result.get("ok"):
-                    return True
-                else:
-                    print(f"Telegram API error: {result.get('description')}")
-                    return False
-            
-        except httpx.HTTPError as e:
-            print(f"HTTP error sending reminder to user {subscription.user.telegram_id}: {e}")
-            return False
+                return response.status_code == 200
+
         except Exception as e:
-            print(f"Unexpected error sending reminder: {e}")
+            print(f"Error sending reminder: {e}")
             return False
 
-    async def check_and_send_reminders(self, days_before: int = 1) -> int:
+    async def process_all_reminders(self) -> int:
         """
-        Check subscriptions that need reminders and send them
-        Returns number of reminders sent
+        Evaluate all active notification rules and send triggers
         """
-        subscriptions = await self.repository.get_subscriptions_for_reminder(days_before)
-        
+        # Fetch all active subscriptions with rules
+        subscriptions = await Subscription.filter(
+            is_active=True, reminder_enabled=True
+        ).prefetch_related("user", "notification_rules")
+
         sent_count = 0
-        for subscription in subscriptions:
-            # Check if reminder already sent today
-            today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-            existing_log = await NotificationLog.filter(
-                subscription=subscription,
-                type='reminder',
-                sent_at__gte=today_start
-            ).first()
+        now = datetime.now()
+        today = now.date()
+        current_time = now.time()
 
-            if existing_log:
-                continue
+        for sub in subscriptions:
+            for rule in sub.notification_rules:
+                should_trigger = False
 
-            success = await self.send_reminder(subscription)
-            if success:
-                # Log the notification
-                await NotificationLog.create(
-                    subscription=subscription,
-                    type='reminder'
-                )
-                sent_count += 1
-            # Small delay to avoid rate limiting
-            await asyncio.sleep(0.1)
-        
+                # Check if already sent recently to avoid spam (within same hour at least)
+                if rule.last_sent_at and (now - rule.last_sent_at) < timedelta(
+                    minutes=50
+                ):
+                    continue
+
+                if rule.rule_type == NotificationRuleType.BEFORE_PAYMENT:
+                    target_date = sub.next_payment_date - timedelta(
+                        days=rule.days_before or 0
+                    )
+                    if today == target_date:
+                        # If at_time is set, check it. If not, trigger once a day (any time)
+                        if rule.at_time:
+                            if self._is_time_to_send(rule.at_time, current_time):
+                                should_trigger = True
+                        else:
+                            # If no time, send once a day (if not sent today)
+                            if (
+                                not rule.last_sent_at
+                                or rule.last_sent_at.date() < today
+                            ):
+                                should_trigger = True
+
+                elif rule.rule_type == NotificationRuleType.RECURRING_NAG:
+                    # Trigger every X hours if next_payment_date is today or in the past
+                    if sub.next_payment_date <= today:
+                        interval = rule.interval_hours or 1
+                        if not rule.last_sent_at or (
+                            now - rule.last_sent_at
+                        ) >= timedelta(hours=interval):
+                            should_trigger = True
+
+                elif rule.rule_type == NotificationRuleType.DAY_OF_PAYMENT:
+                    if today == sub.next_payment_date:
+                        at_time = rule.at_time or time(9, 0)  # Default 9 AM
+                        if self._is_time_to_send(at_time, current_time):
+                            should_trigger = True
+
+                elif rule.rule_type == NotificationRuleType.DUE_DATE_AGGRESSIVE:
+                    if today == sub.next_payment_date and now.hour >= 18:
+                        # Every hour after 6 PM
+                        if not rule.last_sent_at or (
+                            now - rule.last_sent_at
+                        ) >= timedelta(hours=1):
+                            should_trigger = True
+
+                elif rule.rule_type == NotificationRuleType.WEEKLY_DIGEST:
+                    # Monday 9 AM
+                    if now.weekday() == 0:  # Monday
+                        at_time = rule.at_time or time(9, 0)
+                        if self._is_time_to_send(at_time, current_time):
+                            # This one might need a special message, but for now use generic
+                            should_trigger = True
+
+                if should_trigger:
+                    success = await self.send_reminder(sub, rule.rule_type)
+                    if success:
+                        rule.last_sent_at = now
+                        await rule.save()
+                        sent_count += 1
+                        await asyncio.sleep(0.1)
+
         return sent_count
 
-    async def send_reminder_for_subscription(self, subscription_id: int, user_id: int) -> bool:
-        """
-        Send reminder for specific subscription
-        """
-        subscription = await self.repository.get_by_id(subscription_id, user_id)
-        if not subscription:
-            return False
-        
-        if not subscription.reminder_enabled or not subscription.is_active:
-            return False
-        
-        return await self.send_reminder(subscription)
-
+    def _is_time_to_send(self, scheduled: time, current: time) -> bool:
+        """Check if current time is within 1 hour after scheduled time and not yet sent"""
+        # Since we run every hour, we check if we are in the hour starting at 'scheduled'
+        if current.hour == scheduled.hour:
+            return True
+        return False

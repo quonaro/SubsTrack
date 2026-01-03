@@ -36,7 +36,8 @@ db:
         > desc: Migrations with Aerich (Dev Mode)
         > if: $DEV == true
         > script: PYTHONPATH=./src uv run aerich migrate 2>/dev/null
-        > else: echo "Skipping migrations (DEV != true)"
+        > else:
+        > script: echo "Skipping migrations (DEV != true)"
         > fallback: echo "Not found migrations"
         
     upgrade(type: str = "dev"):
