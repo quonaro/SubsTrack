@@ -29,11 +29,11 @@ class ReminderService:
             days_until = (subscription.next_payment_date - now.date()).days
 
             # Format message
-            header = "🔔 Напоминание о подписке"
-            if rule_type == NotificationRuleType.RECURRING_NAG:
-                header = "⚠️ ОПЛАТИТЕ ПОДПИСКУ"
-            elif rule_type == NotificationRuleType.DUE_DATE_AGGRESSIVE:
-                header = "‼️ СРОЧНО: ОПЛАТА СЕГОДНЯ"
+            header = "🔔 Уведомление о подписке"
+            if rule_type == NotificationRuleType.RECURRING_REMINDER:
+                header = "⚠️ ПОВТОРНОЕ НАПОМИНАНИЕ"
+            elif rule_type == NotificationRuleType.URGENT_REMINDER:
+                header = "‼️ СРОЧНОЕ УВЕДОМЛЕНИЕ"
 
             message = (
                 f"{header}\n\n"
@@ -85,7 +85,7 @@ class ReminderService:
                 ):
                     continue
 
-                if rule.rule_type == NotificationRuleType.BEFORE_PAYMENT:
+                if rule.rule_type == NotificationRuleType.ADVANCE_NOTICE:
                     target_date = sub.next_payment_date - timedelta(
                         days=rule.days_before or 0
                     )
@@ -102,7 +102,7 @@ class ReminderService:
                             ):
                                 should_trigger = True
 
-                elif rule.rule_type == NotificationRuleType.RECURRING_NAG:
+                elif rule.rule_type == NotificationRuleType.RECURRING_REMINDER:
                     # Trigger every X hours if next_payment_date is today or in the past
                     if sub.next_payment_date <= today:
                         interval = rule.interval_hours or 1
@@ -111,13 +111,13 @@ class ReminderService:
                         ) >= timedelta(hours=interval):
                             should_trigger = True
 
-                elif rule.rule_type == NotificationRuleType.DAY_OF_PAYMENT:
+                elif rule.rule_type == NotificationRuleType.PAYMENT_DAY_ALERT:
                     if today == sub.next_payment_date:
                         at_time = rule.at_time or time(9, 0)  # Default 9 AM
                         if self._is_time_to_send(at_time, current_time):
                             should_trigger = True
 
-                elif rule.rule_type == NotificationRuleType.DUE_DATE_AGGRESSIVE:
+                elif rule.rule_type == NotificationRuleType.URGENT_REMINDER:
                     if today == sub.next_payment_date and now.hour >= 18:
                         # Every hour after 6 PM
                         if not rule.last_sent_at or (
@@ -125,7 +125,7 @@ class ReminderService:
                         ) >= timedelta(hours=1):
                             should_trigger = True
 
-                elif rule.rule_type == NotificationRuleType.WEEKLY_DIGEST:
+                elif rule.rule_type == NotificationRuleType.WEEKLY_SUMMARY:
                     # Monday 9 AM
                     if now.weekday() == 0:  # Monday
                         at_time = rule.at_time or time(9, 0)

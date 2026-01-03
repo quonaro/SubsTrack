@@ -3,7 +3,6 @@ from app.schema.auth import TelegramAuthRequest, AuthResponse, UserSchema
 from app.service.auth_service import AuthService
 from app.core.dependencies import get_current_user
 from app.models.user import User
-import os
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -48,15 +47,13 @@ async def dev_login():
     """
     from config import settings
 
-    # Check both debug and DEBUG (case-insensitive), and DEV
-    debug_env = os.getenv("DEBUG", "").lower() in ("true", "1", "yes")
-    dev_env = os.getenv("DEV", "").lower() in ("true", "1", "yes")
-    debug_enabled = settings.debug or debug_env or dev_env
+    # Use settings.dev which defaults to False but can be set via env var DEV
+    debug_enabled = settings.dev
 
     if not debug_enabled:
         raise HTTPException(
             status_code=403,
-            detail="Development endpoint is disabled. Set DEBUG=true in .env to enable.",
+            detail="Development endpoint is disabled. Set DEV=true in .env to enable.",
         )
 
     from app.repository.user_repository import UserRepository

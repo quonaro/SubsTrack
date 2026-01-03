@@ -182,11 +182,11 @@
 
                   <div class="space-y-3">
                     <label class="text-[9px] font-bold uppercase tracking-widest text-app-text-muted">Тип правила</label>
-                    <CustomSelect v-model="rule.rule_type" :options="ruleTypeOptions" placeholder="Выберите тип" />
+                    <CustomSelect v-model="rule.rule_type" :options="ruleTypeOptions" placeholder="Выберите тип" mode="modal" />
                   </div>
 
                   <!-- Conditional fields -->
-                  <div v-if="rule.rule_type === 'before_payment'" class="animate-fade-in space-y-3">
+                  <div v-if="rule.rule_type === 'advance_notice'" class="animate-fade-in space-y-3">
                     <label class="text-[9px] font-bold uppercase tracking-widest text-app-text-muted">За сколько дней</label>
                     <div class="flex items-center gap-3">
                       <input v-model.number="rule.days_before" type="number" min="0" max="30" class="flex-1 rounded-xl bg-surface-50 border border-app-border px-4 py-3 text-sm text-app-text" />
@@ -194,18 +194,18 @@
                     </div>
                   </div>
 
-                  <div v-if="rule.rule_type === 'recurring_nag'" class="animate-fade-in space-y-3">
+                  <div v-if="rule.rule_type === 'recurring_reminder'" class="animate-fade-in space-y-3">
                     <label class="text-[9px] font-bold uppercase tracking-widest text-app-text-muted">Интервал (в часах)</label>
                     <input v-model.number="rule.interval_hours" type="number" min="1" max="24" class="w-full rounded-xl bg-surface-50 border border-app-border px-4 py-3 text-sm text-app-text" />
                   </div>
 
-                  <div v-if="rule.rule_type === 'day_of_payment'" class="animate-fade-in space-y-3">
+                  <div v-if="rule.rule_type === 'payment_day_alert'" class="animate-fade-in space-y-3">
                     <label class="text-[9px] font-bold uppercase tracking-widest text-app-text-muted">В какое время</label>
                     <input v-model="rule.at_time" type="time" class="w-full rounded-xl bg-surface-50 border border-app-border px-4 py-3 text-sm text-app-text" />
                   </div>
 
-                  <div v-if="rule.rule_type === 'weekly_digest'" class="animate-fade-in space-y-3">
-                    <label class="text-[9px] font-bold uppercase tracking-widest text-app-text-muted">Время дайджеста (Пн)</label>
+                  <div v-if="rule.rule_type === 'weekly_summary'" class="animate-fade-in space-y-3">
+                    <label class="text-[9px] font-bold uppercase tracking-widest text-app-text-muted">Время отчета (Пн)</label>
                     <input v-model="rule.at_time" type="time" class="w-full rounded-xl bg-surface-50 border border-app-border px-4 py-3 text-sm text-app-text" />
                   </div>
                 </div>
@@ -286,11 +286,31 @@ const loading = ref(false)
 const showEmojiPicker = ref(false)
 
 const ruleTypeOptions = [
-  { label: '🔔 За X дней до оплаты', value: 'before_payment' },
-  { label: '🔁 Дожималка (интервал)', value: 'recurring_nag' },
-  { label: '🌅 Утро дня оплаты', value: 'day_of_payment' },
-  { label: '🧨 Вечерний алярм (после 18:00)', value: 'due_date_aggressive' },
-  { label: '📅 Дайджест на неделю', value: 'weekly_digest' }
+  { 
+    label: '🔔 Предварительное уведомление', 
+    value: 'advance_notice',
+    description: 'Присылает уведомление заранее, чтобы вы успели подготовить нужную сумму на счету.'
+  },
+  { 
+    label: '🔁 Повторяющееся напоминание', 
+    value: 'recurring_reminder',
+    description: 'Повторяет уведомление через заданный интервал, пока вы не отметите подписку как оплаченную.'
+  },
+  { 
+    label: '🌅 Уведомление в день оплаты', 
+    value: 'payment_day_alert',
+    description: 'Уведомление утром в день списания средств.'
+  },
+  { 
+    label: '‼️ Срочное уведомление (вечер)', 
+    value: 'urgent_reminder',
+    description: 'Напоминает о платеже каждый час вечером в день оплаты, если он еще не совершен.'
+  },
+  { 
+    label: '📅 Еженедельный отчет', 
+    value: 'weekly_summary',
+    description: 'Формирует список всех платежей на предстоящую неделю каждый понедельник.'
+  }
 ]
 
 const currencyOptions = [
@@ -388,11 +408,11 @@ onMounted(() => {
 })
 
 const ruleTypeLabels = {
-  'before_payment': 'За X дней',
-  'recurring_nag': 'Дожималка',
-  'day_of_payment': 'День оплаты',
-  'due_date_aggressive': 'Вечерний алярм',
-  'weekly_digest': 'Дайджест'
+  'advance_notice': 'Предварительное',
+  'recurring_reminder': 'Повторяющееся',
+  'payment_day_alert': 'В день оплаты',
+  'urgent_reminder': 'Срочное',
+  'weekly_summary': 'Отчет'
 }
 
 const formData = ref({
@@ -440,7 +460,7 @@ function formatLocalYYYYMMDD(date) {
 
 function addNotificationRule() {
   formData.value.notification_rules.push({
-    rule_type: 'before_payment',
+    rule_type: 'advance_notice',
     days_before: 1,
     at_time: '10:00'
   })

@@ -23,42 +23,101 @@
       </span>
     </button>
 
-    <!-- Dropdown Menu -->
+    <!-- Dropdown / Modal Menu -->
     <Teleport to="body">
       <transition
-        enter-active-class="transition ease-out duration-200"
-        enter-from-class="transform opacity-0 translate-y-2 scale-95"
-        enter-to-class="transform opacity-100 translate-y-0 scale-100"
-        leave-active-class="transition ease-in duration-150"
-        leave-from-class="transform opacity-100 translate-y-0 scale-100"
-        leave-to-class="transform opacity-0 translate-y-2 scale-95"
+        :name="mode === 'modal' ? 'modal-fade' : ''"
+        :enter-active-class="mode === 'modal' ? 'transition ease-out duration-300' : 'transition ease-out duration-200'"
+        :enter-from-class="mode === 'modal' ? 'opacity-0 translate-y-full' : 'transform opacity-0 translate-y-2 scale-95'"
+        :enter-to-class="mode === 'modal' ? 'opacity-100 translate-y-0' : 'transform opacity-100 translate-y-0 scale-100'"
+        :leave-active-class="mode === 'modal' ? 'transition ease-in duration-200' : 'transition ease-in duration-150'"
+        :leave-from-class="mode === 'modal' ? 'opacity-100 translate-y-0' : 'transform opacity-100 translate-y-0 scale-100'"
+        :leave-to-class="mode === 'modal' ? 'opacity-0 translate-y-full' : 'transform opacity-0 translate-y-2 scale-95'"
       >
         <div 
           v-if="isOpen" 
-          class="fixed z-[9999] overflow-hidden rounded-2xl bg-[#27272a] border border-app-border shadow-2xl ring-1 ring-black/20"
-          :style="dropdownStyle"
+          :class="[
+            'z-[9999] overflow-hidden bg-[#27272a] border-app-border shadow-2xl ring-1 ring-black/20',
+            mode === 'modal' 
+              ? 'fixed inset-x-0 bottom-0 rounded-t-[2.5rem] border-t max-h-[90vh] flex flex-col' 
+              : 'fixed rounded-2xl border'
+          ]"
+          :style="mode === 'modal' ? {} : dropdownStyle"
         >
-          <ul class="max-h-60 overflow-auto py-2">
+          <!-- Modal Header -->
+          <div v-if="mode === 'modal'" class="flex items-center justify-between px-8 py-6 border-b border-app-border bg-app-bg/80 backdrop-blur-xl shrink-0">
+            <h3 class="text-lg font-bold text-app-text">{{ label || placeholder }}</h3>
+            <button 
+              class="rounded-2xl p-2 bg-surface-100 text-app-text-muted hover:bg-surface-200 transition-all"
+              @click="isOpen = false"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="h-5 w-5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          <ul class="overflow-y-auto scrollbar-hide py-2" :class="mode === 'modal' ? 'px-4 pb-8' : ''">
             <li 
               v-for="option in options" 
               :key="option.value"
+              class="mb-1 last:mb-0"
             >
-              <button
-                type="button"
-                class="relative w-full cursor-pointer select-none px-5 py-3 text-left transition-colors hover:bg-white/5 flex items-center justify-between group"
-                :class="{ 'bg-primary-500/10 text-primary-400 font-bold': modelValue === option.value, 'text-zinc-300': modelValue !== option.value }"
-                @click="select(option)"
-              >
-                <span class="block truncate">{{ option.label }}</span>
-                <span v-if="modelValue === option.value" class="flex items-center text-primary-500">
-                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-5 w-5 shadow-accent">
-                    <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.124l-3.5-3.5a.75.75 0 011.06-1.06l2.873 2.873 7.42-9.74a.75.75 0 011.051-.15z" clip-rule="evenodd" />
-                  </svg>
-                </span>
-              </button>
+              <div class="flex flex-col">
+                <div class="flex items-center gap-1">
+                  <button
+                    type="button"
+                    class="flex-1 cursor-pointer select-none px-5 py-4 text-left transition-all hover:bg-white/5 flex items-center justify-between group rounded-2xl"
+                    :class="{ 'bg-primary-500/10 text-primary-400 font-bold': modelValue === option.value, 'text-zinc-300': modelValue !== option.value }"
+                    @click="select(option)"
+                  >
+                    <span class="block truncate">{{ option.label }}</span>
+                    <span v-if="modelValue === option.value" class="flex items-center text-primary-500">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-5 w-5 shadow-accent">
+                        <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.124l-3.5-3.5a.75.75 0 011.06-1.06l2.873 2.873 7.42-9.74a.75.75 0 011.051-.15z" clip-rule="evenodd" />
+                      </svg>
+                    </span>
+                  </button>
+                  
+                  <!-- Info / Details Toggle -->
+                  <button 
+                    v-if="option.description"
+                    type="button"
+                    class="p-4 text-app-text-muted hover:text-primary-400 transition-colors rounded-2xl hover:bg-white/5"
+                    @click.stop="toggleDescription(option.value)"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="h-5 w-5" :class="{ 'text-primary-400': expandedDescriptions.has(option.value) }">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
+                    </svg>
+                  </button>
+                </div>
+
+                <!-- Description content -->
+                <transition
+                  enter-active-class="transition duration-200 ease-out"
+                  enter-from-class="opacity-0 -translate-y-2"
+                  enter-to-class="opacity-100 translate-y-0"
+                >
+                  <div v-if="expandedDescriptions.has(option.value)" class="mx-5 mb-4 p-4 rounded-xl bg-app-bg/50 border border-app-border text-xs leading-relaxed text-app-text-muted">
+                    {{ option.description }}
+                  </div>
+                </transition>
+              </div>
             </li>
           </ul>
         </div>
+      </transition>
+      
+      <!-- Modal Backdrop -->
+      <transition
+        enter-active-class="transition duration-300 ease-out"
+        enter-from-class="opacity-0"
+        enter-to-class="opacity-100"
+        leave-active-class="transition duration-200 ease-in"
+        leave-from-class="opacity-100"
+        leave-to-class="opacity-0"
+      >
+        <div v-if="isOpen && mode === 'modal'" class="fixed inset-0 z-[9998] bg-black/60 backdrop-blur-sm" @click="isOpen = false"></div>
       </transition>
     </Teleport>
   </div>
@@ -83,6 +142,11 @@ const props = defineProps({
   placeholder: {
     type: String,
     default: 'Выберите...'
+  },
+  mode: {
+    type: String,
+    default: 'dropdown', // 'dropdown' or 'modal'
+    validator: (value) => ['dropdown', 'modal'].includes(value)
   }
 })
 
@@ -91,6 +155,7 @@ const isOpen = ref(false)
 const container = ref(null)
 const trigger = ref(null)
 const dropdownStyle = ref({})
+const expandedDescriptions = ref(new Set())
 
 const selectedLabel = computed(() => {
   const option = props.options.find(opt => opt.value === props.modelValue)
@@ -98,7 +163,7 @@ const selectedLabel = computed(() => {
 })
 
 function updatePosition() {
-  if (trigger.value) {
+  if (trigger.value && props.mode === 'dropdown') {
     const rect = trigger.value.getBoundingClientRect()
     dropdownStyle.value = {
       top: `${rect.bottom + 8}px`,
@@ -110,7 +175,7 @@ function updatePosition() {
 
 async function toggle() {
   isOpen.value = !isOpen.value
-  if (isOpen.value) {
+  if (isOpen.value && props.mode === 'dropdown') {
     await nextTick()
     updatePosition()
   }
@@ -121,28 +186,18 @@ function select(option) {
   isOpen.value = false
 }
 
+function toggleDescription(value) {
+  if (expandedDescriptions.value.has(value)) {
+    expandedDescriptions.value.delete(value)
+  } else {
+    expandedDescriptions.value.add(value)
+  }
+}
+
 function handleClickOutside(event) {
-  // Since dropdown is teleported, we need to check if click is in dropdown OR in container
-  // However, simple check: if click is NOT in container, close.
-  // Wait, if I click in the dropdown (which is outside container in DOM), it might close?
-  // No, because the click on dropdown button propagates?
-  // Actually, standard tactic: stop propagation in dropdown? Or explicit check.
-  // Easier: Close on click is fine, but selecting an option closes it anyway.
-  // If I click scrollbar? 
-  // Let's implement a specific check.
-  // Check if target is inside trigger. If not, close.
-  // But if target is inside the dropdown... ?
-  // With Teleport, the dropdown is in body.
-  // The simplest way is to check if event.target is closest to dropdown or trigger.
-  
-  if (isOpen.value) {
-    // If clicking trigger, toggle handles it (or we prevent default).
-    // If clicking outside trigger AND outside dropdown...
-    // Since dropdown is fixed/teleported, checking `container.contains` fails.
-    // We can rely on the fact that `toggle` and `select` handle their interactions.
-    // So we just need to detect "click somewhere else".
+  if (isOpen.value && props.mode === 'dropdown') {
     const inTrigger = container.value && container.value.contains(event.target)
-    const dropdownEl = document.querySelector('.fixed.z-\\[9999\\]') // fragile selector but works for this context
+    const dropdownEl = document.querySelector('.fixed.z-\\[9999\\]:not(.inset-x-0)') 
     const inDropdown = dropdownEl && dropdownEl.contains(event.target)
     
     if (!inTrigger && !inDropdown) {
@@ -152,21 +207,17 @@ function handleClickOutside(event) {
 }
 
 function handleResize() {
-  if (isOpen.value) {
+  if (isOpen.value && props.mode === 'dropdown') {
     updatePosition()
-    // Optional: close on scroll to avoid misalignment
-    // isOpen.value = false 
   }
 }
 
-// Close on scroll of any parent to avoid misalignment, 
-// but NOT if we are scrolling the dropdown itself.
 function handleScroll(event) {
-    if (!isOpen.value) return
+    if (!isOpen.value || props.mode === 'modal') return
     
     const dropdownEl = document.querySelector('.fixed.z-\\[9999\\]')
     if (dropdownEl && dropdownEl.contains(event.target)) {
-        return // Allow scrolling within the dropdown
+        return 
     }
     
     isOpen.value = false
@@ -175,7 +226,7 @@ function handleScroll(event) {
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
   window.addEventListener('resize', handleResize)
-  window.addEventListener('scroll', handleScroll, true) // capture phase to catch all scrolls
+  window.addEventListener('scroll', handleScroll, true)
 })
 
 onUnmounted(() => {
@@ -184,3 +235,13 @@ onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll, true)
 })
 </script>
+
+<style scoped>
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+</style>

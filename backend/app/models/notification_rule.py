@@ -4,11 +4,11 @@ from enum import StrEnum
 
 
 class NotificationRuleType(StrEnum):
-    BEFORE_PAYMENT = "before_payment"  # X days/hours before
-    RECURRING_NAG = "recurring_nag"  # Every X hours until paid
-    DAY_OF_PAYMENT = "day_of_payment"  # Morning of payment day
-    DUE_DATE_AGGRESSIVE = "due_date_aggressive"  # Every hour evening of payment day
-    WEEKLY_DIGEST = "weekly_digest"  # Weekly summary
+    ADVANCE_NOTICE = "advance_notice"  # X days/hours before
+    RECURRING_REMINDER = "recurring_reminder"  # Every X hours until paid
+    PAYMENT_DAY_ALERT = "payment_day_alert"  # Morning of payment day
+    URGENT_REMINDER = "urgent_reminder"  # Every hour evening of payment day
+    WEEKLY_SUMMARY = "weekly_summary"  # Weekly summary
 
 
 class NotificationRule(Model):

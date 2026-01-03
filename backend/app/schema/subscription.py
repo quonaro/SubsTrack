@@ -1,23 +1,23 @@
 from pydantic import BaseModel, Field
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, time
 from app.schema.category import CategoryResponse
 from enum import Enum
 
 
 class NotificationRuleType(str, Enum):
-    BEFORE_PAYMENT = "before_payment"
-    RECURRING_NAG = "recurring_nag"
-    DAY_OF_PAYMENT = "day_of_payment"
-    DUE_DATE_AGGRESSIVE = "due_date_aggressive"
-    WEEKLY_DIGEST = "weekly_digest"
+    ADVANCE_NOTICE = "advance_notice"
+    RECURRING_REMINDER = "recurring_reminder"
+    PAYMENT_DAY_ALERT = "payment_day_alert"
+    URGENT_REMINDER = "urgent_reminder"
+    WEEKLY_SUMMARY = "weekly_summary"
 
 
 class NotificationRuleBase(BaseModel):
     rule_type: NotificationRuleType
     days_before: Optional[int] = None
     hours_before: Optional[int] = None
-    at_time: Optional[str] = None  # HH:MM format
+    at_time: Optional[time] = None  # HH:MM format
     interval_hours: Optional[int] = None
 
 

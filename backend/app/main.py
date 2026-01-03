@@ -11,6 +11,7 @@ from app.service.subscription_service import SubscriptionService
 
 logger = logging.getLogger(__name__)
 
+
 async def reminder_task():
     """Background task to check for reminders every hour"""
     # Wait a bit after startup
@@ -22,9 +23,10 @@ async def reminder_task():
             await service.check_reminders()
         except Exception as e:
             logger.error(f"Error in reminder background task: {e}")
-        
+
         # Check every hour (3600 seconds)
         await asyncio.sleep(3600)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -74,7 +76,12 @@ async def health_check():
 
 if __name__ == "__main__":
     import uvicorn
+    from config import settings
 
     uvicorn.run(
-        "app.main:app", host="0.0.0.0", port=8000, reload=True, reload_dirs=["app"]
+        "app.main:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=settings.dev,
+        reload_dirs=["app"],
     )

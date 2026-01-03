@@ -3,7 +3,7 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     app_name: str = "SubsTrack API"
-    debug: bool = False
+    dev: bool = False
 
     # PostgreSQL
     postgres_user: str = "postgres"
