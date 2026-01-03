@@ -26,7 +26,7 @@ wheels/
 *.egg
 .venv
 .python-version
-
+.ruff_cache/
 *-shm
 *-wal
 # Node.js

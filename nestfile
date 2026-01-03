@@ -16,11 +16,11 @@ db:
         > desc: Restore database
         > if: {{force}} == "false"
         > before: echo "🔄 Restoring database $POSTGRES_DB from {{backup_file}} (Cleaning schema...)"
-        > script[hide]: |
+        > script: |
             psql_query(host="{{host}}", query="DO \$\$ DECLARE r RECORD; BEGIN FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = 'public') LOOP EXECUTE 'DROP TABLE IF EXISTS ' || quote_ident(r.tablename) || ' CASCADE'; END LOOP; END \$\$;")
             psql -U "$POSTGRES_USER" -h "{{host}}" -p "$POSTGRES_PORT" -d "$POSTGRES_DB" -f "{{backup_file}}"
         > else:
-        > script[hide]: |
+        > script: |
             # Разделяем действия, так как DROP DATABASE не может быть в одном блоке с другими командами
             psql_query(host="{{host}}", db="postgres", query="SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '$POSTGRES_DB' AND pid <> pg_backend_pid();")
             psql_query(host="{{host}}", db="postgres", query="DROP DATABASE IF EXISTS $POSTGRES_DB;")
@@ -46,7 +46,7 @@ db:
 app(type: str = "dev"):
     > desc: Control Application
     > env: .env
-    > env: DC=docker compose -f {{type}}.yml
+    > env: DC=docker compose -f docker-compose.yml -f {{type}}.yml
     logs(*):
         > desc: Logs Application
         > script: $DC logs {{*}}
@@ -55,7 +55,9 @@ app(type: str = "dev"):
         > script: $DC config --services
     run(!build:bool=true, !include: arr = [] ):
         > desc: Run Application (prod | dev)
-        > script: $DC up {{include}} -d "{{build|copy}}" --force-recreate
+        > script: |
+            echo -e "Starting in \033[31m{{type}}\033[0m mode..."
+            $DC up {{include}} -d "{{build|copy}}" --force-recreate
     down:
         > desc: Down Services
         > script: $DC down 

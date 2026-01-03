@@ -1,59 +1,20 @@
 services:
-  db:
-    image: postgres:16-alpine
-    container_name: substrack-db-dev
-    restart: always
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      POSTGRES_DB: ${POSTGRES_DB:-substrack}
-    volumes:
-      - substrack-db-dev:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-
   backend:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
       target: development
-    container_name: substrack-backend-dev
-    restart: always
-    ports:
-      - "8000:8000"
     volumes:
       - ./backend:/app
     environment:
       UV_PROJECT_ENVIRONMENT: /venv
-      DB_TYPE: postgres
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      POSTGRES_DB: ${POSTGRES_DB:-substrack}
-      POSTGRES_HOST: db
-      POSTGRES_PORT: 5432
-      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
       DEV: "true"
     command: uv run app/main.py
-    depends_on:
-      - db
 
   frontend:
     build:
-      context: ./frontend
-      dockerfile: Dockerfile
       target: development
-    container_name: substrack-frontend-dev
-    restart: always
-    ports:
-      - "5173:5173"
     volumes:
       - ./frontend:/app
       - /app/node_modules
     environment:
       - VITE_API_TARGET=http://backend:8000
-    command: npm run dev -- --host
-    depends_on:
-      - backend
-
-volumes:
-  substrack-db-dev:
+    command: npm run dev
