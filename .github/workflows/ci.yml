@@ -72,15 +72,11 @@ jobs:
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         port: ${{ secrets.SSH_PORT }}
         script: |
-          # Install nest
-          curl -fsSL https://raw.githubusercontent.com/quonaro/nest/main/install.static.sh | bash
-          
           cd ${{ secrets.PROJECT_PATH }}
-          git pull origin main || git pull origin master
+          git pull 
           
-          # Run application using nest
-          export PATH="${HOME}/.local/bin:${PATH}"
-          nest db upgrade && nest app prod run
+          nest db upgrade
+          nest app prod run
 
 
   notify:
