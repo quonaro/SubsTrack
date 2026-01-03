@@ -44,6 +44,14 @@ db:
         > desc: Upgrade with Aerich
         > cwd: backend
         > script: uv run aerich upgrade
+
+    aerich(*):
+        > desc: Aerich commands
+        > cwd: backend
+        > script: uv run aerich {{*}}
+
+
+        
 app(type: str = "dev"):
     > desc: Control Application
     > env: .env
