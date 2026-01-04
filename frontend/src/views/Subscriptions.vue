@@ -187,7 +187,10 @@ const groupedSubscriptions = computed(() => {
   
   filteredSubscriptions.value.forEach(sub => {
     const days = getDaysUntilPayment(sub.next_payment_date)
-    const label = formatDaysUntil(days)
+    const relativeLabel = formatDaysUntil(days)
+    const dateObj = new Date(sub.next_payment_date)
+    const dateLabel = dateObj.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })
+    const label = `${relativeLabel} • ${dateLabel}`
     
     if (!groups[label]) {
       groups[label] = {
