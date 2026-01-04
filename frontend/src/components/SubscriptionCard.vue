@@ -139,6 +139,9 @@
           </svg>
           {{ formatNotificationRule(firstNotificationRule) }}
         </p>
+        <p v-if="lastNotificationSent" class="truncate text-[9px] text-app-text-muted/60 mt-0.5 ml-4 font-medium">
+           Отправлено: {{ lastNotificationSent }}
+        </p>
       </div>
 
       <div class="h-10 w-10 flex items-center justify-center rounded-full bg-white/0 text-zinc-600 transition-all group-hover:bg-white/5 group-hover:text-app-text">
@@ -185,6 +188,38 @@ const firstNotificationRule = computed(() => {
     return null
   }
   return props.subscription.notification_rules[0]
+})
+
+const lastNotificationSent = computed(() => {
+  if (!props.subscription.notification_rules || props.subscription.notification_rules.length === 0) {
+    return null
+  }
+  
+  // Find the most recent last_sent_at
+  let latest = null
+  for (const rule of props.subscription.notification_rules) {
+    if (rule.last_sent_at) {
+      const date = new Date(rule.last_sent_at)
+      if (!latest || date > latest) {
+        latest = date
+      }
+    }
+  }
+
+  if (!latest) return null
+
+  // Format date
+  const now = new Date()
+  const isToday = latest.getDate() === now.getDate() && latest.getMonth() === now.getMonth() && latest.getFullYear() === now.getFullYear()
+  
+  const timeStr = latest.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+  
+  if (isToday) {
+    return `Сегодня в ${timeStr}`
+  }
+  
+  const dateStr = latest.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' })
+  return `${dateStr} в ${timeStr}`
 })
 
 function updateMenuPosition() {

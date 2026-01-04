@@ -31,6 +31,24 @@ class AuthService:
         if not telegram_id:
             return None
 
+        # Fetch fresh user data from Telegram API
+        from app.core.telegram import get_telegram_user_profile
+
+        api_user_data = await get_telegram_user_profile(telegram_id)
+
+        # Merge API data into user_data (API data takes precedence for mutable fields)
+        if api_user_data:
+            if api_user_data.get("username"):
+                user_data["username"] = api_user_data.get("username")
+            if api_user_data.get("first_name"):
+                user_data["first_name"] = api_user_data.get("first_name")
+            if api_user_data.get("last_name"):
+                user_data["last_name"] = api_user_data.get("last_name")
+            # Note: getChat via Bot API usually doesn't return is_premium/language_code for users
+            # so we rely on initData for those, or use them if present
+            if "is_premium" in api_user_data:  # If API ever returns it
+                user_data["is_premium"] = api_user_data.get("is_premium")
+
         # Get or create user
         user, created = await self.user_repository.get_or_create(
             telegram_id=telegram_id,
@@ -56,8 +74,9 @@ class AuthService:
                 update_data["last_name"] = user_data.get("last_name")
             if user_data.get("language_code") is not None:
                 update_data["language_code"] = user_data.get("language_code")
-            if "is_premium" in user_data:
-                update_data["is_premium"] = user_data.get("is_premium", False)
+            # Force update is_premium even if key is missing in initData (implying false)
+            # user_data has merged API data if available, but initData is primary source for premium
+            update_data["is_premium"] = user_data.get("is_premium", False)
             if user_data.get("photo_url") is not None:
                 update_data["photo_url"] = user_data.get("photo_url")
 

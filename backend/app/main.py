@@ -22,10 +22,10 @@ async def reminder_task():
             service = SubscriptionService()
             await service.check_reminders()
         except Exception as e:
-            logger.error(f"Error in reminder background task: {e}")
+            logger.error(f"Error in reminder background task: {e}", exc_info=True)
 
-        # Check every hour (3600 seconds)
-        await asyncio.sleep(3600)
+        # Check every minute (60 seconds)
+        await asyncio.sleep(60)
 
 
 @asynccontextmanager

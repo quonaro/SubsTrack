@@ -21,6 +21,7 @@ export function useAuth() {
     // If already authenticated, load user from storage
     if (hasAuth && !user.value) {
       user.value = getCurrentUser()
+      startRefreshInterval()
       return
     }
 
@@ -43,6 +44,9 @@ export function useAuth() {
           isAuthenticating.value = false
         }
       }
+      if (loginSuccess) {
+        startRefreshInterval()
+      }
       return
     }
 
@@ -54,6 +58,7 @@ export function useAuth() {
         const devAuth = await authenticateDev()
         if (devAuth && devAuth.user) {
           user.value = devAuth.user
+          startRefreshInterval()
         }
       } catch (error) {
         // dev login error
@@ -76,6 +81,7 @@ export function useAuth() {
       const authResponse = await authenticateWithTelegram()
       if (authResponse && authResponse.user) {
         user.value = authResponse.user
+        startRefreshInterval()
         return true
       }
       return false
@@ -91,11 +97,51 @@ export function useAuth() {
    */
   function logout(): void {
     logoutUser()
+    stopRefreshInterval()
     user.value = null
   }
 
   const isAuthenticated = computed(() => checkAuth() && user.value !== null)
   const isTelegram = computed(() => isTelegramWebApp())
+  let refreshInterval: number | null = null
+
+  /**
+   * Refresh user data from Telegram
+   */
+  async function refreshUser(): Promise<void> {
+    if (isTelegramWebApp()) {
+      try {
+        const authResponse = await authenticateWithTelegram()
+        if (authResponse && authResponse.user) {
+          user.value = authResponse.user
+        }
+      } catch (error) {
+        console.error('Failed to refresh user data', error)
+      }
+    }
+  }
+
+  /**
+   * Start 5-minute refresh interval
+   */
+  function startRefreshInterval() {
+    if (refreshInterval) return
+
+    // Refresh every 5 minutes
+    refreshInterval = window.setInterval(() => {
+      refreshUser()
+    }, 5 * 60 * 1000)
+  }
+
+  /**
+   * Stop refresh interval
+   */
+  function stopRefreshInterval() {
+    if (refreshInterval) {
+      clearInterval(refreshInterval)
+      refreshInterval = null
+    }
+  }
 
   return {
     user: computed(() => user.value),

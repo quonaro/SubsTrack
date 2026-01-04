@@ -6,6 +6,10 @@ import asyncio
 from datetime import datetime, timedelta, time
 import httpx
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class ReminderService:
     """Service for sending subscription reminders via Telegram bot using granular rules"""
@@ -91,6 +95,14 @@ class ReminderService:
             print(f"Error sending reminder: {e}")
             return False
 
+    def _make_aware(self, dt: datetime) -> datetime:
+        """Ensure datetime is timezone aware (UTC)"""
+        import pytz
+
+        if dt.tzinfo is None:
+            return pytz.UTC.localize(dt)
+        return dt
+
     async def process_all_reminders(self) -> int:
         """
         Evaluate all active notification rules and send triggers
@@ -115,6 +127,7 @@ class ReminderService:
                     pass
 
             # Localize server time to user's timezone
+            # server_now is already aware, so astimezone works fine
             user_now = server_now.astimezone(user_tz)
             today = user_now.date()
             current_time = user_now.time()
@@ -124,11 +137,8 @@ class ReminderService:
 
                 # Check if already sent recently to avoid spam (within same hour at least)
                 # We use server time for last_sent_at check as it is stored in UTC (or naive assumed UTC)
-                # Ideally last_sent_at should be timezone aware. If it's naive, we treat it as UTC.
                 if rule.last_sent_at:
-                    last_sent = rule.last_sent_at
-                    if last_sent.tzinfo is None:
-                        last_sent = pytz.UTC.localize(last_sent)
+                    last_sent = self._make_aware(rule.last_sent_at)
 
                     if (server_now - last_sent) < timedelta(minutes=50):
                         continue
@@ -144,14 +154,10 @@ class ReminderService:
                                 should_trigger = True
                         else:
                             # If no time, send once a day (if not sent today)
-                            # We need to check if multiple sends happened today in user's timezone?
-                            # Simplest is check if last_sent_at was today
                             if not rule.last_sent_at:
                                 should_trigger = True
                             else:
-                                last_sent = rule.last_sent_at
-                                if last_sent.tzinfo is None:
-                                    last_sent = pytz.UTC.localize(last_sent)
+                                last_sent = self._make_aware(rule.last_sent_at)
                                 last_sent_local = last_sent.astimezone(user_tz)
                                 if last_sent_local.date() < today:
                                     should_trigger = True
@@ -163,42 +169,80 @@ class ReminderService:
                         if not rule.last_sent_at:
                             should_trigger = True
                         else:
-                            last_sent = rule.last_sent_at
-                            if last_sent.tzinfo is None:
-                                last_sent = pytz.UTC.localize(last_sent)
+                            last_sent = self._make_aware(rule.last_sent_at)
                             # Compare using server time (UTC)
                             if (server_now - last_sent) >= timedelta(hours=interval):
                                 should_trigger = True
 
                 elif rule.rule_type == NotificationRuleType.PAYMENT_DAY_ALERT:
                     if today == sub.next_payment_date:
-                        at_time = rule.at_time or time(9, 0)  # Default 9 AM
-                        if self._is_time_to_send(at_time, current_time):
-                            should_trigger = True
+                        # Check if already sent today in user's timezone
+                        already_sent_today = False
+                        if rule.last_sent_at:
+                            last_sent = self._make_aware(rule.last_sent_at)
+                            last_sent_local = last_sent.astimezone(user_tz)
+                            if last_sent_local.date() == today:
+                                already_sent_today = True
+
+                        if not already_sent_today:
+                            at_time = rule.at_time or time(9, 0)  # Default 9 AM
+                            if self._is_time_to_send(at_time, current_time):
+                                should_trigger = True
 
                 elif rule.rule_type == NotificationRuleType.SINGLE_REMINDER:
                     if today == sub.next_payment_date:
-                        if rule.at_time and self._is_time_to_send(
-                            rule.at_time, current_time
-                        ):
-                            should_trigger = True
+                        # Check if already sent today in user's timezone
+                        already_sent_today = False
+                        if rule.last_sent_at:
+                            last_sent = self._make_aware(rule.last_sent_at)
+                            last_sent_local = last_sent.astimezone(user_tz)
+                            if last_sent_local.date() == today:
+                                already_sent_today = True
+
+                        if not already_sent_today:
+                            if rule.at_time and self._is_time_to_send(
+                                rule.at_time, current_time
+                            ):
+                                should_trigger = True
 
                 if should_trigger:
-                    success = await self.send_reminder(sub, rule.rule_type)
-                    if success:
-                        rule.last_sent_at = server_now.replace(
-                            tzinfo=None
-                        )  # Store as naive UTC if DB expects naive
-                        await rule.save()
-                        sent_count += 1
-                        await asyncio.sleep(0.1)
+                    try:
+                        logger.info(
+                            f"Triggering reminder for sub {sub.id}, rule {rule.rule_type}"
+                        )
+                        success = await self.send_reminder(sub, rule.rule_type)
+                        if success:
+                            rule.last_sent_at = server_now.replace(
+                                tzinfo=None
+                            )  # Store as naive UTC if DB expects naive
+                            await rule.save()
+                            sent_count += 1
+                        else:
+                            logger.error(f"Failed to send reminder for sub {sub.id}")
+                    except Exception as e:
+                        logger.error(
+                            f"Exception sending reminder for sub {sub.id}: {e}"
+                        )
+
+                # Yield control to event loop
+                await asyncio.sleep(0.01)
 
         return sent_count
 
     def _is_time_to_send(self, scheduled: time, current: time) -> bool:
-        """Check if current time is within 1 hour after scheduled time"""
-        # We check if current hour == scheduled hour.
-        # This works if job runs every hour or more frequently.
-        if current.hour == scheduled.hour:
+        """Check if we should send the reminder"""
+        # We check if current time is equal to or greater than scheduled time.
+        # Since we run every minute, this ensures we don't miss it if we started a bit late.
+        # Repeated sending is preventing by last_sent_at check in the main loop.
+
+        # Ensure comparison is done on naive times (wall clock time vs wall clock time)
+        if scheduled.tzinfo is not None:
+            scheduled = scheduled.replace(tzinfo=None)
+
+        if current.tzinfo is not None:
+            current = current.replace(tzinfo=None)
+
+        # Simple comparison for same day
+        if current >= scheduled:
             return True
         return False
