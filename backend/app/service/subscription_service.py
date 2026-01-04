@@ -45,7 +45,22 @@ class SubscriptionService:
         subscriptions = await self.repository.get_all_by_user(
             user_id, is_active, sort_by
         )
-        return [SubscriptionResponse.model_validate(sub) for sub in subscriptions]
+
+        # Prefetch last payments for each
+        res = []
+        for sub in subscriptions:
+            # Note: For bulk this might be inefficient (N+1), but let's see.
+            # In a real app we'd prefetch or join.
+            last_p = (
+                await PaymentHistory.filter(subscription=sub)
+                .order_by("-date", "-created_at")
+                .first()
+            )
+            s_res = SubscriptionResponse.model_validate(sub)
+            if last_p:
+                s_res.last_paid_at = last_p.created_at
+            res.append(s_res)
+        return res
 
     async def get_subscription(
         self, subscription_id: int, user_id: int
@@ -54,7 +69,16 @@ class SubscriptionService:
         subscription = await self.repository.get_by_id(subscription_id, user_id)
         if not subscription:
             return None
-        return SubscriptionResponse.model_validate(subscription)
+
+        last_p = (
+            await PaymentHistory.filter(subscription=subscription)
+            .order_by("-date", "-created_at")
+            .first()
+        )
+        res = SubscriptionResponse.model_validate(subscription)
+        if last_p:
+            res.last_paid_at = last_p.created_at
+        return res
 
     def _add_months(self, source_date: datetime, months: int) -> datetime:
         """Add months to a date, handling end-of-month clamping"""
@@ -220,6 +244,20 @@ class SubscriptionService:
         subscription = await self.repository.get_by_id(subscription_id, user_id)
         if not subscription:
             return None
+
+        # Anti-spam check: if already paid in the last 1 hour, ignore advancing
+        recent_payment = (
+            await PaymentHistory.filter(
+                subscription=subscription, date=datetime.now().date()
+            )
+            .order_by("-created_at")
+            .first()
+        )
+
+        if recent_payment and (
+            datetime.now() - recent_payment.created_at.replace(tzinfo=None)
+        ) < timedelta(hours=1):
+            return await self.get_subscription(subscription_id, user_id)
 
         # 1. Record History
         now = datetime.now()

@@ -53,13 +53,32 @@
             <p class="text-xl font-medium text-app-text">{{ formatDate(subscription.next_payment_date) }}</p>
         </div>
 
+        <div v-if="isAlreadyPaid" class="bg-green-500/10 rounded-xl p-4 border border-green-500/20 text-green-500 flex items-center gap-3">
+             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-6 h-6">
+                 <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+             </svg>
+             <div class="text-left">
+                 <p class="font-bold">Уже оплачено</p>
+                 <p class="text-xs opacity-80">Вы уже отметили этот платеж сегодня</p>
+             </div>
+        </div>
+
         <button 
+            v-if="!isAlreadyPaid"
             @click="handlePayment"
             :disabled="processing"
             class="w-full py-4 px-6 rounded-2xl bg-primary-500 text-white text-lg font-bold shadow-accent hover:bg-primary-600 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-3"
         >
             <span v-if="processing" class="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
              {{ processing ? 'Обработка...' : 'Подтвердить оплату' }}
+        </button>
+
+        <button 
+            v-else
+            @click="closeApp"
+            class="w-full py-4 px-6 rounded-2xl bg-surface-200 text-app-text text-lg font-bold hover:bg-surface-300 active:scale-[0.98] transition-all flex items-center justify-center gap-3"
+        >
+             Закрыть окно
         </button>
 
          <button 
@@ -73,7 +92,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { getSubscription, markAsPaid, type Subscription, formatPrice, formatPeriod } from '../services/subscriptions'
 
@@ -85,6 +104,20 @@ const loading = ref(true)
 const error = ref('')
 const success = ref(false)
 const processing = ref(false)
+
+const isAlreadyPaid = computed(() => {
+    if (!subscription.value?.last_paid_at) return false
+    const lastPaid = new Date(subscription.value.last_paid_at)
+    const now = new Date()
+    
+    // Check if it was paid today (within last 12 hours or same calendar day)
+    const diffMs = now.getTime() - lastPaid.getTime()
+    const isToday = lastPaid.getDate() === now.getDate() && 
+                   lastPaid.getMonth() === now.getMonth() && 
+                   lastPaid.getFullYear() === now.getFullYear()
+                   
+    return isToday || diffMs < 12 * 60 * 60 * 1000
+})
 
 // Telegram WebApp
 const tg = (window as any).Telegram?.WebApp

@@ -1,10 +1,17 @@
 <template>
+  <div class="header-placeholder" :style="{ height: headerHeight }"></div>
   <header 
-    class="sticky top-0 z-40 border-b border-app-border bg-app-bg/80 px-4 py-3 backdrop-blur-xl transition-all duration-500" 
-    :style="{ top: 'var(--safe-offset, 0px)' }"
+    class="fixed top-0 left-0 right-0 z-40 border-b border-app-border px-4 py-3 backdrop-blur-xl transition-all duration-500 animate-header-slide-down" 
+    :style="{ 
+      paddingTop: fullscreenMode === 'extra' ? 'calc(var(--safe-offset, 0px) + 0.25rem)' : '0.75rem',
+      backgroundColor: 'color-mix(in srgb, var(--tg-theme-header-bg-color, var(--bg-color)), transparent 20%)'
+    }"
     :data-mode="fullscreenMode"
+    ref="headerRef"
   >
-    <div class="flex items-center justify-between relative h-10">
+    <div 
+      class="flex items-center justify-between relative h-10 header-content"
+    >
       <!-- Left: Logo and Name (Hidden in extra mode) -->
       <div 
         class="flex items-center gap-2.5 transition-all duration-500"
@@ -17,10 +24,9 @@
         <h1 class="text-lg font-black tracking-tight bg-gradient-to-r from-app-text to-app-text-muted bg-clip-text text-transparent">SubsTrack</h1>
       </div>
 
-      <!-- Center Logo (Only in extra mode) -->
       <div 
         class="absolute inset-0 flex items-center justify-center pointer-events-none transition-all duration-500"
-        :class="fullscreenMode === 'extra' ? 'opacity-100 scale-110' : 'opacity-0 scale-90 translate-y-2'"
+        :class="fullscreenMode === 'extra' ? 'opacity-100 scale-100' : 'opacity-0 scale-90 translate-y-2'"
       >
         <div class="flex items-center gap-2.5">
           <img src="/logo.png" alt="Logo" class="h-7 w-7 object-contain rounded-lg shadow-sm" />
@@ -64,8 +70,20 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted } from 'vue'
+import { computed, ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { getCurrentUser } from '../services/auth'
+import { useLayout } from '../composables/useLayout'
+
+const { isHeaderPresent } = useLayout()
+
+const headerRef = ref(null)
+const headerHeight = ref('0px')
+
+const updateHeaderHeight = () => {
+  if (headerRef.value) {
+    headerHeight.value = `${headerRef.value.offsetHeight}px`
+  }
+}
 
 const user = getCurrentUser()
 
@@ -76,6 +94,7 @@ const userInitial = computed(() => {
 const fullscreenMode = ref('native')
 
 onMounted(() => {
+  isHeaderPresent.value = true
   // Initial load
   fullscreenMode.value = localStorage.getItem('fullscreen_mode') || 'native'
 
@@ -84,17 +103,42 @@ onMounted(() => {
     mutations.forEach((mutation) => {
       if (mutation.type === 'attributes' && mutation.attributeName === 'data-fullscreen-mode') {
         fullscreenMode.value = document.body.getAttribute('data-fullscreen-mode')
+        nextTick(updateHeaderHeight)
       }
     })
   })
   observer.observe(document.body, { attributes: true })
+  
+  nextTick(updateHeaderHeight)
+  window.addEventListener('resize', updateHeaderHeight)
+})
+
+onUnmounted(() => {
+  isHeaderPresent.value = false
+  window.removeEventListener('resize', updateHeaderHeight)
 })
 </script>
 
 <style scoped>
 header[data-mode="extra"] {
-  padding-top: 1rem;
-  padding-bottom: 1rem;
+  padding-bottom: 0.25rem;
+}
+
+header[data-mode="extra"] .header-content {
+  height: 2rem;
+}
+
+.animate-header-slide-down {
+  animation: headerSlideDown 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes headerSlideDown {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: translateY(0);
+  }
 }
 
 .animate-fade-in-down {

@@ -2,8 +2,13 @@
   <div class="min-h-screen bg-app-bg text-app-text selection:bg-primary-500/30">
     <!-- Notch Shield (Black Bar for Extra Offset Mode) -->
     <div 
-      class="fixed top-0 left-0 right-0 z-[60] bg-black transition-all duration-500 overflow-hidden"
-      :style="{ height: isFullscreenExtra ? 'var(--safe-offset, 0px)' : '0px' }"
+      v-if="!isHeaderPresent"
+      class="fixed top-0 left-0 right-0 z-[60] transition-all duration-500 overflow-hidden backdrop-blur-xl border-b border-app-border"
+      :class="isFullscreenExtra ? 'opacity-100' : 'opacity-0'"
+      :style="{ 
+        height: isFullscreenExtra ? 'var(--safe-offset, 0px)' : '0px',
+        backgroundColor: 'color-mix(in srgb, var(--tg-theme-header-bg-color, var(--bg-color)), transparent 20%)'
+      }"
     ></div>
 
     <div v-if="isAuthenticating" class="flex min-h-screen items-center justify-center">
@@ -37,10 +42,12 @@ import AppHeader from './components/AppHeader.vue'
 import TimezoneModal from './components/TimezoneModal.vue'
 import { useAuth } from './composables/useAuth'
 import { useTheme } from './composables/useTheme'
+import { useLayout } from './composables/useLayout'
 import { getCurrentUser } from './services/auth'
 
 const { isAuthenticated, isAuthenticating, isTelegram, initAuth } = useAuth()
 const { accentColor } = useTheme()
+const { isHeaderPresent } = useLayout()
 
 const showTimezoneModal = ref(false)
 const currentUser = ref(null)

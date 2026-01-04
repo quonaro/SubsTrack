@@ -156,6 +156,8 @@
 
   body[data-fullscreen-mode="extra"] {
     --safe-offset: calc(env(safe-area-inset-top) + var(--header-extra-offset, 54px));
+    padding-top: 0;
+    /* Components handle safe area in this mode */
   }
 }
 

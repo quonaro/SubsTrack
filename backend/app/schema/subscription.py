@@ -97,6 +97,7 @@ class SubscriptionResponse(BaseModel):
     reminder_enabled: bool
     category: Optional[CategoryResponse] = None
     notification_rules: list[NotificationRuleResponse] = []
+    last_paid_at: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime
 

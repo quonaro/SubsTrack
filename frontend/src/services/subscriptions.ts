@@ -12,6 +12,7 @@ export interface Subscription {
   is_active: boolean
   reminder_enabled: boolean
   reminder_days_before: number
+  last_paid_at?: string
   created_at: string
   updated_at: string
 }

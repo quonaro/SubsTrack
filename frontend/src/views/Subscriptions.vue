@@ -1,37 +1,34 @@
 <template>
   <div class="min-h-screen bg-app-bg pb-24 text-app-text">
     <!-- Header -->
-    <AppHeader>
-      <template #extension>
-        <div class="px-2">
-          <div class="relative flex w-full rounded-2xl bg-surface-100 p-1.5 shadow-inner">
-            <div 
-              class="absolute h-[calc(100%-12px)] rounded-[0.8rem] bg-surface-300 shadow-premium transition-all duration-300 ease-out border border-app-border"
-              :style="{ 
-                left: activeTab === 'active' ? '6px' : 'calc(50% + 3px)', 
-                width: 'calc(50% - 9px)' 
-              }"
-            ></div>
-            <button 
-              class="relative z-10 w-1/2 py-2.5 text-xs font-bold uppercase tracking-widest transition-all duration-200"
-              :class="activeTab === 'active' ? 'text-app-text' : 'text-app-text-muted hover:text-zinc-300'"
-              @click="activeTab = 'active'"
-            >
-              Активные
-            </button>
-            <button 
-              class="relative z-10 w-1/2 py-2.5 text-xs font-bold uppercase tracking-widest transition-all duration-200"
-              :class="activeTab === 'archived' ? 'text-app-text' : 'text-app-text-muted hover:text-zinc-300'"
-              @click="activeTab = 'archived'"
-            >
-              Архивные
-            </button>
-          </div>
-        </div>
-      </template>
-    </AppHeader>
-
+    <AppHeader />
+ 
     <main class="p-6 space-y-8 animate-fade-in">
+      <!-- Tabs (Moved from Header) -->
+      <div class="relative flex w-full rounded-2xl bg-surface-100 p-1.5 shadow-inner">
+        <div 
+          class="absolute h-[calc(100%-12px)] rounded-[0.8rem] bg-surface-300 shadow-premium transition-all duration-300 ease-out border border-app-border"
+          :style="{ 
+            left: activeTab === 'active' ? '6px' : 'calc(50% + 3px)', 
+            width: 'calc(50% - 9px)' 
+          }"
+        ></div>
+        <button 
+          class="relative z-10 w-1/2 py-2.5 text-xs font-bold uppercase tracking-widest transition-all duration-200"
+          :class="activeTab === 'active' ? 'text-app-text' : 'text-app-text-muted hover:text-zinc-300'"
+          @click="activeTab = 'active'"
+        >
+          Активные
+        </button>
+        <button 
+          class="relative z-10 w-1/2 py-2.5 text-xs font-bold uppercase tracking-widest transition-all duration-200"
+          :class="activeTab === 'archived' ? 'text-app-text' : 'text-app-text-muted hover:text-zinc-300'"
+          @click="activeTab = 'archived'"
+        >
+          Архивные
+        </button>
+      </div>
+
       <!-- Summary Card -->
       <div class="overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-primary-600 to-primary-800 p-8 shadow-accent relative group">
         <!-- Abstract Decorations -->
