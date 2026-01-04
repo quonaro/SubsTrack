@@ -25,7 +25,7 @@ class Category(Model):
     class Meta:
         table = "categories"
         unique_together = (("user", "name"),)
-        indexes = [("user_id", "name")]
+        indexes = [("user", "name")]
 
     def __str__(self) -> str:
         return f"{self.name} (User: {self.user_id})"

@@ -60,18 +60,27 @@
              >
                 <div class="flex items-center justify-between p-4 pb-3">
                    <div class="flex items-center gap-4">
-                      <div class="h-11 w-11 rounded-xl bg-surface-200/50 flex items-center justify-center text-xl shadow-inner group-hover:scale-110 transition-transform">{{ cat.icon }}</div>
-                      <div>
-                        <p class="text-xs font-black text-app-text uppercase tracking-widest">{{ cat.name }}</p>
-                        <p class="text-[10px] text-app-text-muted font-bold mt-0.5">{{ cat.percent }}%</p>
-                      </div>
-                   </div>
-                   <p class="text-base font-black text-app-text">{{ formatPrice(cat.total) }}</p>
-                </div>
-                <!-- Progress bar -->
-                <div class="relative h-[3px] bg-surface-200/30 w-full rounded-b-2xl overflow-hidden">
-                   <div class="h-full bg-gradient-to-r from-primary-600 to-primary-400 shadow-[0_0_12px_rgba(139,92,246,0.4)] transition-all duration-1000 delay-300" :style="{ width: cat.percent + '%' }"></div>
-                </div>
+                      <div 
+                        class="h-11 w-11 rounded-xl flex items-center justify-center text-xl shadow-inner group-hover:scale-110 transition-transform"
+                        :style="{ backgroundColor: cat.color + '15', color: cat.color }"
+                       >
+                        {{ cat.icon }}
+                       </div>
+                       <div>
+                         <p class="text-xs font-black text-app-text uppercase tracking-widest">{{ cat.name }}</p>
+                         <p class="text-[10px] text-app-text-muted font-bold mt-0.5">{{ cat.percent }}%</p>
+                       </div>
+                    </div>
+                    <p class="text-base font-black text-app-text">{{ formatPrice(cat.total) }}</p>
+                 </div>
+                 <!-- Progress bar -->
+                 <div class="relative h-[3px] bg-surface-200/30 w-full rounded-b-2xl overflow-hidden">
+                    <div 
+                      class="h-full transition-all duration-1000 delay-300" 
+                      :class="!cat.color ? 'bg-gradient-to-r from-primary-600 to-primary-400 shadow-[0_0_12px_rgba(139,92,246,0.4)]' : ''"
+                      :style="{ width: cat.percent + '%', backgroundColor: cat.color, boxShadow: cat.color ? `0 0 12px ${cat.color}66` : '' }"
+                    ></div>
+                 </div>
              </div>
           </div>
         </section>

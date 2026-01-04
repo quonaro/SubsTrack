@@ -83,9 +83,9 @@ declare global {
  * Check if app is running as Telegram MiniApp
  */
 export function isTelegramWebApp(): boolean {
-  return typeof window !== 'undefined' && 
-         window.Telegram !== undefined && 
-         window.Telegram.WebApp !== undefined
+  return typeof window !== 'undefined' &&
+    window.Telegram !== undefined &&
+    window.Telegram.WebApp !== undefined
 }
 
 /**
@@ -127,15 +127,8 @@ export function initTelegramWebApp(): void {
   const webApp = getTelegramWebApp()
   if (webApp) {
     webApp.ready()
+    // Always expand to fullscreen for best experience
     webApp.expand()
   }
 }
-
-
-
-
-
-
-
-
 

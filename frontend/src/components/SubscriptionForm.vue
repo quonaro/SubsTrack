@@ -71,22 +71,6 @@
                label="Категория"
                :searchable="true"
              />
-             <div v-if="formData.category_id === 'new'" class="animate-fade-in space-y-3 pt-2">
-                <input 
-                  v-model="newCategoryName"
-                  type="text" 
-                  placeholder="Название новой категории" 
-                  class="w-full rounded-2xl bg-surface-50 border border-app-border px-5 py-4 text-app-text placeholder-zinc-700 focus:border-primary-500/50 focus:bg-surface-100 focus:outline-none focus:ring-4 focus:ring-primary-500/10 transition-all center-placeholder"
-                  @keydown.enter.prevent="createNewCategory"
-                />
-                <button 
-                  type="button"
-                  class="w-full rounded-2xl bg-primary-500/10 px-4 py-3 text-sm font-bold text-primary-400 hover:bg-primary-500/20 active:scale-95 transition-all"
-                  @click="createNewCategory"
-                >
-                  Создать категорию
-                </button>
-             </div>
           </div>
           
 
@@ -268,6 +252,13 @@
         </div>
       </div>
     </transition>
+
+    <!-- Category Form Modal (Full Screen) -->
+    <CategoryForm
+      v-if="showCategoryForm"
+      @close="handleCategoryFormClose"
+      @created="handleCategoryCreated"
+    />
   </div>
 </template>
 
@@ -275,7 +266,8 @@
 import { ref, watch, computed, onMounted } from 'vue'
 import EmojiPicker from './EmojiPicker.vue'
 import CustomSelect from './CustomSelect.vue'
-import { getCategories, createCategory as apiCreateCategory } from '../services/categories'
+import CategoryForm from './CategoryForm.vue'
+import { getCategories } from '../services/categories'
 
 const props = defineProps({
   subscription: {
@@ -289,29 +281,7 @@ const emit = defineEmits(['close', 'submit'])
 const isEdit = computed(() => !!props.subscription)
 const loading = ref(false)
 const showEmojiPicker = ref(false)
-
-const ruleTypeOptions = [
-  { 
-    label: '🔔 Предварительное уведомление', 
-    value: 'advance_notice',
-    description: 'Присылает уведомление заранее, чтобы вы успели подготовить нужную сумму на счету.'
-  },
-  { 
-    label: '🔄 Повторяющееся напоминание', 
-    value: 'recurring_reminder',
-    description: 'Повторяет уведомление через заданный интервал прямо В ДЕНЬ оплаты, пока вы не отметите подписку как оплаченную.'
-  },
-  { 
-    label: '🌅 Уведомление в день оплаты', 
-    value: 'payment_day_alert',
-    description: 'Уведомление утром в день списания средств.'
-  },
-  { 
-    label: '📅 Единичное уведомление', 
-    value: 'single_reminder',
-    description: 'Уведомление в день списания в точное время.'
-  }
-]
+const showCategoryForm = ref(false)
 
 const currencyOptions = [
   { label: 'RUB ₽', value: 'RUB' },
@@ -347,7 +317,6 @@ const monthOptions = [
 const dayOptions = Array.from({ length: 31 }, (_, i) => ({ label: (i + 1).toString(), value: i + 1 }))
 
 const currentYear = new Date().getFullYear()
-// Simple range of years: Current year - 1 to Current year + 5
 const yearOptions = Array.from({ length: 7 }, (_, i) => {
   const year = currentYear - 1 + i
   return { label: year.toString(), value: year }
@@ -356,56 +325,6 @@ const yearOptions = Array.from({ length: 7 }, (_, i) => {
 const selectedDay = ref(new Date().getDate())
 const selectedMonth = ref(new Date().getMonth())
 const selectedYear = ref(new Date().getFullYear())
-
-function handleEmojiSelect(emoji) {
-  formData.value.icon = emoji
-  showEmojiPicker.value = false
-}
-
-const categories = ref([])
-const newCategoryName = ref('')
-
-const categoryOptions = computed(() => {
-  const opts = categories.value.map(c => ({
-    label: c.icon + ' ' + c.name,
-    value: c.id
-  }))
-  opts.push({ label: '➕ Создать новую...', value: 'new' })
-  return opts
-})
-
-async function fetchCategories() {
-  try {
-    categories.value = await getCategories()
-  } catch (e) {
-    console.error('Failed to fetch categories', e)
-  }
-}
-
-async function createNewCategory() {
-  if (!newCategoryName.value) return
-  
-  try {
-    const defaultIcons = ['🍿', '🎮', '💡', '🏠', '🛒', '🎓']
-    const randomIcon = defaultIcons[Math.floor(Math.random() * defaultIcons.length)]
-    
-    const newCat = await apiCreateCategory({
-      name: newCategoryName.value,
-      color: '#8b5cf6',
-      icon: randomIcon
-    })
-    
-    categories.value.push(newCat)
-    formData.value.category_id = newCat.id
-    newCategoryName.value = ''
-  } catch (e) {
-    console.error('Failed to create category', e)
-  }
-}
-
-onMounted(() => {
-  fetchCategories()
-})
 
 const ruleTypeLabels = {
   'advance_notice': 'Предварительное',
@@ -454,6 +373,79 @@ watch(() => props.subscription, (sub) => {
     }
   }
 }, { immediate: true })
+
+const ruleTypeOptions = [
+  { 
+    label: '🔔 Предварительное уведомление', 
+    value: 'advance_notice',
+    description: 'Присылает уведомление заранее, чтобы вы успели подготовить нужную сумму на счету.'
+  },
+  { 
+    label: '🔄 Повторяющееся напоминание', 
+    value: 'recurring_reminder',
+    description: 'Повторяет уведомление через заданный интервал прямо В ДЕНЬ оплаты, пока вы не отметите подписку как оплаченную.'
+  },
+  { 
+    label: '🌅 Уведомление в день оплаты', 
+    value: 'payment_day_alert',
+    description: 'Уведомление утром в день списания средств.'
+  },
+  { 
+    label: '📅 Единичное уведомление', 
+    value: 'single_reminder',
+    description: 'Уведомление в день списания в точное время.'
+  }
+]
+
+
+function handleEmojiSelect(emoji) {
+  formData.value.icon = emoji
+  showEmojiPicker.value = false
+}
+
+const categories = ref([])
+
+const categoryOptions = computed(() => {
+  const opts = categories.value.map(c => ({
+    label: (c.icon || '📁') + ' ' + c.name,
+    value: c.id
+  }))
+  opts.push({ label: '➕ Создать новую...', value: 'new' })
+  return opts
+})
+
+async function fetchCategories() {
+  try {
+    categories.value = await getCategories()
+  } catch (e) {
+    console.error('Failed to fetch categories', e)
+  }
+}
+
+watch(() => formData.value.category_id, (newVal) => {
+  if (newVal === 'new') {
+    showCategoryForm.value = true
+  }
+})
+
+function handleCategoryFormClose() {
+  showCategoryForm.value = false
+  // If user closed without creating, reset to null
+  if (formData.value.category_id === 'new') {
+    formData.value.category_id = null
+  }
+}
+
+function handleCategoryCreated(newCat) {
+  categories.value.push(newCat)
+  formData.value.category_id = newCat.id
+  showCategoryForm.value = false
+}
+
+onMounted(() => {
+  fetchCategories()
+})
+
 
 function formatLocalYYYYMMDD(date) {
   const y = date.getFullYear()

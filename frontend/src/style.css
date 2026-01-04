@@ -143,6 +143,11 @@
 
   body {
     @apply bg-app-bg text-app-text antialiased overflow-x-hidden transition-colors duration-300;
+    /* Safe area insets with fallback padding for better ergonomics */
+    padding-top: max(12px, env(safe-area-inset-top));
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
   }
 }
 
@@ -162,6 +167,6 @@
 /* Make time and date picker icons white in dark theme */
 input[type="time"]::-webkit-calendar-picker-indicator,
 input[type="date"]::-webkit-calendar-picker-indicator {
-    filter: invert(1);
-    cursor: pointer;
+  filter: invert(1);
+  cursor: pointer;
 }

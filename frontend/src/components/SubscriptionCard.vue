@@ -16,9 +16,23 @@
         >
           {{ daysText }}
         </span>
-        <h3 class="truncate text-lg font-bold text-app-text group-hover:text-primary-400 transition-colors">
-          {{ subscription.name }}
-        </h3>
+        <div class="flex items-center gap-2">
+          <h3 class="truncate text-lg font-bold text-app-text group-hover:text-primary-400 transition-colors">
+            {{ subscription.name }}
+          </h3>
+          <div 
+            v-if="subscription.category" 
+            class="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider"
+            :style="{ 
+              backgroundColor: (subscription.category.color || '#8b5cf6') + '15', 
+              color: subscription.category.color || '#8b5cf6', 
+              border: `1px solid ${subscription.category.color || '#8b5cf6'}30` 
+            }"
+          >
+            <span>{{ subscription.category.icon }}</span>
+            <span>{{ subscription.category.name }}</span>
+          </div>
+        </div>
       </div>
       
       <div class="flex items-center gap-2">

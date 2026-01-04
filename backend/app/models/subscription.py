@@ -43,7 +43,7 @@ class Subscription(Model):
 
     class Meta:
         table = "subscriptions"
-        indexes = [("user_id", "is_active")]
+        indexes = [("user", "is_active")]
 
     def __str__(self) -> str:
         return f"Subscription({self.name}, {self.price} {self.currency})"
