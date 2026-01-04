@@ -251,6 +251,32 @@
                 </div>
               </button>
             </div>
+
+            <!-- Height Slider (Only for Black Bar mode) -->
+            <transition 
+              enter-active-class="transition duration-300 ease-out"
+              enter-from-class="opacity-0 -translate-y-2 scale-95"
+              enter-to-class="opacity-100 translate-y-0 scale-100"
+              leave-active-class="transition duration-200 ease-in"
+              leave-from-class="opacity-100 translate-y-0 scale-100"
+              leave-to-class="opacity-0 -translate-y-2 scale-95"
+            >
+              <div v-if="fullscreenMode === 'extra'" class="mt-4 pt-4 border-t border-app-border/50 space-y-3">
+                <div class="flex justify-between items-center px-1">
+                  <span class="text-[10px] font-bold uppercase tracking-widest text-app-text-muted">Высота рамки</span>
+                  <span class="text-xs font-black text-primary-500">{{ fullscreenExtraHeight }}px</span>
+                </div>
+                <input 
+                  type="range" 
+                  v-model="fullscreenExtraHeight"
+                  min="0" 
+                  max="120" 
+                  step="2"
+                  @input="updateExtraHeight"
+                  class="w-full h-1.5 bg-surface-200 rounded-lg appearance-none cursor-pointer accent-primary-500"
+                />
+              </div>
+            </transition>
           </div>
         </div>
       </section>
@@ -296,11 +322,13 @@ const router = useRouter()
 const { accentColor, setAccentColor, theme, setTheme } = useTheme()
 
 const selectedTimezone = ref('')
-const fullscreenMode = ref('native')
+const fullscreenMode = ref('extra')
+const fullscreenExtraHeight = ref(54)
 
 onMounted(() => {
   // Load fullscreen mode
-  fullscreenMode.value = localStorage.getItem('fullscreen_mode') || 'native'
+  fullscreenMode.value = localStorage.getItem('fullscreen_mode') || 'extra'
+  fullscreenExtraHeight.value = parseInt(localStorage.getItem('fullscreen_extra_height') || '54')
 
   try {
     const user = getCurrentUser()
@@ -385,6 +413,11 @@ function setFullscreenMode(mode) {
       webApp.expand()
     }
   }
+}
+
+function updateExtraHeight() {
+  localStorage.setItem('fullscreen_extra_height', fullscreenExtraHeight.value.toString())
+  document.body.style.setProperty('--header-extra-offset', fullscreenExtraHeight.value + 'px')
 }
 
 const fullscreenModes = [

@@ -155,7 +155,7 @@
   }
 
   body[data-fullscreen-mode="extra"] {
-    --safe-offset: calc(env(safe-area-inset-top) + 28px);
+    --safe-offset: calc(env(safe-area-inset-top) + var(--header-extra-offset, 54px));
   }
 }
 

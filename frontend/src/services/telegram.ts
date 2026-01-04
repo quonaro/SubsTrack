@@ -128,8 +128,8 @@ export function initTelegramWebApp(): void {
   if (webApp) {
     webApp.ready()
 
-    // Check fullscreen mode from localStorage (default to 'native')
-    const mode = localStorage.getItem('fullscreen_mode') || 'native'
+    // Check fullscreen mode from localStorage (default to 'extra')
+    const mode = localStorage.getItem('fullscreen_mode') || 'extra'
 
     if (mode !== 'disabled') {
       webApp.expand()

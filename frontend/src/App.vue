@@ -66,20 +66,26 @@ function handleTimezoneSaved(tz) {
   }
 }
 
-const isFullscreenExtra = ref(false)
+const isFullscreenExtra = ref(true)
 
 onMounted(async () => {
   // Initialize fullscreen mode for CSS
-  const mode = localStorage.getItem('fullscreen_mode') || 'native'
+  const mode = localStorage.getItem('fullscreen_mode') || 'extra'
+  const extraHeight = localStorage.getItem('fullscreen_extra_height') || '54'
+  
   document.body.setAttribute('data-fullscreen-mode', mode)
+  document.body.style.setProperty('--header-extra-offset', extraHeight + 'px')
+  
   isFullscreenExtra.value = mode === 'extra'
 
   // Watch for changes to the attribute (e.g. from Settings.vue)
   const observer = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {
-      if (mutation.type === 'attributes' && mutation.attributeName === 'data-fullscreen-mode') {
-        const newMode = document.body.getAttribute('data-fullscreen-mode')
-        isFullscreenExtra.value = newMode === 'extra'
+      if (mutation.type === 'attributes') {
+        if (mutation.attributeName === 'data-fullscreen-mode') {
+          const newMode = document.body.getAttribute('data-fullscreen-mode')
+          isFullscreenExtra.value = newMode === 'extra'
+        }
       }
     })
   })

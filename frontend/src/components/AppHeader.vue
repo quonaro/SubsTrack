@@ -1,5 +1,9 @@
 <template>
-  <header class="sticky top-0 z-40 border-b border-app-border bg-app-bg/80 px-4 py-3 backdrop-blur-xl" :style="{ top: 'var(--safe-offset, 0px)' }">
+  <header 
+    class="sticky top-0 z-40 border-b border-app-border bg-app-bg/80 px-4 py-3 backdrop-blur-xl transition-all duration-500" 
+    :style="{ top: 'var(--safe-offset, 0px)' }"
+    :data-mode="fullscreenMode"
+  >
     <div class="flex items-center justify-between">
       <!-- Left: Logo and Name -->
       <div class="flex items-center gap-2.5">
@@ -43,7 +47,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { getCurrentUser } from '../services/auth'
 
 const user = getCurrentUser()
@@ -52,9 +56,30 @@ const userInitial = computed(() => {
   if (!user) return '?'
   return (user.first_name?.[0] || user.username?.[0] || '?').toUpperCase()
 })
+const fullscreenMode = ref('native')
+
+onMounted(() => {
+  // Initial load
+  fullscreenMode.value = localStorage.getItem('fullscreen_mode') || 'native'
+
+  // Observer for global attribute changes
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      if (mutation.type === 'attributes' && mutation.attributeName === 'data-fullscreen-mode') {
+        fullscreenMode.value = document.body.getAttribute('data-fullscreen-mode')
+      }
+    })
+  })
+  observer.observe(document.body, { attributes: true })
+})
 </script>
 
 <style scoped>
+header[data-mode="extra"] {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+
 .animate-fade-in-down {
   animation: fadeInDown 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
