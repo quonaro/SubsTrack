@@ -74,9 +74,8 @@ jobs:
         script: |
           cd ${{ secrets.PROJECT_PATH }}
           git pull 
+          nest app prod run && nest db upgrade 
           
-          nest db upgrade
-          nest app prod run
 
 
   notify:

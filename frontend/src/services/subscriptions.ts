@@ -213,3 +213,30 @@ export function formatDaysUntil(days: number): string {
   if (days < 5) return `Через ${days} дня`
   return `Через ${days} дней`
 }
+
+export function formatNotificationRule(rule: any): string {
+  if (!rule) return ''
+
+  const timeStr = rule.at_time ? ` в ${rule.at_time.substring(0, 5)}` : ''
+
+  if (rule.rule_type === 'advance_notice') {
+    const days = rule.days_before || 0
+    if (days === 0) return `В день оплаты${timeStr}`
+    if (days === 1) return `За 1 день${timeStr}`
+    if (days < 5) return `За ${days} дня${timeStr}`
+    return `За ${days} дней${timeStr}`
+  }
+
+  if (rule.rule_type === 'payment_day_alert') {
+    return `В день оплаты${timeStr}`
+  }
+
+  if (rule.rule_type === 'recurring_reminder') {
+    const hours = rule.interval_hours || 0
+    if (hours === 1) return 'Каждый час'
+    if (hours < 5) return `Каждые ${hours} часа`
+    return `Каждые ${hours} часов`
+  }
+
+  return ''
+}

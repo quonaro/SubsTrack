@@ -100,7 +100,15 @@
                 </div>
                 <div class="flex-1 min-w-0">
                   <h3 class="font-semibold truncate">{{ sub.name }}</h3>
-                  <p class="text-xs text-app-text-muted">{{ formatPeriod(sub.period_days) }}</p>
+                  <div class="flex flex-col gap-1 mt-0.5">
+                    <p class="text-[10px] text-app-text-muted font-medium uppercase tracking-wider">{{ formatPeriod(sub.period_days) }}</p>
+                    <p v-if="sub.notification_rules?.length" class="text-[10px] text-primary-400 flex items-center gap-1 font-bold uppercase tracking-wider">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="h-3 w-3">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
+                      </svg>
+                      {{ formatNotificationRule(sub.notification_rules[0]) }}
+                    </p>
+                  </div>
                 </div>
                 <div class="text-right">
                   <p class="font-bold text-primary-400">{{ formatPrice(sub.price, sub.currency) }}</p>
@@ -125,7 +133,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import BottomNavigation from '../components/BottomNavigation.vue'
 import AppHeader from '../components/AppHeader.vue'
 import PageLoader from '../components/PageLoader.vue'
-import { getCalendarOccurrences, formatPrice, formatPeriod } from '../services/subscriptions'
+import { getCalendarOccurrences, formatPrice, formatPeriod, formatNotificationRule } from '../services/subscriptions'
 
 const currentDate = ref(new Date())
 const selectedDay = ref(null)
