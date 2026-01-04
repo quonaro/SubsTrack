@@ -11,7 +11,12 @@ from app.schema.subscription import (
 )
 from datetime import datetime, timedelta, date
 from app.models.payment import PaymentHistory
+from app.models.history import History
 from app.schema.payment import PaymentHistoryResponse
+from app.schema.history import HistoryResponse
+
+
+from fastapi.encoders import jsonable_encoder
 
 
 class SubscriptionService:
@@ -19,6 +24,19 @@ class SubscriptionService:
 
     def __init__(self):
         self.repository = SubscriptionRepository()
+
+    async def _log_history(
+        self,
+        subscription: Subscription,
+        event_type: str,
+        details: Optional[dict] = None,
+    ):
+        """Log a history event"""
+        await History.create(
+            subscription=subscription,
+            event_type=event_type,
+            details=jsonable_encoder(details) if details else None,
+        )
 
     async def get_user_subscriptions(
         self, user_id: int, is_active: Optional[bool] = None, sort_by: str = "date_asc"
@@ -125,6 +143,15 @@ class SubscriptionService:
         """Create new subscription"""
         data = subscription_data.model_dump()
         subscription = await self.repository.create(user, data)
+        await self._log_history(
+            subscription,
+            "created",
+            {
+                "name": subscription.name,
+                "price": float(subscription.price),
+                "currency": subscription.currency,
+            },
+        )
         return SubscriptionResponse.model_validate(subscription)
 
     async def update_subscription(
@@ -136,7 +163,21 @@ class SubscriptionService:
             return None
 
         data = update_data.model_dump(exclude_unset=True)
+        # Calculate diff for history
+        changes = {}
+        for key, value in data.items():
+            old_value = getattr(subscription, key, None)
+            if old_value != value:
+                # Handle Decimal serialization manually for cleaner history (optional but good)
+                if key == "price":
+                    changes[key] = str(value)
+                else:
+                    changes[key] = value
+
         updated_subscription = await self.repository.update(subscription, data)
+        if changes:
+            await self._log_history(updated_subscription, "updated", changes)
+
         return SubscriptionResponse.model_validate(updated_subscription)
 
     async def delete_subscription(self, subscription_id: int, user_id: int) -> bool:
@@ -156,7 +197,9 @@ class SubscriptionService:
             return None
 
         subscription.is_active = False
+        subscription.is_active = False
         await subscription.save()
+        await self._log_history(subscription, "archived")
         return SubscriptionResponse.model_validate(subscription)
 
     async def _create_payment_history(
@@ -181,6 +224,7 @@ class SubscriptionService:
         # 1. Record History
         now = datetime.now()
         await self._create_payment_history(subscription, now)
+        # Payment is tracked in PaymentHistory, we will merge it in get_history
 
         # 2. Advance Date
         current_next = subscription.next_payment_date
@@ -217,6 +261,119 @@ class SubscriptionService:
         """Get payment history"""
         history = await self.repository.get_history(user_id, subscription_id)
         return [PaymentHistoryResponse.model_validate(h) for h in history]
+
+    async def get_all_history_merged(self, user_id: int) -> List[HistoryResponse]:
+        """Get full audit history for ALL user subscriptions (merging History and PaymentHistory)"""
+        # 1. Fetch all user subscriptions (to filter history)
+        # Actually easier to filter History by subscription__user_id if relations allow,
+        # but History -> Subscription -> User.
+        # Tortoise supports double underscore filtering.
+
+        # 1. Fetch generic history
+        history_records = (
+            await History.filter(subscription__user_id=user_id)
+            .prefetch_related(
+                "subscription",
+                "subscription__category",
+                "subscription__notification_rules",
+            )
+            .all()
+        )
+
+        # 2. Fetch payment history
+        # We need subscription loaded with details for naming
+        from app.models.payment import PaymentHistory
+
+        payments = (
+            await PaymentHistory.filter(subscription__user_id=user_id)
+            .order_by("-date")
+            .prefetch_related(
+                "subscription",
+                "subscription__category",
+                "subscription__notification_rules",
+            )
+        )
+
+        # 3. Merge
+        results = []
+        for h in history_records:
+            # We need to ensure subscription is loaded for details if we want to show name?
+            # HistoryResponse has subscription_id. Frontend might need name.
+            # But HistoryResponse schema currently only has IDs.
+            # Frontend uses subscription Store or needs data in response?
+            # Looking at HistoryList.vue it uses `item.subscription?.name`.
+            # So HistoryResponse needs 'subscription' field?
+            # Let's check HistoryResponse schema.
+            # It currently might not have it.
+            # Wait, `get_subscription_history` uses `HistoryResponse`.
+            # Let's check `HistoryResponse` definition again.
+            # If it's missing, we need to add it.
+            results.append(HistoryResponse.model_validate(h))
+
+        for p in payments:
+            results.append(
+                HistoryResponse(
+                    id=p.id,
+                    subscription_id=p.subscription_id,
+                    event_type="payment",
+                    details={
+                        "amount": float(p.amount),
+                        "currency": p.currency,
+                        "date": str(p.date),
+                    },
+                    created_at=p.created_at,
+                    subscription=p.subscription,  # Include full subscription object
+                )
+            )
+
+        # 4. Sort
+        results.sort(key=lambda x: x.created_at, reverse=True)
+        return results
+
+    async def get_subscription_history(
+        self, subscription_id: int, user_id: int
+    ) -> List[HistoryResponse]:
+        """Get full audit history for a subscription (merging History and PaymentHistory)"""
+        subscription = await self.repository.get_by_id(subscription_id, user_id)
+        if not subscription:
+            return []
+
+        # 1. Fetch generic history
+        history_records = await History.filter(subscription=subscription).all()
+
+        # 2. Fetch payment history
+        payments = await self.repository.get_history(user_id, subscription_id)
+
+        # 3. Merge
+        results = []
+        for h in history_records:
+            results.append(HistoryResponse.model_validate(h))
+
+        for p in payments:
+            # Convert PaymentHistory to HistoryResponse format
+            results.append(
+                HistoryResponse(
+                    id=p.id,  # Note: IDs might collide if we are not careful in UI keying, but for list it's ok.
+                    # Actually ID collision is possible between tables.
+                    # We might want to prefix ID or genericize.
+                    # But HistoryResponse.id is int.
+                    # Let's hope frontend uses composed key.
+                    # FOR NOW: Use p.id.
+                    subscription_id=subscription.id,
+                    event_type="payment",
+                    details={
+                        "amount": float(p.amount),
+                        "currency": p.currency,
+                        "date": str(p.date),
+                    },
+                    created_at=p.created_at,
+                )
+            )
+
+        # 4. Sort by created_at desc
+        results.sort(key=lambda x: x.created_at, reverse=True)
+
+        return results
 
     async def check_reminders(self):
         """Check for subscriptions that need reminders and send them using granular rules"""

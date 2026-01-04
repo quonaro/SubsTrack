@@ -59,6 +59,15 @@ export interface PaymentHistory {
   subscription?: Subscription
 }
 
+export interface HistoryResponse {
+  id: number
+  subscription_id: number
+  event_type: string
+  details?: any
+  created_at: string
+  subscription?: Subscription
+}
+
 /**
  * Get all subscriptions for current user
  */
@@ -139,11 +148,11 @@ export async function getCalendarOccurrences(startDate: string, endDate: string)
 /**
  * Get payment history (global or for a subscription)
  */
-export async function getHistory(subscriptionId?: number): Promise<PaymentHistory[]> {
+export async function getHistory(subscriptionId?: number): Promise<HistoryResponse[]> {
   const url = subscriptionId
     ? `/subscriptions/${subscriptionId}/history`
-    : '/subscriptions/history' // I need to make sure this exists in backend!
-  const response = await api.get<PaymentHistory[]>(url)
+    : '/subscriptions/history'
+  const response = await api.get<HistoryResponse[]>(url)
   return response.data
 }
 

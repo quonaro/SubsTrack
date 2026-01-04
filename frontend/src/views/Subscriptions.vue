@@ -106,7 +106,9 @@
               @unarchive="handleUnarchive"
               @paid="handlePaid"
               @delete="handleDelete"
+              @history="handleHistory"
             />
+
           </transition-group>
         </div>
       </div>
@@ -140,14 +142,34 @@
         @submit="handleFormSubmit"
       />
     </transition>
+
+    <!-- History Modal -->
+    <transition
+      enter-active-class="duration-300 ease-out"
+      enter-from-class="transform opacity-0"
+      enter-to-class="transform opacity-100"
+      leave-active-class="duration-200 ease-in"
+      leave-from-class="transform opacity-100"
+      leave-to-class="transform opacity-0"
+    >
+      <HistoryList
+        v-if="showHistory"
+        :history="historyItems"
+        :loading="historyLoading"
+        @close="closeHistory"
+      />
+    </transition>
   </div>
 </template>
+
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import SubscriptionCard from '../components/SubscriptionCard.vue'
 import SubscriptionForm from '../components/SubscriptionForm.vue'
+import HistoryList from '../components/HistoryList.vue'
 import AppHeader from '../components/AppHeader.vue'
+
 import PageLoader from '../components/PageLoader.vue'
 import SortMenu from '../components/SortMenu.vue'
 import {
@@ -160,8 +182,10 @@ import {
   markAsPaid,
   deleteSubscription,
   getDaysUntilPayment,
-  formatDaysUntil
+  formatDaysUntil,
+  getHistory
 } from '../services/subscriptions'
+
 
 const activeTab = ref('active')
 const subscriptions = ref([])
@@ -169,6 +193,11 @@ const nextMonthTotal = ref({ total: 0, currency: 'RUB', count: 0 })
 const loading = ref(false)
 const showForm = ref(false)
 const editingSubscription = ref(null)
+
+const showHistory = ref(false)
+const historyItems = ref([])
+const historyLoading = ref(false)
+
 
 const sortBy = ref('date_asc')
 
@@ -320,4 +349,23 @@ async function handleDelete(id) {
     loading.value = false
   }
 }
+
+
+async function handleHistory(id) {
+  showHistory.value = true
+  historyLoading.value = true
+  try {
+    historyItems.value = await getHistory(id)
+  } catch (error) {
+    alert('Ошибка при загрузке истории')
+  } finally {
+    historyLoading.value = false
+  }
+}
+
+function closeHistory() {
+  showHistory.value = false
+  historyItems.value = []
+}
 </script>
+

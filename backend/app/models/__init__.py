@@ -4,6 +4,8 @@ from app.models.category import Category
 
 from app.models.payment import PaymentHistory
 from app.models.subscription import Subscription
+from app.models.history import History
+
 
 from app.models.notification_log import NotificationLog
 from app.models.notification_rule import NotificationRule
@@ -15,4 +17,5 @@ __all__ = [
     "PaymentHistory",
     "NotificationLog",
     "NotificationRule",
+    "History",
 ]

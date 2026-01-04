@@ -11,7 +11,8 @@ from app.schema.subscription import (
     NextMonthTotalResponse,
     SubscriptionOccurrence,
 )
-from app.schema.payment import PaymentHistoryResponse
+from app.schema.history import HistoryResponse
+
 
 router = APIRouter(prefix="/subscriptions", tags=["subscriptions"])
 
@@ -188,11 +189,11 @@ async def export_subscriptions(current_user: User = Depends(get_current_user)):
     return {"status": "success", "message": "Export sent to Telegram"}
 
 
-@router.get("/history", response_model=List[PaymentHistoryResponse])
+@router.get("/history", response_model=List[HistoryResponse])
 async def get_all_history(current_user: User = Depends(get_current_user)):
-    """Get all payment history for current user"""
+    """Get all history (audit + payments) for current user"""
     service = SubscriptionService()
-    return await service.get_history(current_user.id)
+    return await service.get_all_history_merged(current_user.id)
 
 
 @router.post("", response_model=SubscriptionResponse, status_code=201)
@@ -269,10 +270,10 @@ async def mark_as_paid(
     return subscription
 
 
-@router.get("/{subscription_id}/history", response_model=List[PaymentHistoryResponse])
+@router.get("/{subscription_id}/history", response_model=List[HistoryResponse])
 async def get_subscription_history(
     subscription_id: int, current_user: User = Depends(get_current_user)
 ):
-    """Get payment history for a specific subscription"""
+    """Get full audit history for a specific subscription"""
     service = SubscriptionService()
-    return await service.get_history(current_user.id, subscription_id)
+    return await service.get_subscription_history(subscription_id, current_user.id)

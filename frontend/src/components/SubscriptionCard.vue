@@ -97,6 +97,7 @@
 
                 <div class="my-1 border-t border-app-border"></div>
 
+
                 <button 
                   v-if="canTestNotification"
                   class="w-full text-left px-4 py-3 text-xs font-semibold text-yellow-500 hover:bg-surface-100 flex items-center gap-3 transition-colors"
@@ -169,7 +170,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['edit', 'paid', 'archive', 'unarchive', 'delete'])
+const emit = defineEmits(['edit', 'paid', 'archive', 'unarchive', 'delete', 'history'])
 
 const isMenuOpen = ref(false)
 const menuContainer = ref(null)

@@ -56,9 +56,9 @@
              <div 
               v-for="cat in categoryStats" 
               :key="cat.name"
-              class="rounded-2xl bg-surface-50 p-4 border border-app-border relative overflow-hidden group hover:bg-surface-100/50 transition-colors"
+              class="rounded-2xl bg-surface-50 border border-app-border group hover:bg-surface-100/50 transition-colors"
              >
-                <div class="flex items-center justify-between relative z-10">
+                <div class="flex items-center justify-between p-4 pb-3">
                    <div class="flex items-center gap-4">
                       <div class="h-11 w-11 rounded-xl bg-surface-200/50 flex items-center justify-center text-xl shadow-inner group-hover:scale-110 transition-transform">{{ cat.icon }}</div>
                       <div>
@@ -68,9 +68,9 @@
                    </div>
                    <p class="text-base font-black text-app-text">{{ formatPrice(cat.total) }}</p>
                 </div>
-                <!-- Progress bar bg -->
-                <div class="absolute bottom-0 left-0 h-1 bg-surface-200/30 w-full overflow-hidden">
-                   <div class="h-full bg-gradient-to-r from-primary-600 to-primary-400 shadow-[0_0_10px_rgba(139,92,246,0.3)] transition-all duration-1000 delay-300" :style="{ width: cat.percent + '%' }"></div>
+                <!-- Progress bar -->
+                <div class="relative h-[3px] bg-surface-200/30 w-full rounded-b-2xl overflow-hidden">
+                   <div class="h-full bg-gradient-to-r from-primary-600 to-primary-400 shadow-[0_0_12px_rgba(139,92,246,0.4)] transition-all duration-1000 delay-300" :style="{ width: cat.percent + '%' }"></div>
                 </div>
              </div>
           </div>
