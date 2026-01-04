@@ -1,11 +1,7 @@
 <template>
   <div class="min-h-screen bg-app-bg pb-24 text-app-text">
     <!-- Header -->
-    <AppHeader>
-      <template #center>
-        <h1 class="text-xs font-bold uppercase tracking-widest text-app-text">История платежей</h1>
-      </template>
-    </AppHeader>
+    <AppHeader />
 
     <main class="space-y-6 p-6 animate-fade-in">
       <PageLoader v-if="loading" text="Загружаем историю..." />
