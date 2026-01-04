@@ -4,9 +4,12 @@
     :style="{ top: 'var(--safe-offset, 0px)' }"
     :data-mode="fullscreenMode"
   >
-    <div class="flex items-center justify-between">
-      <!-- Left: Logo and Name -->
-      <div class="flex items-center gap-2.5">
+    <div class="flex items-center justify-between relative h-10">
+      <!-- Left: Logo and Name (Hidden in extra mode) -->
+      <div 
+        class="flex items-center gap-2.5 transition-all duration-500"
+        :class="fullscreenMode === 'extra' ? 'opacity-0 scale-90 -translate-x-4 pointer-events-none' : 'opacity-100 scale-100'"
+      >
         <div class="relative group">
           <div class="absolute inset-0 bg-primary-500/20 blur-lg rounded-full group-hover:bg-primary-500/30 transition-all duration-500"></div>
           <img src="/logo.png" alt="Logo" class="relative h-8 w-8 object-contain rounded-xl shadow-sm transition-transform group-hover:scale-110 duration-500" />
@@ -14,13 +17,27 @@
         <h1 class="text-lg font-black tracking-tight bg-gradient-to-r from-app-text to-app-text-muted bg-clip-text text-transparent">SubsTrack</h1>
       </div>
 
-      <!-- Center: Slot for navigation/controls -->
-      <div class="flex-1 flex justify-center px-4">
-        <slot name="center"></slot>
+      <!-- Center Logo (Only in extra mode) -->
+      <div 
+        class="absolute inset-0 flex items-center justify-center pointer-events-none transition-all duration-500"
+        :class="fullscreenMode === 'extra' ? 'opacity-100 scale-110' : 'opacity-0 scale-90 translate-y-2'"
+      >
+        <div class="flex items-center gap-2.5">
+          <img src="/logo.png" alt="Logo" class="h-7 w-7 object-contain rounded-lg shadow-sm" />
+          <h1 class="text-base font-black tracking-tight bg-gradient-to-r from-app-text to-app-text-muted bg-clip-text text-transparent">SubsTrack</h1>
+        </div>
       </div>
 
-      <!-- Right: User Info -->
-      <div class="flex items-center gap-3">
+      <!-- Center: Slot for navigation/controls (Custom position) -->
+      <div class="flex-1 flex justify-center px-4">
+        <slot name="center" v-if="fullscreenMode !== 'extra'"></slot>
+      </div>
+
+      <!-- Right: User Info (Hidden in extra mode) -->
+      <div 
+        class="flex items-center gap-3 transition-all duration-500"
+        :class="fullscreenMode === 'extra' ? 'opacity-0 scale-90 translate-x-4 pointer-events-none' : 'opacity-100 scale-100'"
+      >
         <div v-if="user" class="flex flex-col items-end">
           <div class="flex items-center gap-1">
             <span class="text-[10px] font-bold uppercase tracking-widest text-app-text">{{ user.first_name || user.username }}</span>

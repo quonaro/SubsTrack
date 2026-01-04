@@ -11,16 +11,33 @@
           <h2 class="text-[10px] font-bold uppercase tracking-[0.2em] text-app-text-muted">Профиль 👤</h2>
         </div>
 
-        <div class="rounded-[2.5rem] bg-surface-50 p-6 border border-app-border shadow-premium space-y-4">
-           <div class="space-y-2">
-            <label class="text-[10px] font-bold uppercase tracking-widest text-app-text-muted px-1">Часовой пояс</label>
-            <div class="relative">
-              <TimezoneSelect 
-                v-model="selectedTimezone" 
-                @update:modelValue="handleTimezoneChange"
-              />
+        <div class="rounded-[2.5rem] bg-surface-50 p-8 border border-app-border shadow-premium space-y-8">
+           <!-- User Profile Card -->
+           <div class="flex items-center gap-5">
+            <div class="group relative">
+              <div class="absolute inset-0 bg-primary-500/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div class="relative h-20 w-20 rounded-[2rem] bg-gradient-to-br from-surface-100 to-surface-200 border border-app-border flex items-center justify-center text-2xl font-black text-primary-400 shadow-inner overflow-hidden">
+                <img v-if="user?.photo_url" :src="user.photo_url" alt="Avatar" class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                <span v-else>{{ userInitial }}</span>
+              </div>
+            </div>
+            
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2">
+                <h3 class="text-lg font-black tracking-tight text-app-text truncate">{{ user?.first_name || user?.username || 'Пользователь' }}</h3>
+                <svg v-if="user?.is_premium" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5 text-amber-400 animate-pulse-slow">
+                  <path fill-rule="evenodd" d="M10.868 2.884c-.321-.772-1.415-.772-1.736 0l-1.83 4.401-4.753.381c-.833.067-1.171 1.107-.536 1.651l3.62 3.102-1.106 4.637c-.194.813.691 1.456 1.405 1.02L10 15.591l4.069 2.485c.713.436 1.598-.207 1.404-1.02l-1.106-4.637 3.62-3.102c.635-.544.297-1.584-.536-1.65l-4.752-.382-1.831-4.401z" clip-rule="evenodd" />
+                </svg>
+              </div>
+              <p v-if="user?.username" class="text-xs font-bold text-app-text-muted mt-0.5 tracking-tight opacity-60">@{{ user.username }}</p>
+              
+              <div v-if="user?.is_premium" class="mt-3 flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-400/10 border border-amber-400/20 w-fit">
+                <div class="h-1.5 w-1.5 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.8)]"></div>
+                <span class="text-[9px] font-black uppercase tracking-[0.2em] text-amber-400">Premium Subscriber</span>
+              </div>
             </div>
           </div>
+
         </div>
       </section>
 
@@ -193,6 +210,23 @@
             </div>
           </button>
 
+          <!-- Timezone -->
+          <div class="rounded-3xl bg-surface-50 p-6 border border-app-border shadow-premium space-y-4">
+            <div class="flex items-center gap-4 px-1">
+              <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-surface-100 text-xl shadow-inner">🌍</div>
+              <div class="text-left">
+                <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-app-text-muted">Регион</p>
+                <p class="text-xs font-black uppercase tracking-widest mt-0.5">Часовой пояс</p>
+              </div>
+            </div>
+            <div class="relative">
+              <TimezoneSelect 
+                v-model="selectedTimezone" 
+                @update:modelValue="handleTimezoneChange"
+              />
+            </div>
+          </div>
+
           <!-- Clear Cache -->
           <button 
             class="flex w-full items-center justify-between rounded-3xl bg-surface-50 p-6 border border-app-border transition-all active:scale-[0.98] hover:bg-surface-100 group shadow-premium"
@@ -307,7 +341,7 @@
 
 <script setup>
 import { useRouter } from 'vue-router'
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import BottomNavigation from '../components/BottomNavigation.vue'
 import AppHeader from '../components/AppHeader.vue'
 import { useTheme } from '../composables/useTheme'
@@ -325,15 +359,23 @@ const selectedTimezone = ref('')
 const fullscreenMode = ref('extra')
 const fullscreenExtraHeight = ref(54)
 
+const user = ref(null)
+const userInitial = computed(() => {
+  if (!user.value) return '?'
+  return (user.value.first_name?.[0] || user.value.username?.[0] || '?').toUpperCase()
+})
+
 onMounted(() => {
+  // Load user data
+  user.value = getCurrentUser()
+  
   // Load fullscreen mode
   fullscreenMode.value = localStorage.getItem('fullscreen_mode') || 'extra'
   fullscreenExtraHeight.value = parseInt(localStorage.getItem('fullscreen_extra_height') || '54')
 
   try {
-    const user = getCurrentUser()
-    if (user && user.timezone) {
-      selectedTimezone.value = user.timezone
+    if (user.value && user.value.timezone) {
+      selectedTimezone.value = user.value.timezone
     } else {
       selectedTimezone.value = Intl.DateTimeFormat().resolvedOptions().timeZone
     }
