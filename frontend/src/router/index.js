@@ -36,6 +36,12 @@ const routes = [
     name: 'Statistics',
     component: Statistics,
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/tg/pay/:id',
+    name: 'TelegramPayment',
+    component: () => import('../views/TelegramPayment.vue'),
+    meta: { requiresAuth: true }
   }
 ]
 

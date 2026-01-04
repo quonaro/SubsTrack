@@ -9,7 +9,7 @@ const getBaseURL = (): string => {
         return '/api'
     }
     // @ts-ignore - Vite env types
-    return import.meta.env.VITE_BACKEND_URL || '/api'
+    return import.meta.env.BACKEND_URL || import.meta.env.VITE_BACKEND_URL || '/api'
 }
 
 // Create axios instance

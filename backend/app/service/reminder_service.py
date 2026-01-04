@@ -16,7 +16,10 @@ class ReminderService:
         self.api_url = "https://api.telegram.org/bot"
 
     async def send_reminder(
-        self, subscription: Subscription, rule_type: str = "reminder"
+        self,
+        subscription: Subscription,
+        rule_type: str = "reminder",
+        force: bool = False,
     ) -> bool:
         """
         Send reminder message to user via Telegram bot
@@ -24,10 +27,13 @@ class ReminderService:
         if not self.bot_token:
             return False
 
-        if settings.dev and not subscription.user.is_admin:
+        if not force and settings.dev and not subscription.user.is_admin:
             return False
 
         try:
+            if not subscription.user.telegram_id:
+                return False
+
             now = datetime.now()
             days_until = (subscription.next_payment_date - now.date()).days
 
@@ -35,8 +41,6 @@ class ReminderService:
             header = "🔔 Уведомление о подписке"
             if rule_type == NotificationRuleType.RECURRING_REMINDER:
                 header = "⚠️ ПОВТОРНОЕ НАПОМИНАНИЕ"
-            elif rule_type == NotificationRuleType.URGENT_REMINDER:
-                header = "‼️ СРОЧНОЕ УВЕДОМЛЕНИЕ"
 
             message = (
                 f"{header}\n\n"
@@ -52,9 +56,32 @@ class ReminderService:
             else:
                 message += f"❌ Платеж просрочен на {abs(days_until)} {'день' if abs(days_until) == 1 else 'дня' if abs(days_until) < 5 else 'дней'}!"
 
+            # Prepare WebApp button
+            # Derive frontend URL from backend_url
+            backend_url = settings.backend_url
+            if backend_url.startswith("/"):
+                backend_url = f"http://127.0.0.1:8000{backend_url}"
+
+            # Remove /api suffix if present to get frontend root
+            frontend_url = backend_url.removesuffix("/api").removesuffix("/")
+
+            webapp_url = f"{frontend_url}/tg/pay/{subscription.id}"
+
+            reply_markup = {
+                "inline_keyboard": [
+                    [{"text": "✅ Оплачено", "web_app": {"url": webapp_url}}]
+                ]
+            }
+
             # Send message via Telegram Bot API
             url = f"{self.api_url}{self.bot_token}/sendMessage"
-            payload = {"chat_id": subscription.user.telegram_id, "text": message}
+            import json
+
+            payload = {
+                "chat_id": subscription.user.telegram_id,
+                "text": message,
+                "reply_markup": json.dumps(reply_markup),
+            }
 
             async with httpx.AsyncClient(timeout=10.0) as client:
                 response = await client.post(url, json=payload)
@@ -155,20 +182,6 @@ class ReminderService:
                             rule.at_time, current_time
                         ):
                             should_trigger = True
-
-                elif rule.rule_type == NotificationRuleType.URGENT_REMINDER:
-                    # This rule might be deprecated or not in enum based on previous search results
-                    # But if it exists in DB/Code, let's keep it safe.
-                    # Assuming logic: send every hour after 6 PM on payment day
-                    if today == sub.next_payment_date and user_now.hour >= 18:
-                        if not rule.last_sent_at:
-                            should_trigger = True
-                        else:
-                            last_sent = rule.last_sent_at
-                            if last_sent.tzinfo is None:
-                                last_sent = pytz.UTC.localize(last_sent)
-                            if (server_now - last_sent) >= timedelta(hours=1):
-                                should_trigger = True
 
                 if should_trigger:
                     success = await self.send_reminder(sub, rule.rule_type)

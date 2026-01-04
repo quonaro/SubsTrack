@@ -89,6 +89,35 @@ async def send_test_notification(current_user: User = Depends(get_current_user))
     return {"status": "success", "message": "Test notification sent"}
 
 
+@router.post("/{subscription_id}/test-notification")
+async def send_subscription_test_notification(
+    subscription_id: int, current_user: User = Depends(get_current_user)
+):
+    """Send a test notification for a specific subscription"""
+    service = SubscriptionService()
+    subscription = await service.get_subscription(subscription_id, current_user.id)
+
+    if not subscription:
+        raise HTTPException(status_code=404, detail="Subscription not found")
+
+    from app.service.reminder_service import ReminderService
+    from app.models.subscription import Subscription
+
+    # We need the actual model instance, not the response schema
+    sub_model = await Subscription.get(id=subscription_id).prefetch_related("user")
+
+    reminder_service = ReminderService()
+    success = await reminder_service.send_reminder(sub_model, force=True)
+
+    if not success:
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to send notification. Check bot token and logs.",
+        )
+
+    return {"status": "success", "message": "Notification sent"}
+
+
 @router.get("/export")
 async def export_subscriptions(current_user: User = Depends(get_current_user)):
     """Export subscriptions to CSV"""

@@ -12,7 +12,9 @@ class TelegramService:
         self.bot_token = settings.telegram_bot_token
         self.base_url = f"https://api.telegram.org/bot{self.bot_token}"
 
-    async def send_message(self, chat_id: int, text: str) -> bool:
+    async def send_message(
+        self, chat_id: int, text: str, reply_markup: dict = None
+    ) -> bool:
         """Send a message to a specific chat ID"""
         if not self.bot_token:
             logger.warning("TELEGRAM_BOT_TOKEN not set, skipping notification")
@@ -20,6 +22,10 @@ class TelegramService:
 
         url = f"{self.base_url}/sendMessage"
         payload = {"chat_id": chat_id, "text": text, "parse_mode": "HTML"}
+        if reply_markup:
+            import json
+
+            payload["reply_markup"] = json.dumps(reply_markup)
 
         try:
             async with httpx.AsyncClient() as client:
@@ -38,6 +44,26 @@ class TelegramService:
             logger.exception(
                 f"Unexpected error sending Telegram message to chat_id {chat_id}"
             )
+            return False
+
+    async def answer_callback_query(
+        self, callback_query_id: str, text: str = None
+    ) -> bool:
+        """Answer a callback query to stop the loading state on the bot"""
+        if not self.bot_token:
+            return False
+
+        url = f"{self.base_url}/answerCallbackQuery"
+        payload = {"callback_query_id": callback_query_id}
+        if text:
+            payload["text"] = text
+
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.post(url, json=payload, timeout=5.0)
+                return response.status_code == 200
+        except Exception:
+            logger.exception(f"Error answering callback query {callback_query_id}")
             return False
 
     async def send_reminder(

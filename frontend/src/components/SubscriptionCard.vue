@@ -48,13 +48,13 @@
             >
               <div 
                 v-if="isMenuOpen" 
-                class="fixed z-[9999] overflow-hidden rounded-2xl bg-[#27272a] border border-app-border shadow-2xl ring-1 ring-black/20 w-48 py-1"
+                class="fixed z-[9999] overflow-hidden rounded-2xl bg-app-bg/95 backdrop-blur-xl border border-app-border shadow-premium w-48 py-1"
                 :style="menuStyle"
               >
                 <!-- Actions -->
                 <button 
                   v-if="subscription.is_active"
-                  class="w-full text-left px-4 py-3 text-xs font-semibold text-green-400 hover:bg-white/5 flex items-center gap-3 transition-colors"
+                  class="w-full text-left px-4 py-3 text-xs font-semibold text-green-500 hover:bg-surface-100 flex items-center gap-3 transition-colors"
                   @click.stop="handleAction('paid')"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="h-4 w-4">
@@ -64,7 +64,7 @@
                 </button>
 
                 <button 
-                  class="w-full text-left px-4 py-3 text-xs font-semibold text-zinc-200 hover:bg-white/5 flex items-center gap-3 transition-colors"
+                  class="w-full text-left px-4 py-3 text-xs font-semibold text-app-text hover:bg-surface-100 flex items-center gap-3 transition-colors"
                   @click.stop="handleAction('edit')"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="h-4 w-4">
@@ -75,7 +75,7 @@
 
                 <button 
                   v-if="subscription.is_active"
-                  class="w-full text-left px-4 py-3 text-xs font-semibold text-zinc-200 hover:bg-white/5 flex items-center gap-3 transition-colors"
+                  class="w-full text-left px-4 py-3 text-xs font-semibold text-app-text hover:bg-surface-100 flex items-center gap-3 transition-colors"
                   @click.stop="handleAction('archive')"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="h-4 w-4">
@@ -86,7 +86,7 @@
 
                 <button 
                   v-else
-                  class="w-full text-left px-4 py-3 text-xs font-semibold text-zinc-200 hover:bg-white/5 flex items-center gap-3 transition-colors"
+                  class="w-full text-left px-4 py-3 text-xs font-semibold text-app-text hover:bg-surface-100 flex items-center gap-3 transition-colors"
                   @click.stop="handleAction('unarchive')"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="h-4 w-4">
@@ -95,10 +95,21 @@
                   Восстановить
                 </button>
 
-                <div class="my-1 border-t border-white/5"></div>
+                <div class="my-1 border-t border-app-border"></div>
 
                 <button 
-                  class="w-full text-left px-4 py-3 text-xs font-semibold text-red-400 hover:bg-red-500/10 flex items-center gap-3 transition-colors"
+                  v-if="isDev"
+                  class="w-full text-left px-4 py-3 text-xs font-semibold text-yellow-500 hover:bg-surface-100 flex items-center gap-3 transition-colors"
+                  @click.stop="handleTestNotification"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="h-4 w-4">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
+                  </svg>
+                  Тест уведомления
+                </button>
+
+                <button 
+                  class="w-full text-left px-4 py-3 text-xs font-semibold text-red-500 hover:bg-red-500/10 flex items-center gap-3 transition-colors"
                   @click.stop="handleAction('delete')"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="h-4 w-4">
@@ -141,7 +152,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
-import { getDaysUntilPayment, formatPrice, formatPeriod, formatDaysUntil, formatNotificationRule } from '../services/subscriptions'
+import { getDaysUntilPayment, formatPrice, formatPeriod, formatDaysUntil, formatNotificationRule, sendTestNotification } from '../services/subscriptions'
 
 const props = defineProps({
   subscription: {
@@ -159,6 +170,7 @@ const emit = defineEmits(['edit', 'paid', 'archive', 'unarchive', 'delete'])
 const isMenuOpen = ref(false)
 const menuContainer = ref(null)
 const menuStyle = ref({})
+const isDev = import.meta.env.DEV
 
 const daysUntil = computed(() => getDaysUntilPayment(props.subscription.next_payment_date))
 
@@ -196,6 +208,17 @@ function handleAction(action) {
     emit('edit', props.subscription)
   } else {
     emit(action, props.subscription.id)
+  }
+}
+
+async function handleTestNotification() {
+  isMenuOpen.value = false
+  try {
+    await sendTestNotification(props.subscription.id)
+    // Maybe show a toast/alert? For now just log since it's dev tool
+    console.log('Test notification sent')
+  } catch (e) {
+    console.error('Failed to send test notification', e)
   }
 }
 

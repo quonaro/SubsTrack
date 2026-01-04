@@ -1,9 +1,13 @@
+from pydantic import Field
 from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
     app_name: str = "SubsTrack API"
     dev: bool = False
+
+    # URL for generating direct links (e.g. from BACKEND_URL)
+    backend_url: str = Field(default="http://localhost:8000/api", alias="BACKEND_URL")
 
     # PostgreSQL
     postgres_user: str = "postgres"

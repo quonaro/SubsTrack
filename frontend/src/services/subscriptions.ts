@@ -156,6 +156,13 @@ export async function markAsPaid(id: number): Promise<Subscription> {
 }
 
 /**
+ * Send test notification for a specific subscription
+ */
+export async function sendTestNotification(id: number): Promise<void> {
+  await api.post(`/subscriptions/${id}/test-notification`)
+}
+
+/**
  * Calculate days until next payment
  */
 export function getDaysUntilPayment(nextPaymentDate: string): number {
