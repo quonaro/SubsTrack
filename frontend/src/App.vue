@@ -3,11 +3,11 @@
     <!-- Notch Shield (Black Bar for Extra Offset Mode) -->
     <div 
       v-if="!isHeaderPresent"
-      class="fixed top-0 left-0 right-0 z-[60] transition-all duration-500 overflow-hidden backdrop-blur-xl border-b border-app-border"
+      class="fixed top-0 left-0 right-0 z-[60] transition-all duration-500 overflow-hidden"
       :class="isFullscreenExtra ? 'opacity-100' : 'opacity-0'"
       :style="{ 
         height: isFullscreenExtra ? 'var(--safe-offset, 0px)' : '0px',
-        backgroundColor: 'color-mix(in srgb, var(--tg-theme-header-bg-color, var(--bg-color)), transparent 20%)'
+        backgroundColor: 'var(--bg-color)'
       }"
     ></div>
 
