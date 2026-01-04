@@ -158,3 +158,10 @@
 ::-webkit-scrollbar-thumb {
   @apply bg-surface-200 rounded-full hover:bg-surface-300 transition-colors;
 }
+
+/* Make time and date picker icons white in dark theme */
+input[type="time"]::-webkit-calendar-picker-indicator,
+input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    cursor: pointer;
+}
