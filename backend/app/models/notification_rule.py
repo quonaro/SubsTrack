@@ -7,6 +7,7 @@ class NotificationRuleType(StrEnum):
     ADVANCE_NOTICE = "advance_notice"  # X days/hours before
     RECURRING_REMINDER = "recurring_reminder"  # Every X hours until paid
     PAYMENT_DAY_ALERT = "payment_day_alert"  # Morning of payment day
+    SINGLE_REMINDER = "single_reminder"  # One-time notification at specific time
 
 
 class NotificationRule(Model):

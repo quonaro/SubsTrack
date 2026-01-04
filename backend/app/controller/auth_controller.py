@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends
-from app.schema.auth import TelegramAuthRequest, AuthResponse, UserSchema
+from app.schema.auth import TelegramAuthRequest, AuthResponse, UserSchema, UserUpdate
 from app.service.auth_service import AuthService
 from app.core.dependencies import get_current_user
 from app.models.user import User
@@ -36,7 +36,22 @@ async def get_current_user_info(current_user: User = Depends(get_current_user)):
         language_code=current_user.language_code,
         is_premium=current_user.is_premium,
         photo_url=current_user.photo_url,
+        timezone=current_user.timezone,
     )
+
+
+@router.patch("/me", response_model=UserSchema)
+async def update_current_user(
+    update_data: UserUpdate, current_user: User = Depends(get_current_user)
+):
+    """
+    Update current user profile
+    """
+    auth_service = AuthService()
+    user = await auth_service.update_user(current_user.id, update_data.model_dump())
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
 
 
 @router.post("/dev/login", response_model=AuthResponse)

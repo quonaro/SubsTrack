@@ -238,5 +238,9 @@ export function formatNotificationRule(rule: any): string {
     return `Каждые ${hours} часов`
   }
 
+  if (rule.rule_type === 'single_reminder') {
+    return `В день оплаты${timeStr}`
+  }
+
   return ''
 }

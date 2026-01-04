@@ -20,20 +20,49 @@
       </transition>
     </router-view>
     <BottomNavigation v-if="isAuthenticated" />
+    <TimezoneModal v-if="needsTimezone || showTimezoneModal" @saved="handleTimezoneSaved" />
   </div>
 </template>
 
 <script setup>
-import { onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import BottomNavigation from './components/BottomNavigation.vue'
+import AppHeader from './components/AppHeader.vue'
+import TimezoneModal from './components/TimezoneModal.vue'
 import { useAuth } from './composables/useAuth'
 import { useTheme } from './composables/useTheme'
+import { getCurrentUser } from './services/auth'
 
 const { isAuthenticated, isAuthenticating, isTelegram, initAuth } = useAuth()
 const { accentColor } = useTheme()
 
+const showTimezoneModal = ref(false)
+const currentUser = ref(null)
+
+const needsTimezone = computed(() => {
+  return isAuthenticated.value && currentUser.value && !currentUser.value.timezone
+})
+
+function checkTimezone() {
+  const user = getCurrentUser()
+  currentUser.value = user
+  if (user && !user.timezone) {
+    showTimezoneModal.value = true
+  } else {
+    showTimezoneModal.value = false
+  }
+}
+
+function handleTimezoneSaved(tz) {
+  showTimezoneModal.value = false
+  if (currentUser.value) {
+    currentUser.value.timezone = tz
+  }
+}
+
 onMounted(async () => {
   await initAuth()
+  checkTimezone()
 })
 </script>
 

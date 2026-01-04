@@ -4,6 +4,26 @@
     <AppHeader />
 
     <main class="space-y-10 p-6 animate-fade-in">
+      <!-- Profile Settings -->
+      <section class="space-y-6">
+        <div class="flex items-center gap-2 px-1">
+          <div class="h-4 w-1 rounded-full bg-primary-500"></div>
+          <h2 class="text-[10px] font-bold uppercase tracking-[0.2em] text-app-text-muted">Профиль 👤</h2>
+        </div>
+
+        <div class="rounded-[2.5rem] bg-surface-50 p-6 border border-app-border shadow-premium space-y-4">
+           <div class="space-y-2">
+            <label class="text-[10px] font-bold uppercase tracking-widest text-app-text-muted px-1">Часовой пояс</label>
+            <div class="relative">
+              <TimezoneSelect 
+                v-model="selectedTimezone" 
+                @update:modelValue="handleTimezoneChange"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!-- Theme Selection -->
       <section class="space-y-6">
         <div class="flex items-center gap-2 px-1">
@@ -201,16 +221,44 @@
 
 <script setup>
 import { useRouter } from 'vue-router'
+import { ref, onMounted } from 'vue'
 import BottomNavigation from '../components/BottomNavigation.vue'
 import AppHeader from '../components/AppHeader.vue'
 import { useTheme } from '../composables/useTheme'
 import api from '../services/api'
+import { getCurrentUser, updateUser } from '../services/auth'
+import TimezoneSelect from '../components/TimezoneSelect.vue'
 import packageInfo from '../../package.json'
 
 const version = packageInfo.version
 
 const router = useRouter()
 const { accentColor, setAccentColor, theme, setTheme } = useTheme()
+
+const selectedTimezone = ref('')
+
+onMounted(() => {
+  try {
+    const user = getCurrentUser()
+    if (user && user.timezone) {
+      selectedTimezone.value = user.timezone
+    } else {
+      selectedTimezone.value = Intl.DateTimeFormat().resolvedOptions().timeZone
+    }
+  } catch (e) {
+    console.error('Timezone API not supported', e)
+  }
+})
+
+async function handleTimezoneChange() {
+  if (!selectedTimezone.value) return
+  try {
+    await updateUser({ timezone: selectedTimezone.value })
+  } catch (e) {
+    console.error('Failed to update timezone', e)
+    alert('Ошибка обновления часового пояса')
+  }
+}
 
 async function testNotification() {
   try {

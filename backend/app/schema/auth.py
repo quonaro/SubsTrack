@@ -20,9 +20,16 @@ class UserSchema(BaseModel):
     is_premium: bool = False
     is_admin: bool = False
     photo_url: Optional[str] = None
+    timezone: Optional[str] = None
 
     class Config:
         from_attributes = True
+
+
+class UserUpdate(BaseModel):
+    """Schema for updating user profile"""
+
+    timezone: Optional[str] = None
 
 
 class AuthResponse(BaseModel):

@@ -31,6 +31,9 @@ class User(Model):
     photo_url = fields.CharField(
         max_length=1024, null=True, description="Telegram user avatar URL"
     )
+    timezone = fields.CharField(
+        max_length=50, null=True, description="User timezone (IANA format)"
+    )
     created_at = fields.DatetimeField(
         auto_now_add=True, description="Account creation timestamp"
     )

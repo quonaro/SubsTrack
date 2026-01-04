@@ -10,6 +10,7 @@ export interface User {
   language_code: string | null
   is_premium: boolean
   photo_url: string | null
+  timezone?: string | null
 }
 
 export interface AuthResponse {
@@ -51,6 +52,21 @@ export async function authenticateWithTelegram(): Promise<AuthResponse | null> {
     throw error
   }
 }
+
+/**
+ * Update user profile
+ */
+export async function updateUser(data: Partial<User>): Promise<User> {
+  const response = await api.patch<User>('/auth/me', data)
+
+  // Update local storage
+  if (response.data) {
+    localStorage.setItem('user', JSON.stringify(response.data))
+  }
+
+  return response.data
+}
+
 
 /**
  * Get current user from localStorage

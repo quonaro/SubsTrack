@@ -208,6 +208,11 @@
                     <label class="text-[9px] font-bold uppercase tracking-widest text-app-text-muted">Время отчета (Пн)</label>
                     <input v-model="rule.at_time" type="time" class="w-full rounded-xl bg-surface-50 border border-app-border px-4 py-3 text-sm text-app-text" />
                   </div>
+
+                  <div v-if="rule.rule_type === 'single_reminder'" class="animate-fade-in space-y-3">
+                    <label class="text-[9px] font-bold uppercase tracking-widest text-app-text-muted">Время уведомления</label>
+                    <input v-model="rule.at_time" type="time" class="w-full rounded-xl bg-surface-50 border border-app-border px-4 py-3 text-sm text-app-text" />
+                  </div>
                 </div>
 
                 <button 
@@ -300,6 +305,11 @@ const ruleTypeOptions = [
     label: '🌅 Уведомление в день оплаты', 
     value: 'payment_day_alert',
     description: 'Уведомление утром в день списания средств.'
+  },
+  { 
+    label: '📅 Единичное уведомление', 
+    value: 'single_reminder',
+    description: 'Уведомление в день списания в точное время.'
   }
 ]
 
@@ -402,7 +412,8 @@ const ruleTypeLabels = {
   'recurring_reminder': 'Повторяющееся',
   'payment_day_alert': 'В день оплаты',
   'urgent_reminder': 'Срочное',
-  'weekly_summary': 'Отчет'
+  'weekly_summary': 'Отчет',
+  'single_reminder': 'Точное время'
 }
 
 const formData = ref({
