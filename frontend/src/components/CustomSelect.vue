@@ -13,7 +13,7 @@
       :class="{ 'bg-surface-100 ring-4 ring-primary-500/10': isOpen }"
       @click="toggle"
     >
-      <span class="block truncate font-medium" :class="{ 'text-app-text-muted': !modelValue }">
+      <span class="block truncate font-medium text-sm" :class="{ 'text-app-text-muted': !modelValue }">
         {{ selectedLabel || placeholder }}
       </span>
       <span class="pointer-events-none flex items-center text-app-text-muted transition-transform duration-200" :class="{ 'rotate-180': isOpen }">
@@ -71,7 +71,7 @@
                     :class="{ 'bg-primary-500/10 text-primary-400 font-bold': modelValue === option.value, 'text-zinc-300': modelValue !== option.value }"
                     @click="select(option)"
                   >
-                    <span class="block truncate">{{ option.label }}</span>
+                    <span class="block truncate text-sm">{{ option.label }}</span>
                     <span v-if="modelValue === option.value" class="flex items-center text-primary-500">
                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-5 w-5 shadow-accent">
                         <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.124l-3.5-3.5a.75.75 0 011.06-1.06l2.873 2.873 7.42-9.74a.75.75 0 011.051-.15z" clip-rule="evenodd" />

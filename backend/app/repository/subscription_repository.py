@@ -118,27 +118,6 @@ class SubscriptionRepository:
         }
 
     @staticmethod
-    async def get_subscriptions_for_reminder(
-        days_before: int = 1,
-    ) -> List[Subscription]:
-        """Get subscriptions that need reminders sent"""
-        from datetime import timedelta
-
-        target_date = datetime.now() + timedelta(days=days_before)
-        target_date_start = datetime(
-            target_date.year, target_date.month, target_date.day
-        )
-        target_date_end = target_date_start + timedelta(days=1)
-
-        return await Subscription.filter(
-            is_active=True,
-            reminder_enabled=True,
-            reminder_days_before=days_before,
-            next_payment_date__gte=target_date_start,
-            next_payment_date__lt=target_date_end,
-        ).prefetch_related("user")
-
-    @staticmethod
     async def get_history(
         user_id: int, subscription_id: Optional[int] = None
     ) -> List[PaymentHistory]:

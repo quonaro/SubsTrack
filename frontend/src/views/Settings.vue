@@ -163,7 +163,7 @@
               <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-surface-100 text-xl shadow-inner group-hover:scale-110 duration-500">📊</div>
               <div class="text-left">
                 <p class="text-xs font-black uppercase tracking-widest">Экспорт данных</p>
-                <p class="text-[10px] font-medium text-app-text-muted mt-0.5">Скачать все подписки в формате CSV</p>
+                <p class="text-[10px] font-medium text-app-text-muted mt-0.5">Получить все подписки в Telegram (CSV)</p>
               </div>
             </div>
             <div class="h-10 w-10 flex items-center justify-center rounded-full bg-white/0 text-zinc-600 transition-all group-hover:bg-primary-500/10 group-hover:text-primary-500">
@@ -187,23 +187,9 @@
             SubsTrack — это удобный инструмент для управления вашими подписками. Следите за расходами, получайте уведомления и анализируйте свои траты.
           </p>
           
-          <div class="pt-2 flex flex-col gap-2">
-            <a href="#" class="flex items-center gap-2 text-xs font-bold text-primary-400 hover:text-primary-500 transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="h-4 w-4">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m3.75 9v6m3-3H9m1.5-12H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-              </svg>
-              Политика конфиденциальности
-            </a>
-            <a href="#" class="flex items-center gap-2 text-xs font-bold text-primary-400 hover:text-primary-500 transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="h-4 w-4">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" />
-              </svg>
-              Поддержка
-            </a>
-          </div>
 
           <div class="pt-4 border-t border-app-border">
-            <p class="text-[10px] font-bold text-app-text-muted text-center uppercase tracking-widest opacity-60">Версия 1.0.0</p>
+            <p class="text-[10px] font-bold text-app-text-muted text-center uppercase tracking-widest opacity-60">Версия {{ version }}</p>
           </div>
         </div>
       </section>
@@ -219,6 +205,9 @@ import BottomNavigation from '../components/BottomNavigation.vue'
 import AppHeader from '../components/AppHeader.vue'
 import { useTheme } from '../composables/useTheme'
 import api from '../services/api'
+import packageInfo from '../../package.json'
+
+const version = packageInfo.version
 
 const router = useRouter()
 const { accentColor, setAccentColor, theme, setTheme } = useTheme()
@@ -237,22 +226,19 @@ async function testNotification() {
   }
 }
 
-async function exportCSVBlob() {
+async function exportCSV() {
   try {
-    const response = await api.get('/subscriptions/export', { responseType: 'blob' })
-    const url = window.URL.createObjectURL(new Blob([response.data]))
-    const link = document.createElement('a')
-    link.href = url
-    link.setAttribute('download', 'subscriptions.csv')
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+    await api.get('/subscriptions/export')
+    alert('Файл экспорта отправлен вам в Telegram! 📊')
   } catch (e) {
-    alert('Ошибка при экспорте: ' + e.message)
+    let errorMessage = e.message
+    if (e.response?.data?.detail) {
+      const detail = e.response.data.detail
+      errorMessage = typeof detail === 'string' ? detail : JSON.stringify(detail)
+    }
+    alert('Ошибка при экспорте: ' + errorMessage)
   }
 }
-
-const exportCSV = exportCSVBlob
 
 const darkThemes = [
   { id: 'midnight', name: 'Midnight', preview: '#0f0f13', surface: 'rgba(255,255,255,0.05)' },

@@ -24,6 +24,9 @@ class ReminderService:
         if not self.bot_token:
             return False
 
+        if settings.dev and not subscription.user.is_admin:
+            return False
+
         try:
             now = datetime.now()
             days_until = (subscription.next_payment_date - now.date()).days
@@ -123,14 +126,6 @@ class ReminderService:
                         if not rule.last_sent_at or (
                             now - rule.last_sent_at
                         ) >= timedelta(hours=1):
-                            should_trigger = True
-
-                elif rule.rule_type == NotificationRuleType.WEEKLY_SUMMARY:
-                    # Monday 9 AM
-                    if now.weekday() == 0:  # Monday
-                        at_time = rule.at_time or time(9, 0)
-                        if self._is_time_to_send(at_time, current_time):
-                            # This one might need a special message, but for now use generic
                             should_trigger = True
 
                 if should_trigger:

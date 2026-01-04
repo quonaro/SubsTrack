@@ -9,8 +9,6 @@ class NotificationRuleType(str, Enum):
     ADVANCE_NOTICE = "advance_notice"
     RECURRING_REMINDER = "recurring_reminder"
     PAYMENT_DAY_ALERT = "payment_day_alert"
-    URGENT_REMINDER = "urgent_reminder"
-    WEEKLY_SUMMARY = "weekly_summary"
 
 
 class NotificationRuleBase(BaseModel):
@@ -48,9 +46,6 @@ class SubscriptionCreate(BaseModel):
     reminder_enabled: bool = Field(
         default=True, description="Whether reminders are enabled"
     )
-    reminder_days_before: int = Field(
-        default=1, ge=0, description="Days before payment to send reminder"
-    )
     category_id: Optional[int] = Field(None, description="Category ID")
     notification_rules: Optional[list[NotificationRuleCreate]] = Field(
         default=[], description="List of notification rules"
@@ -79,9 +74,6 @@ class SubscriptionUpdate(BaseModel):
     reminder_enabled: Optional[bool] = Field(
         None, description="Whether reminders are enabled"
     )
-    reminder_days_before: Optional[int] = Field(
-        None, ge=0, description="Days before payment to send reminder"
-    )
     category_id: Optional[int] = Field(None, description="Category ID")
     notification_rules: Optional[list[NotificationRuleCreate]] = Field(
         None, description="List of notification rules"
@@ -102,7 +94,6 @@ class SubscriptionResponse(BaseModel):
     icon: str
     is_active: bool
     reminder_enabled: bool
-    reminder_days_before: int
     category: Optional[CategoryResponse] = None
     notification_rules: list[NotificationRuleResponse] = []
     created_at: datetime

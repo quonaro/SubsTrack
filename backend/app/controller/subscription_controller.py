@@ -9,7 +9,7 @@ from app.schema.subscription import (
     SubscriptionUpdate,
     SubscriptionResponse,
     NextMonthTotalResponse,
-    SubscriptionOccurrence
+    SubscriptionOccurrence,
 )
 from app.schema.payment import PaymentHistoryResponse
 
@@ -20,7 +20,7 @@ router = APIRouter(prefix="/subscriptions", tags=["subscriptions"])
 async def get_subscriptions(
     is_active: Optional[bool] = Query(None, description="Filter by active status"),
     sort_by: str = Query("date_asc", description="Sort by field"),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """Get all subscriptions for current user"""
     service = SubscriptionService()
@@ -28,9 +28,7 @@ async def get_subscriptions(
 
 
 @router.get("/next-month-total", response_model=NextMonthTotalResponse)
-async def get_next_month_total(
-    current_user: User = Depends(get_current_user)
-):
+async def get_next_month_total(current_user: User = Depends(get_current_user)):
     """Get total amount for next month"""
     service = SubscriptionService()
     return await service.get_next_month_total(current_user.id)
@@ -40,7 +38,7 @@ async def get_next_month_total(
 async def get_calendar(
     start_date: datetime = Query(..., description="Start date of range"),
     end_date: datetime = Query(..., description="End date of range"),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """Get subscription occurrences for calendar"""
     service = SubscriptionService()
@@ -48,79 +46,121 @@ async def get_calendar(
 
 
 @router.get("/test-notification")
-async def send_test_notification(
-    current_user: User = Depends(get_current_user)
-):
+async def send_test_notification(current_user: User = Depends(get_current_user)):
     """Send a test Telegram notification to the current user"""
     import logging
+
     logger = logging.getLogger(__name__)
-    
-    logger.info(f"User {current_user.id} ({current_user.username}) requested a test notification")
-    
+
+    logger.info(
+        f"User {current_user.id} ({current_user.username}) requested a test notification"
+    )
+
+    from config import settings
+
+    if settings.dev and not current_user.is_admin:
+        logger.warning(
+            f"User {current_user.id} is not an admin, skipping notification in DEV mode"
+        )
+        raise HTTPException(
+            status_code=403, detail="Only admins can receive notifications in DEV mode"
+        )
+
     if not current_user.telegram_id:
         logger.warning(f"User {current_user.id} has no Telegram ID linked")
         raise HTTPException(status_code=400, detail="User has no Telegram ID linked")
-    
+
     from app.service.telegram_service import TelegramService
+
     service = TelegramService()
     success = await service.send_message(
-        current_user.telegram_id, 
-        "🚀 <b>SubsTrack:</b> Это тестовое уведомление! Ваша настройка уведомлений работает корректно."
+        current_user.telegram_id,
+        "🚀 <b>SubsTrack:</b> Это тестовое уведомление! Ваша настройка уведомлений работает корректно.",
     )
-    
+
     if not success:
         logger.error(f"Failed to send test notification for user {current_user.id}")
-        raise HTTPException(status_code=500, detail="Failed to send notification. Check bot token and ensure the bot is started by the user.")
-        
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to send notification. Check bot token and ensure the bot is started by the user.",
+        )
+
     logger.info(f"Test notification successfully sent for user {current_user.id}")
     return {"status": "success", "message": "Test notification sent"}
 
 
 @router.get("/export")
-async def export_subscriptions(
-    current_user: User = Depends(get_current_user)
-):
+async def export_subscriptions(current_user: User = Depends(get_current_user)):
     """Export subscriptions to CSV"""
     import csv
     import io
-    from fastapi.responses import StreamingResponse
-    
+
     service = SubscriptionService()
     subscriptions = await service.get_user_subscriptions(current_user.id)
-    
+
     output = io.StringIO()
     writer = csv.writer(output)
-    
+
     # Header
-    writer.writerow(["ID", "Status", "Name", "Price", "Currency", "Period (days)", "Next Payment", "Category"])
-    
+    writer.writerow(
+        [
+            "ID",
+            "Status",
+            "Name",
+            "Price",
+            "Currency",
+            "Period (days)",
+            "Next Payment",
+            "Category",
+        ]
+    )
+
     for sub in subscriptions:
         status = "Active" if sub.is_active else "Inactive"
         category = sub.category.name if sub.category else ""
-        writer.writerow([
-            sub.id,
-            status,
-            sub.name,
-            sub.price,
-            sub.currency,
-            sub.period_days,
-            sub.next_payment_date,
-            category
-        ])
-    
+        writer.writerow(
+            [
+                sub.id,
+                status,
+                sub.name,
+                sub.price,
+                sub.currency,
+                sub.period_days,
+                sub.next_payment_date,
+                category,
+            ]
+        )
+
     output.seek(0)
-    
-    return StreamingResponse(
-        iter([output.getvalue()]),
-        media_type="text/csv",
-        headers={"Content-Disposition": "attachment; filename=subscriptions.csv"}
+
+    from config import settings
+
+    if settings.dev and not current_user.is_admin:
+        raise HTTPException(
+            status_code=403, detail="Only admins can use export in DEV mode"
+        )
+
+    if not current_user.telegram_id:
+        raise HTTPException(status_code=400, detail="User has no Telegram ID linked")
+
+    from app.service.telegram_service import TelegramService
+
+    telegram_service = TelegramService()
+    success = await telegram_service.send_document(
+        current_user.telegram_id,
+        output.getvalue().encode("utf-8"),
+        "subscriptions.csv",
+        caption="📊 <b>Ваш экспорт подписок готов!</b>",
     )
+
+    if not success:
+        raise HTTPException(status_code=500, detail="Failed to send file via Telegram")
+
+    return {"status": "success", "message": "Export sent to Telegram"}
 
 
 @router.get("/history", response_model=List[PaymentHistoryResponse])
-async def get_all_history(
-    current_user: User = Depends(get_current_user)
-):
+async def get_all_history(current_user: User = Depends(get_current_user)):
     """Get all payment history for current user"""
     service = SubscriptionService()
     return await service.get_history(current_user.id)
@@ -129,7 +169,7 @@ async def get_all_history(
 @router.post("", response_model=SubscriptionResponse, status_code=201)
 async def create_subscription(
     subscription_data: SubscriptionCreate,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """Create new subscription"""
     service = SubscriptionService()
@@ -138,8 +178,7 @@ async def create_subscription(
 
 @router.get("/{subscription_id}", response_model=SubscriptionResponse)
 async def get_subscription(
-    subscription_id: int,
-    current_user: User = Depends(get_current_user)
+    subscription_id: int, current_user: User = Depends(get_current_user)
 ):
     """Get subscription by ID"""
     service = SubscriptionService()
@@ -153,14 +192,12 @@ async def get_subscription(
 async def update_subscription(
     subscription_id: int,
     subscription_data: SubscriptionUpdate,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """Update subscription"""
     service = SubscriptionService()
     subscription = await service.update_subscription(
-        subscription_id, 
-        current_user.id, 
-        subscription_data
+        subscription_id, current_user.id, subscription_data
     )
     if not subscription:
         raise HTTPException(status_code=404, detail="Subscription not found")
@@ -169,8 +206,7 @@ async def update_subscription(
 
 @router.delete("/{subscription_id}", status_code=204)
 async def delete_subscription(
-    subscription_id: int,
-    current_user: User = Depends(get_current_user)
+    subscription_id: int, current_user: User = Depends(get_current_user)
 ):
     """Delete subscription"""
     service = SubscriptionService()
@@ -182,8 +218,7 @@ async def delete_subscription(
 
 @router.post("/{subscription_id}/archive", response_model=SubscriptionResponse)
 async def archive_subscription(
-    subscription_id: int,
-    current_user: User = Depends(get_current_user)
+    subscription_id: int, current_user: User = Depends(get_current_user)
 ):
     """Archive subscription (set is_active=False)"""
     service = SubscriptionService()
@@ -193,14 +228,9 @@ async def archive_subscription(
     return subscription
 
 
-
-
-
-
 @router.post("/{subscription_id}/paid", response_model=SubscriptionResponse)
 async def mark_as_paid(
-    subscription_id: int,
-    current_user: User = Depends(get_current_user)
+    subscription_id: int, current_user: User = Depends(get_current_user)
 ):
     """Mark subscription as paid and record history"""
     service = SubscriptionService()
@@ -210,15 +240,10 @@ async def mark_as_paid(
     return subscription
 
 
-
-
 @router.get("/{subscription_id}/history", response_model=List[PaymentHistoryResponse])
 async def get_subscription_history(
-    subscription_id: int,
-    current_user: User = Depends(get_current_user)
+    subscription_id: int, current_user: User = Depends(get_current_user)
 ):
     """Get payment history for a specific subscription"""
     service = SubscriptionService()
     return await service.get_history(current_user.id, subscription_id)
-
-

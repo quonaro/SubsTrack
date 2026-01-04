@@ -4,11 +4,13 @@ from typing import Optional
 
 class TelegramAuthRequest(BaseModel):
     """Request schema for Telegram authentication"""
+
     init_data: str
 
 
 class UserSchema(BaseModel):
     """User data schema"""
+
     id: int
     telegram_id: int
     username: Optional[str] = None
@@ -16,6 +18,7 @@ class UserSchema(BaseModel):
     last_name: Optional[str] = None
     language_code: Optional[str] = None
     is_premium: bool = False
+    is_admin: bool = False
     photo_url: Optional[str] = None
 
     class Config:
@@ -24,11 +27,7 @@ class UserSchema(BaseModel):
 
 class AuthResponse(BaseModel):
     """Response schema for authentication"""
+
     access_token: str
     token_type: str = "bearer"
     user: UserSchema
-
-
-
-
-
