@@ -446,7 +446,10 @@ watch(() => props.subscription, (sub) => {
       reminder_enabled: sub.reminder_enabled,
       reminder_days_before: sub.reminder_days_before,
       category_id: sub.category ? sub.category.id : null,
-      notification_rules: sub.notification_rules ? [...sub.notification_rules] : []
+      notification_rules: sub.notification_rules ? sub.notification_rules.map(rule => ({
+        ...rule,
+        at_time: rule.at_time ? rule.at_time.substring(0, 5) : rule.at_time
+      })) : []
     }
   }
 }, { immediate: true })
