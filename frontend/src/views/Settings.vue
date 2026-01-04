@@ -211,6 +211,47 @@
               </svg>
             </div>
           </button>
+
+          <!-- Fullscreen Mode Selection (Visual Cards) -->
+          <div class="space-y-4 rounded-[2.5rem] bg-surface-50 p-6 border border-app-border group shadow-premium relative overflow-hidden">
+            <div class="flex items-center gap-4 px-1">
+              <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-surface-100 text-xl shadow-inner group-hover:rotate-12 duration-500">📱</div>
+              <div class="text-left">
+                <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-app-text-muted">Интерфейс</p>
+                <p class="text-xs font-black uppercase tracking-widest mt-0.5">Полноэкранный режим</p>
+              </div>
+            </div>
+            
+            <div class="grid grid-cols-1 gap-3">
+              <button 
+                v-for="mode in fullscreenModes" 
+                :key="mode.id"
+                @click="setFullscreenMode(mode.id)"
+                class="relative flex items-center justify-between p-4 rounded-3xl border transition-all duration-300 active:scale-[0.98]"
+                :class="fullscreenMode === mode.id ? 'border-primary-500 bg-primary-500/5 ring-1 ring-primary-500/20' : 'border-app-border bg-surface-100/30 hover:bg-surface-100/60'"
+              >
+                <div class="flex items-center gap-4">
+                  <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-app-bg text-2xl shadow-sm border border-app-border">
+                    {{ mode.icon }}
+                  </div>
+                  <div class="text-left">
+                    <p class="text-xs font-black uppercase tracking-widest" :class="fullscreenMode === mode.id ? 'text-primary-500' : 'text-app-text'">{{ mode.name }}</p>
+                    <p class="text-[10px] font-medium text-app-text-muted mt-0.5">{{ mode.description }}</p>
+                  </div>
+                </div>
+                
+                <!-- Radio-like Check -->
+                <div 
+                  class="h-6 w-6 rounded-full border-2 flex items-center justify-center transition-all duration-300"
+                  :class="fullscreenMode === mode.id ? 'border-primary-500 bg-primary-500' : 'border-app-border'"
+                >
+                  <svg v-if="fullscreenMode === mode.id" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 text-white">
+                    <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clip-rule="evenodd" />
+                  </svg>
+                </div>
+              </button>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -255,8 +296,12 @@ const router = useRouter()
 const { accentColor, setAccentColor, theme, setTheme } = useTheme()
 
 const selectedTimezone = ref('')
+const fullscreenMode = ref('native')
 
 onMounted(() => {
+  // Load fullscreen mode
+  fullscreenMode.value = localStorage.getItem('fullscreen_mode') || 'native'
+
   try {
     const user = getCurrentUser()
     if (user && user.timezone) {
@@ -325,6 +370,28 @@ function clearCache() {
     window.location.reload(true)
   }
 }
+
+function setFullscreenMode(mode) {
+  fullscreenMode.value = mode
+  localStorage.setItem('fullscreen_mode', mode)
+  
+  // Apply attribute immediately
+  document.body.setAttribute('data-fullscreen-mode', mode)
+  
+  // If not disabled, try to expand
+  if (mode !== 'disabled') {
+    const webApp = window.Telegram?.WebApp
+    if (webApp) {
+      webApp.expand()
+    }
+  }
+}
+
+const fullscreenModes = [
+  { id: 'native', name: 'Нативный', icon: '✨', description: 'Стандартный вид' },
+  { id: 'extra', name: 'Черная рамка', icon: '⬛', description: 'Скрывает челку/камеру' },
+  { id: 'disabled', name: 'Выключить', icon: '🚫', description: 'Обычное окно Telegram' }
+]
 
 const darkThemes = [
   { id: 'midnight', name: 'Midnight', preview: '#0f0f13', surface: 'rgba(255,255,255,0.05)' },

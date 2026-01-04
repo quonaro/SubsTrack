@@ -1,5 +1,11 @@
 <template>
   <div class="min-h-screen bg-app-bg text-app-text selection:bg-primary-500/30">
+    <!-- Notch Shield (Black Bar for Extra Offset Mode) -->
+    <div 
+      class="fixed top-0 left-0 right-0 z-[60] bg-black transition-all duration-500 overflow-hidden"
+      :style="{ height: isFullscreenExtra ? 'var(--safe-offset, 0px)' : '0px' }"
+    ></div>
+
     <div v-if="isAuthenticating" class="flex min-h-screen items-center justify-center">
       <div class="animate-pulse flex flex-col items-center gap-4">
         <div class="h-12 w-12 rounded-full border-4 border-primary-500 border-t-transparent animate-spin"></div>
@@ -60,7 +66,26 @@ function handleTimezoneSaved(tz) {
   }
 }
 
+const isFullscreenExtra = ref(false)
+
 onMounted(async () => {
+  // Initialize fullscreen mode for CSS
+  const mode = localStorage.getItem('fullscreen_mode') || 'native'
+  document.body.setAttribute('data-fullscreen-mode', mode)
+  isFullscreenExtra.value = mode === 'extra'
+
+  // Watch for changes to the attribute (e.g. from Settings.vue)
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      if (mutation.type === 'attributes' && mutation.attributeName === 'data-fullscreen-mode') {
+        const newMode = document.body.getAttribute('data-fullscreen-mode')
+        isFullscreenExtra.value = newMode === 'extra'
+      }
+    })
+  })
+  
+  observer.observe(document.body, { attributes: true })
+
   await initAuth()
   checkTimezone()
 })

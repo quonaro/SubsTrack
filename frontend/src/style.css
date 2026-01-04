@@ -142,12 +142,20 @@
   }
 
   body {
-    @apply bg-app-bg text-app-text antialiased overflow-x-hidden transition-colors duration-300;
+    @apply bg-app-bg text-app-text antialiased overflow-x-hidden transition-all duration-500;
+
+    /* Dynamic Safe Area Offset */
+    --safe-offset: env(safe-area-inset-top);
+
     /* Safe area insets with fallback padding for better ergonomics */
-    padding-top: max(12px, env(safe-area-inset-top));
+    padding-top: max(12px, var(--safe-offset));
     padding-bottom: max(12px, env(safe-area-inset-bottom));
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
+  }
+
+  body[data-fullscreen-mode="extra"] {
+    --safe-offset: calc(env(safe-area-inset-top) + 28px);
   }
 }
 

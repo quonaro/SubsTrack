@@ -1,5 +1,5 @@
 <template>
-  <header class="sticky top-0 z-40 border-b border-app-border bg-app-bg/80 px-4 py-3 backdrop-blur-xl" :style="{ top: 'env(safe-area-inset-top, 0px)' }">
+  <header class="sticky top-0 z-40 border-b border-app-border bg-app-bg/80 px-4 py-3 backdrop-blur-xl" :style="{ top: 'var(--safe-offset, 0px)' }">
     <div class="flex items-center justify-between">
       <!-- Left: Logo and Name -->
       <div class="flex items-center gap-2.5">
