@@ -20,7 +20,7 @@ class Settings(BaseSettings):
 
     class Config:
         env_file = ".env"
-        extra = "ignore"  # Ignore extra fields in .env
+        extra = "ignore"
 
     @property
     def tortoise_orm_config(self) -> dict:

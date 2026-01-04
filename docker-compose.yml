@@ -9,6 +9,8 @@ services:
       - db_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+    networks:
+      - substrack-network
 
   backend:
     container_name: substrack-backend
@@ -23,6 +25,8 @@ services:
       - db
     ports:
       - "8000:8000"
+    networks:
+      - substrack-network
 
   frontend:
     container_name: substrack-frontend
@@ -37,7 +41,14 @@ services:
       - backend
     ports:
       - "8001:8001"
+    networks:
+      - substrack-network
 
 volumes:
   db_data:
     name: substrack-db
+
+networks:
+  substrack-network:
+    name: substrack-network
+    driver: bridge

@@ -4,6 +4,7 @@ db:
     > desc: Database commands
     > env: .env
     > env: PGPASSWORD=$POSTGRES_PASSWORD
+    > env: POSTGRES_HOST=localhost
     > env: POSTGRES_PORT=5432
     backup(!backup_path|p: str = "./backups", !host|H: str = "$DB_HOST"):
         @var filename = $(date -u +"%Y-%m-%d_%H-%M-%S")_$POSTGRES_DB.sql
@@ -15,7 +16,7 @@ db:
     restore(backup_file: str, !host|H: str = localhost, !force:bool = false):
         > desc: Restore database
         > if: {{force}} == "false"
-        > before: echo "🔄 Restoring database $POSTGRES_DB from {{backup_file}} (Cleaning schema...)"
+        > before: echo "🔄 Restoring database $POSTGRES_DB from {{backup_file}} with {{host}} (Cleaning schema...)"
         > script: |
             psql_query(host="{{host}}", query="DO \$\$ DECLARE r RECORD; BEGIN FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = 'public') LOOP EXECUTE 'DROP TABLE IF EXISTS ' || quote_ident(r.tablename) || ' CASCADE'; END LOOP; END \$\$;")
             psql -U "$POSTGRES_USER" -h "{{host}}" -p "$POSTGRES_PORT" -d "$POSTGRES_DB" -f "{{backup_file}}"
@@ -41,11 +42,13 @@ db:
         > fallback: echo "Not found migrations"
         
     upgrade(type: str = "dev"):
+        
         > desc: Upgrade with Aerich
         > cwd: backend
         > script: uv run aerich upgrade
 
     aerich(*):
+       
         > desc: Aerich commands
         > cwd: backend
         > script: uv run aerich {{*}}
