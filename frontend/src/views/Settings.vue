@@ -192,6 +192,25 @@
               </svg>
             </div>
           </button>
+
+          <!-- Clear Cache -->
+          <button 
+            class="flex w-full items-center justify-between rounded-3xl bg-surface-50 p-6 border border-app-border transition-all active:scale-[0.98] hover:bg-surface-100 group shadow-premium"
+            @click="clearCache"
+          >
+            <div class="flex items-center gap-4">
+              <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-surface-100 text-xl shadow-inner group-hover:scale-110 duration-500">🧹</div>
+              <div class="text-left">
+                <p class="text-xs font-black uppercase tracking-widest text-red-500">Очистить кэш</p>
+                <p class="text-[10px] font-medium text-app-text-muted mt-0.5">Сбросить настройки и кэш</p>
+              </div>
+            </div>
+            <div class="h-10 w-10 flex items-center justify-center rounded-full bg-white/0 text-zinc-600 transition-all group-hover:bg-red-500/10 group-hover:text-red-500">
+               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.34 9m-4.72 0-.34-9m9.27-2.31a.75.75 0 0 0-.71-.51L14.5 6H9.5l-1.07.18a.75.75 0 0 0-.71.51l-.31 1.31h13.18l-.31-1.31ZM4.5 9h15l-1 12a2 2 0 0 1-2 2H7.5a2 2 0 0 1-2-2L4.5 9Z" />
+              </svg>
+            </div>
+          </button>
         </div>
       </section>
 
@@ -285,6 +304,25 @@ async function exportCSV() {
       errorMessage = typeof detail === 'string' ? detail : JSON.stringify(detail)
     }
     alert('Ошибка при экспорте: ' + errorMessage)
+  }
+}
+
+function clearCache() {
+  if (confirm('Вы уверены? Это удалит настройки темы и авторизацию.')) {
+     // ... (clear storage logic)
+    localStorage.clear()
+    sessionStorage.clear()
+    
+    if ('caches' in window) {
+      caches.keys().then((names) => {
+        names.forEach((name) => {
+          caches.delete(name)
+        })
+      })
+    }
+    
+    // Attempt full reload bypassing cache
+    window.location.reload(true)
   }
 }
 

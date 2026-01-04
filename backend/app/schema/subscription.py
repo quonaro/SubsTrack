@@ -9,6 +9,7 @@ class NotificationRuleType(str, Enum):
     ADVANCE_NOTICE = "advance_notice"
     RECURRING_REMINDER = "recurring_reminder"
     PAYMENT_DAY_ALERT = "payment_day_alert"
+    SINGLE_REMINDER = "single_reminder"
 
 
 class NotificationRuleBase(BaseModel):
