@@ -9,6 +9,7 @@ export interface User {
   last_name: string | null
   language_code: string | null
   is_premium: boolean
+  is_admin: boolean
   photo_url: string | null
   timezone?: string | null
 }

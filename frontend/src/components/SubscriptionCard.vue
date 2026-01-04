@@ -98,7 +98,7 @@
                 <div class="my-1 border-t border-app-border"></div>
 
                 <button 
-                  v-if="isDev"
+                  v-if="canTestNotification"
                   class="w-full text-left px-4 py-3 text-xs font-semibold text-yellow-500 hover:bg-surface-100 flex items-center gap-3 transition-colors"
                   @click.stop="handleTestNotification"
                 >
@@ -153,6 +153,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { getDaysUntilPayment, formatPrice, formatPeriod, formatDaysUntil, formatNotificationRule, sendTestNotification } from '../services/subscriptions'
+import { useAuth } from '../composables/useAuth'
 
 const props = defineProps({
   subscription: {
@@ -171,6 +172,9 @@ const isMenuOpen = ref(false)
 const menuContainer = ref(null)
 const menuStyle = ref({})
 const isDev = import.meta.env.DEV
+const { user } = useAuth()
+
+const canTestNotification = computed(() => isDev || user.value?.is_admin)
 
 const daysUntil = computed(() => getDaysUntilPayment(props.subscription.next_payment_date))
 
