@@ -256,34 +256,48 @@
               </div>
             </div>
             
-            <div class="grid grid-cols-1 gap-3">
-              <button 
-                v-for="mode in fullscreenModes" 
-                :key="mode.id"
-                @click="setFullscreenMode(mode.id)"
-                class="relative flex items-center justify-between p-4 rounded-3xl border transition-all duration-300 active:scale-[0.98]"
-                :class="fullscreenMode === mode.id ? 'border-primary-500 bg-primary-500/5 ring-1 ring-primary-500/20' : 'border-app-border bg-surface-100/30 hover:bg-surface-100/60'"
-              >
-                <div class="flex items-center gap-4">
-                  <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-app-bg text-2xl shadow-sm border border-app-border">
-                    {{ mode.icon }}
-                  </div>
-                  <div class="text-left">
-                    <p class="text-xs font-black uppercase tracking-widest" :class="fullscreenMode === mode.id ? 'text-primary-500' : 'text-app-text'">{{ mode.name }}</p>
-                    <p class="text-[10px] font-medium text-app-text-muted mt-0.5">{{ mode.description }}</p>
-                  </div>
+            <!-- Auto Mode Toggle -->
+            <div class="rounded-3xl border border-app-border bg-surface-100/30 p-5 transition-all hover:bg-surface-100/60 mb-3">
+              <div class="flex items-center justify-between">
+                <div class="flex flex-col">
+                  <span class="text-sm font-black text-app-text">Авто-режим</span>
+                  <span class="text-[10px] font-medium text-app-text-muted mt-1 leading-relaxed max-w-[200px]">Автоматически включать рамку в полном экране</span>
                 </div>
                 
-                <!-- Radio-like Check -->
-                <div 
-                  class="h-6 w-6 rounded-full border-2 flex items-center justify-center transition-all duration-300"
-                  :class="fullscreenMode === mode.id ? 'border-primary-500 bg-primary-500' : 'border-app-border'"
+                <button 
+                  class="relative h-7 w-12 rounded-full transition-colors duration-300 focus:outline-none"
+                  :class="isAutoBlackBar ? 'bg-primary-500' : 'bg-surface-300'"
+                  @click="toggleAutoBlackBar"
                 >
-                  <svg v-if="fullscreenMode === mode.id" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 text-white">
-                    <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clip-rule="evenodd" />
-                  </svg>
+                  <span 
+                    class="absolute left-0.5 top-0.5 h-6 w-6 transform rounded-full bg-white shadow-sm transition-transform duration-300"
+                    :class="isAutoBlackBar ? 'translate-x-5' : 'translate-x-0'"
+                  ></span>
+                </button>
+              </div>
+            </div>
+
+            <div 
+              class="rounded-3xl border border-app-border bg-surface-100/30 p-5 transition-all"
+              :class="isAutoBlackBar ? 'opacity-50 pointer-events-none grayscale' : 'hover:bg-surface-100/60'"
+            >
+              <div class="flex items-center justify-between">
+                <div class="flex flex-col">
+                  <span class="text-sm font-black text-app-text">Ручной режим</span>
+                  <span class="text-[10px] font-medium text-app-text-muted mt-1 leading-relaxed max-w-[200px]">Принудительно включить черную рамку</span>
                 </div>
-              </button>
+                
+                <button 
+                  class="relative h-7 w-12 rounded-full transition-colors duration-300 focus:outline-none"
+                  :class="isFullscreenExtra ? 'bg-primary-500' : 'bg-surface-300'"
+                  @click="toggleFullscreenMode"
+                >
+                  <span 
+                    class="absolute left-0.5 top-0.5 h-6 w-6 transform rounded-full bg-white shadow-sm transition-transform duration-300"
+                    :class="isFullscreenExtra ? 'translate-x-5' : 'translate-x-0'"
+                  ></span>
+                </button>
+              </div>
             </div>
 
             <!-- Height Slider (Only for Black Bar mode) -->
@@ -295,7 +309,7 @@
               leave-from-class="opacity-100 translate-y-0 scale-100"
               leave-to-class="opacity-0 -translate-y-2 scale-95"
             >
-              <div v-if="fullscreenMode === 'extra'" class="mt-4 pt-4 border-t border-app-border/50 space-y-3">
+              <div v-if="isFullscreenExtra" class="mt-4 pt-4 border-t border-app-border/50 space-y-3">
                 <div class="flex justify-between items-center px-1">
                   <span class="text-[10px] font-bold uppercase tracking-widest text-app-text-muted">Высота рамки</span>
                   <span class="text-xs font-black text-primary-500">{{ fullscreenExtraHeight }}px</span>
@@ -356,7 +370,8 @@ const router = useRouter()
 const { accentColor, setAccentColor, theme, setTheme } = useTheme()
 
 const selectedTimezone = ref('')
-const fullscreenMode = ref('extra')
+const isFullscreenExtra = ref(true)
+const isAutoBlackBar = ref(false)
 const fullscreenExtraHeight = ref(54)
 
 const user = ref(null)
@@ -370,7 +385,12 @@ onMounted(() => {
   user.value = getCurrentUser()
   
   // Load fullscreen mode
-  fullscreenMode.value = localStorage.getItem('fullscreen_mode') || 'extra'
+  const mode = localStorage.getItem('fullscreen_mode') || 'extra'
+  isFullscreenExtra.value = mode === 'extra'
+  
+  // Load auto mode
+  isAutoBlackBar.value = localStorage.getItem('fullscreen_auto') === 'true'
+  
   fullscreenExtraHeight.value = parseInt(localStorage.getItem('fullscreen_extra_height') || '54')
 
   try {
@@ -441,20 +461,47 @@ function clearCache() {
   }
 }
 
-function setFullscreenMode(mode) {
-  fullscreenMode.value = mode
+function toggleFullscreenMode() {
+  if (isAutoBlackBar.value) return
+  
+  isFullscreenExtra.value = !isFullscreenExtra.value
+  const mode = isFullscreenExtra.value ? 'extra' : 'native'
+  
   localStorage.setItem('fullscreen_mode', mode)
   
-  // Apply attribute immediately
-  document.body.setAttribute('data-fullscreen-mode', mode)
+  updateBodyAttributes(mode)
   
-  // If not disabled, try to expand
-  if (mode !== 'disabled') {
+  // Always try to expand
+  window.Telegram?.WebApp?.expand()
+}
+
+function toggleAutoBlackBar() {
+  isAutoBlackBar.value = !isAutoBlackBar.value
+  localStorage.setItem('fullscreen_auto', isAutoBlackBar.value.toString())
+  
+  if (isAutoBlackBar.value) {
+    // If turning ON, immediately apply auto logic
     const webApp = window.Telegram?.WebApp
     if (webApp) {
-      webApp.expand()
+      const isExpanded = webApp.isExpanded
+      // If expanded -> extra, else -> native
+      const newMode = isExpanded ? 'extra' : 'native'
+      isFullscreenExtra.value = newMode === 'extra'
+      localStorage.setItem('fullscreen_mode', newMode)
+      updateBodyAttributes(newMode)
     }
+  } else {
+    // If turning OFF, leave state as is (user can then manually toggle)
   }
+  
+  // Update App.vue listener via storage event or just relying on App.vue's own check?
+  // Since we are in the same window, storage event doesn't fire.
+  // We should dispatch a custom event for App.vue to pick up immediately.
+  window.dispatchEvent(new CustomEvent('fullscreen-auto-change', { detail: { isAuto: isAutoBlackBar.value } }))
+}
+
+function updateBodyAttributes(mode) {
+  document.body.setAttribute('data-fullscreen-mode', mode)
 }
 
 function updateExtraHeight() {
@@ -462,11 +509,7 @@ function updateExtraHeight() {
   document.body.style.setProperty('--header-extra-offset', fullscreenExtraHeight.value + 'px')
 }
 
-const fullscreenModes = [
-  { id: 'native', name: 'Нативный', icon: '✨', description: 'Стандартный вид' },
-  { id: 'extra', name: 'Черная рамка', icon: '⬛', description: 'Скрывает челку/камеру' },
-  { id: 'disabled', name: 'Выключить', icon: '🚫', description: 'Обычное окно Telegram' }
-]
+
 
 const darkThemes = [
   { id: 'midnight', name: 'Midnight', preview: '#0f0f13', surface: 'rgba(255,255,255,0.05)' },

@@ -74,6 +74,7 @@ function handleTimezoneSaved(tz) {
 }
 
 const isFullscreenExtra = ref(true)
+const isAutoBlackBar = ref(false)
 
 onMounted(async () => {
   // Initialize fullscreen mode for CSS
@@ -99,8 +100,42 @@ onMounted(async () => {
   
   observer.observe(document.body, { attributes: true })
 
+  // Initialize Auto Mode
+  isAutoBlackBar.value = localStorage.getItem('fullscreen_auto') === 'true'
+
+  const webApp = window.Telegram?.WebApp
+  if (webApp) {
+    // Listen for viewport changes
+    webApp.onEvent('viewportChanged', handleViewportChanged)
+  }
+
+  // Listen for settings changes via custom event
+  window.addEventListener('fullscreen-auto-change', (e) => {
+    isAutoBlackBar.value = e.detail.isAuto
+    if (isAutoBlackBar.value) {
+      handleViewportChanged()
+    }
+  })
+
   await initAuth()
   checkTimezone()
 })
+
+function handleViewportChanged() {
+  if (!isAutoBlackBar.value) return
+
+  const webApp = window.Telegram?.WebApp
+  if (webApp) {
+    // If expanded -> extra, else -> native
+    const isExpanded = webApp.isExpanded
+    const newMode = isExpanded ? 'extra' : 'native'
+    
+    // Only update if changed to avoid loop/flicker
+    if ((newMode === 'extra') !== isFullscreenExtra.value) {
+       document.body.setAttribute('data-fullscreen-mode', newMode)
+       localStorage.setItem('fullscreen_mode', newMode)
+    }
+  }
+}
 </script>
 
