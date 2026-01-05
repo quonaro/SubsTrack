@@ -17,26 +17,46 @@
         <p class="text-primary-400 font-medium">Авторизация...</p>
       </div>
     </div>
-    <router-view v-else v-slot="{ Component }">
-      <transition 
-        enter-active-class="transition ease-out duration-300" 
-        enter-from-class="opacity-0 translate-y-4" 
-        enter-to-class="opacity-100 translate-y-0"
-        leave-active-class="transition ease-in duration-200" 
-        leave-from-class="opacity-100" 
-        leave-to-class="opacity-0"
-        mode="out-in"
-      >
-        <component :is="Component" />
-      </transition>
-    </router-view>
-    <BottomNavigation v-if="isAuthenticated" />
+    
+    <div v-else class="min-h-screen">
+      <template v-if="!route.meta.requiresAuth || isAuthenticated">
+        <router-view v-slot="{ Component }">
+          <transition 
+            enter-active-class="transition ease-out duration-300" 
+            enter-from-class="opacity-0 translate-y-4" 
+            enter-to-class="opacity-100 translate-y-0"
+            leave-active-class="transition ease-in duration-200" 
+            leave-from-class="opacity-100" 
+            leave-to-class="opacity-0"
+            mode="out-in"
+          >
+            <component :is="Component" />
+          </transition>
+        </router-view>
+        <BottomNavigation v-if="isAuthenticated" />
+      </template>
+
+      <!-- Auth Required State -->
+      <div v-else class="flex min-h-screen items-center justify-center p-4 text-center">
+        <div class="flex flex-col items-center gap-3 text-app-text-muted">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-12 h-12 opacity-50">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+          </svg>
+          <div>
+            <p class="font-medium text-lg mb-1">Требуется авторизация</p>
+            <p class="text-sm opacity-70">Пожалуйста, откройте приложение через Telegram</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <TimezoneModal v-if="needsTimezone || showTimezoneModal" @saved="handleTimezoneSaved" />
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
+import { useRoute } from 'vue-router'
 import BottomNavigation from './components/BottomNavigation.vue'
 import AppHeader from './components/AppHeader.vue'
 import TimezoneModal from './components/TimezoneModal.vue'
@@ -45,6 +65,7 @@ import { useTheme } from './composables/useTheme'
 import { useLayout } from './composables/useLayout'
 import { getCurrentUser } from './services/auth'
 
+const route = useRoute()
 const { isAuthenticated, isAuthenticating, isTelegram, initAuth } = useAuth()
 const { accentColor } = useTheme()
 const { isHeaderPresent } = useLayout()
