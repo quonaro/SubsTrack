@@ -74,35 +74,11 @@
           </div>
           
 
-          <!-- Subscription Date (Day + Month + Year) -->
-          <div class="space-y-3">
-            <label class="text-[10px] font-bold uppercase tracking-widest text-app-text-muted px-1">
-              Дата следующего платежа
-            </label>
-            <div class="grid grid-cols-7 gap-3">
-              <div class="col-span-2">
-                <CustomSelect
-                  v-model="selectedDay"
-                  :options="dayOptions"
-                  placeholder="День"
-                />
-              </div>
-              <div class="col-span-3">
-                <CustomSelect
-                  v-model="selectedMonth"
-                  :options="monthOptions"
-                  placeholder="Месяц"
-                />
-              </div>
-              <div class="col-span-2">
-                <CustomSelect
-                  v-model="selectedYear"
-                  :options="yearOptions"
-                  placeholder="Год"
-                />
-              </div>
-            </div>
-          </div>
+          <!-- Subscription Date -->
+          <PremiumDatePicker
+            v-model="dateData"
+            label="Дата следующего платежа"
+          />
           
           <!-- Icon Picker -->
           <div class="space-y-3">
@@ -267,6 +243,7 @@ import { ref, watch, computed, onMounted } from 'vue'
 import EmojiPicker from './EmojiPicker.vue'
 import CustomSelect from './CustomSelect.vue'
 import CategoryForm from './CategoryForm.vue'
+import PremiumDatePicker from './PremiumDatePicker.vue'
 import { getCategories } from '../services/categories'
 
 const props = defineProps({
@@ -299,32 +276,11 @@ const periodOptions = [
   { label: 'Ежегодно (365 дней)', value: 365 }
 ]
 
-const monthOptions = [
-  { label: 'Январь', value: 0 },
-  { label: 'Февраль', value: 1 },
-  { label: 'Март', value: 2 },
-  { label: 'Апрель', value: 3 },
-  { label: 'Май', value: 4 },
-  { label: 'Июнь', value: 5 },
-  { label: 'Июль', value: 6 },
-  { label: 'Август', value: 7 },
-  { label: 'Сентябрь', value: 8 },
-  { label: 'Октябрь', value: 9 },
-  { label: 'Ноябрь', value: 10 },
-  { label: 'Декабрь', value: 11 }
-]
-
-const dayOptions = Array.from({ length: 31 }, (_, i) => ({ label: (i + 1).toString(), value: i + 1 }))
-
-const currentYear = new Date().getFullYear()
-const yearOptions = Array.from({ length: 7 }, (_, i) => {
-  const year = currentYear - 1 + i
-  return { label: year.toString(), value: year }
+const dateData = ref({
+  day: new Date().getDate(),
+  month: new Date().getMonth(),
+  year: new Date().getFullYear()
 })
-
-const selectedDay = ref(new Date().getDate())
-const selectedMonth = ref(new Date().getMonth())
-const selectedYear = ref(new Date().getFullYear())
 
 const ruleTypeLabels = {
   'advance_notice': 'Предварительное',
@@ -352,9 +308,11 @@ const formData = ref({
 watch(() => props.subscription, (sub) => {
   if (sub) {
     const date = new Date(sub.next_payment_date)
-    selectedDay.value = date.getDate()
-    selectedMonth.value = date.getMonth()
-    selectedYear.value = date.getFullYear()
+    dateData.value = {
+      day: date.getDate(),
+      month: date.getMonth(),
+      year: date.getFullYear()
+    }
     
     formData.value = {
       name: sub.name,
@@ -467,15 +425,15 @@ function removeNotificationRule(index) {
 }
 
 function handleSubmit() {
-  const year = selectedYear.value
+  const { day, month, year } = dateData.value
   
-  // Construct user selected target date for current year
+  // Construct user selected target date
   // Note: This constructs in LOCAL time
-  let targetDate = new Date(year, selectedMonth.value, selectedDay.value)
+  let targetDate = new Date(year, month, day)
   
   // Fix month overflow (e.g. Feb 31)
-  if (targetDate.getMonth() !== selectedMonth.value) {
-    targetDate = new Date(year, selectedMonth.value + 1, 0)
+  if (targetDate.getMonth() !== month) {
+    targetDate = new Date(year, month + 1, 0)
   }
   
   const finalDate = targetDate
