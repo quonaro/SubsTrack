@@ -71,6 +71,9 @@ interface TelegramWebApp {
   close: () => void
   onEvent: (eventType: string, callback: () => void) => void
   offEvent: (eventType: string, callback: () => void) => void
+  requestFullscreen: () => void
+  exitFullscreen: () => void
+  isFullscreen: boolean
 }
 
 declare global {
@@ -142,15 +145,36 @@ export function initTelegramWebApp(): void {
     const shouldExpand = true
 
     if (shouldExpand) {
-      webApp.expand()
+      // Try new Fullscreen API first, fallback to expand
+      try {
+        if (webApp.requestFullscreen) {
+          webApp.requestFullscreen()
+        } else {
+          webApp.expand()
+        }
+      } catch (e) {
+        webApp.expand()
+      }
 
       // Aggressive expansion: retry every 100ms for 2 seconds to ensure it sticks
       // This helps if the app is launched via Menu Button and the initial expand is ignored
       let attempts = 0
       const expandInterval = setInterval(() => {
-        webApp.expand()
+        try {
+          if (webApp.requestFullscreen) {
+            webApp.requestFullscreen()
+          } else {
+            webApp.expand()
+          }
+        } catch (e) {
+          webApp.expand()
+        }
+
         attempts++
-        if (attempts > 20 || (webApp.isExpanded && !isAuto)) {
+        // Check both isExpanded and isFullscreen (if available)
+        const isFullscreen = webApp.isFullscreen !== undefined ? webApp.isFullscreen : webApp.isExpanded
+
+        if (attempts > 20 || (isFullscreen && !isAuto)) {
           // Stop if expanded (unless auto mode is weird) or after 2s
           clearInterval(expandInterval)
         }
