@@ -132,9 +132,29 @@ export function initTelegramWebApp(): void {
 
     // Check fullscreen mode from localStorage (default to 'extra')
     const mode = localStorage.getItem('fullscreen_mode') || 'extra'
+    const isAuto = localStorage.getItem('fullscreen_auto') === 'true'
 
-    if (mode !== 'disabled') {
+    // Force expand immediately if not in native mode, or just always expand to be safe
+    // The user wants fullscreen experience. 
+    // Even if 'native', we likely want 'expand()' so it fills the screen, just without the black bar.
+    // The only time we might NOT want expand is if the user specifically requested Compact (which is no longer an option).
+
+    const shouldExpand = true
+
+    if (shouldExpand) {
       webApp.expand()
+
+      // Aggressive expansion: retry every 100ms for 2 seconds to ensure it sticks
+      // This helps if the app is launched via Menu Button and the initial expand is ignored
+      let attempts = 0
+      const expandInterval = setInterval(() => {
+        webApp.expand()
+        attempts++
+        if (attempts > 20 || (webApp.isExpanded && !isAuto)) {
+          // Stop if expanded (unless auto mode is weird) or after 2s
+          clearInterval(expandInterval)
+        }
+      }, 100)
     }
 
     // Set attribute for CSS styling
