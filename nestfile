@@ -41,7 +41,7 @@ db:
             # Step 0: Ensure role exists
             docker run --rm -i --network substrack-network -e PGPASSWORD="$POSTGRES_PASSWORD" postgres:15-alpine \
               psql -h $POSTGRES_HOST -U "$POSTGRES_USER" -d "postgres" \
-              -c "DO \$\$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'yourtask') THEN CREATE ROLE yourtask; END IF; END \$\$;" 2>/dev/null || true
+              -c "DO \$\$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'substrack') THEN CREATE ROLE substrack; END IF; END \$\$;" 2>/dev/null || true
 
             # Step 1: Terminate connections
             docker run --rm -i --network substrack-network -e PGPASSWORD="$POSTGRES_PASSWORD" postgres:15-alpine \
