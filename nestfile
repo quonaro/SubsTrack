@@ -1,78 +1,98 @@
-@function psql_query(query: str, !host|H: str = "$DB_HOST", !db|D: str = "$POSTGRES_DB"):
-    psql -U "$POSTGRES_USER" -h "{{host}}" -p "$POSTGRES_PORT" -d "{{db}}" -c "{{query}}"
 db:
-    > desc: Database commands
-    > env: .env
-    > env: PGPASSWORD=$POSTGRES_PASSWORD
-    > env: POSTGRES_HOST=localhost
-    > env: POSTGRES_PORT=5432
-    backup(!backup_path|p: str = "./backups", !host|H: str = "$DB_HOST"):
-        @var filename = $(date -u +"%Y-%m-%d_%H-%M-%S")_$POSTGRES_DB.sql
-        > desc: Backup database
-        > before: echo "🔄 Backuping database $POSTGRES_DB to {{backup_path}}/{{filename}}"
-        > after: echo "✅ Backuped database $POSTGRES_DB to {{backup_path}}/{{filename}}"
-        > script: |
-            pg_dump -U "$POSTGRES_USER" -h "{{host}}" -p "$POSTGRES_PORT" -d "$POSTGRES_DB" -f "{{backup_path}}/{{filename}}"
-    restore(backup_file: str, !host|H: str = localhost, !force:bool = false):
-        > desc: Restore database
-        > if: {{force}} == "false"
-        > before: echo "🔄 Restoring database $POSTGRES_DB from {{backup_file}} with {{host}} (Cleaning schema...)"
-        > script: |
-            psql_query(host="{{host}}", query="DO \$\$ DECLARE r RECORD; BEGIN FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = 'public') LOOP EXECUTE 'DROP TABLE IF EXISTS ' || quote_ident(r.tablename) || ' CASCADE'; END LOOP; END \$\$;")
-            psql -U "$POSTGRES_USER" -h "{{host}}" -p "$POSTGRES_PORT" -d "$POSTGRES_DB" -f "{{backup_file}}"
-        > else:
-        > script: |
-            # Разделяем действия, так как DROP DATABASE не может быть в одном блоке с другими командами
-            psql_query(host="{{host}}", db="postgres", query="SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '$POSTGRES_DB' AND pid <> pg_backend_pid();")
-            psql_query(host="{{host}}", db="postgres", query="DROP DATABASE IF EXISTS $POSTGRES_DB;")
-            psql_query(host="{{host}}", db="postgres", query="CREATE DATABASE $POSTGRES_DB;")
-            # Восстановление
-            psql -U "$POSTGRES_USER" -h "{{host}}" -p "$POSTGRES_PORT" -d "$POSTGRES_DB" -f "{{backup_file}}"
-        > after: echo "✅ Restored database $POSTGRES_DB from {{backup_file}}"
-                            
-    list(!backup_path|p: str = "./backups"):
-        > desc: List database backups
-        > script: find {{backup_path}} -maxdepth 1 -type f -name "*.sql" -printf '%T@ %TY-%Tm-%Td %TH:%TM | %f\n' | sort -nr | cut -d' ' -f2-
-    migrate():
-        > desc: Migrations with Aerich (Dev Mode)
-        > if: $DEV == true
-        > script: PYTHONPATH=./src uv run aerich migrate 2>/dev/null
-        > else:
-        > script: echo "Skipping migrations (DEV != true)"
-        > fallback: echo "Not found migrations"
-        
-    upgrade(type: str = "dev"):
-        
-        > desc: Upgrade with Aerich
-        > cwd: backend
-        > script: uv run aerich upgrade
+    env: DOCKER_CMD="docker compose --env-file .env -p substrack -f docker/compose.yml -f docker/infra.yml exec backend"
+    desc: Database commands
+    env: .env
+    env: TZ=UTC+7
+
+    backup(!backup_path|p: str = "./backups"):
+        var filename = $(date -u +"%d-%m-%Y__%H:%M"a)_$DB_NAME.dump.gz
+        desc: Backup via temporary container (Gzipped custom format)
+        before: mkdir -p "{{backup_path}}" && echo "🔄 Backing up to {{backup_path}}/{{filename}} (compressed)"
+        script: |
+            docker run --rm -i --network substrack-network -e PGPASSWORD="$DB_PASSWORD" \
+              postgres:15-alpine pg_dump -h $DB_HOST -U "$DB_USER" -d "$DB_NAME" -Fc | gzip > "{{backup_path}}/{{filename}}"
+        after: echo "✅ Backed up to {{backup_path}}/{{filename}}"
+
+    restore(backup_file: str):
+        desc: Restore database (auto-detects .dump, .sql, .gz)
+        before: echo "🔄 Restoring database $DB_NAME ..."
+        after: echo "✅ Restored database $DB_NAME"
+        script: |
+            if [ -z "{{backup_file}}" ]; then
+                echo "❌ Please specify a backup file."
+                exit 1
+            fi
+
+            if [ ! -f "{{backup_file}}" ]; then
+                echo "❌ File not found: {{backup_file}}"
+                exit 1
+            fi
+
+            echo "📦 Restoring from: {{backup_file}}"
+
+            # Helper to get stream (decompressed if needed)
+            get_stream() {
+                case "$1" in
+                    *.gz) gunzip -c "$1" ;;
+                    *) cat "$1" ;;
+                esac
+            }
+
+            # Step 0: Ensure role exists
+            docker run --rm -i --network yourtask-network -e PGPASSWORD="$DB_PASSWORD" postgres:15-alpine \
+              psql -h $DB_HOST -U "$DB_USER" -d "postgres" \
+              -c "DO \$\$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'yourtask') THEN CREATE ROLE yourtask; END IF; END \$\$;" 2>/dev/null || true
+
+            # Step 1: Terminate connections
+            docker run --rm -i --network yourtask-network -e PGPASSWORD="$DB_PASSWORD" postgres:15-alpine \
+              psql -h $DB_HOST -U "$DB_USER" -d "postgres" \
+              -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '$DB_NAME' AND pid <> pg_backend_pid();" || true
+
+            # Step 2: Detect format and restore
+            # We peek at the stream to detect format
+            if get_stream "{{backup_file}}" | head -c 5 | grep -q "PGDMP"; then
+                echo "📦 Detected binary dump format. Using pg_restore..."
+                get_stream "{{backup_file}}" | docker run --rm -i --network yourtask-network -e PGPASSWORD="$DB_PASSWORD" postgres:15-alpine \
+                    pg_restore -h $DB_HOST -U "$DB_USER" -d "$DB_NAME" \
+                    --clean --if-exists --no-owner --no-privileges
+            else
+                echo "📄 Detected plain SQL format. Using psql..."
+                docker run --rm -i --network yourtask-network -e PGPASSWORD="$DB_PASSWORD" postgres:15-alpine \
+                    psql -h $DB_HOST -U "$DB_USER" -d "$DB_NAME" \
+                    -c "DO \$\$ DECLARE r RECORD; BEGIN FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = 'public') LOOP EXECUTE 'DROP TABLE IF EXISTS ' || quote_ident(r.tablename) || ' CASCADE'; END LOOP; FOR r IN (SELECT sequence_name FROM information_schema.sequences WHERE sequence_schema = 'public') LOOP EXECUTE 'DROP SEQUENCE IF EXISTS ' || quote_ident(r.sequence_name) || ' CASCADE'; END LOOP; FOR r IN (SELECT viewname FROM pg_views WHERE schemaname = 'public') LOOP EXECUTE 'DROP VIEW IF EXISTS ' || quote_ident(r.viewname) || ' CASCADE'; END LOOP; END \$\$;"
+                get_stream "{{backup_file}}" | docker run --rm -i --network yourtask-network -e PGPASSWORD="$DB_PASSWORD" postgres:15-alpine \
+                    psql -h $DB_HOST -U "$DB_USER" -d "$DB_NAME" --set ON_ERROR_STOP=off || true
+            fi
 
     aerich(*):
-       
-        > desc: Aerich commands
-        > cwd: backend
-        > script: uv run aerich {{*}}
+        desc: Aerich
+        script: $DOCKER_CMD uv run aerich {{*}}
 
+app:
+    env: DOCKER_CMD="docker compose --env-file .env -p substrack -f docker/compose.yml "
+    desc: Control Application
 
-        
-app(type: str = "dev"):
-    > desc: Control Application
-    > env: .env
-    > env: DC=docker compose -f docker-compose.yml -f {{type}}.yml
     logs(*):
-        > desc: Logs Application
-        > script: $DC logs {{*}}
-    list:
-        > desc: List Application
-        > script: $DC config --services
-    run(!build:bool=true, !include: arr = [] ):
-        > desc: Run Application (prod | dev)
-        > script: |
-            echo -e "Starting in \033[31m{{type}}\033[0m mode..."
-            $DC up {{include}} -d "{{build|copy}}" --force-recreate
+        desc: Logs Application
+        script: |
+            $DOCKER_CMD logs {{*}}
+
+    run(!build: bool = true, !include: arr = [], type: str = "dev"):
+        desc: Run Application with build option
+        env: .env
+        script: |
+            if [ "{{type}}" == "dev" ]; then
+                $DOCKER_CMD -f docker/{{type}}.yml up {{include}} -d {{build|copy}} --force-recreate
+            elif [ "{{type}}" == "prod" ]; then
+                $DOCKER_CMD up {{include}} -d {{build|copy}} --force-recreate
+            fi
+
     down:
-        > desc: Down Services
-        > script: $DC down 
+        desc: Down Services
+        script: |
+            $DOCKER_CMD down 
+
     exec(app: str, *commands):
-        > desc: Execute commands in Container
-        > script: $DC exec "{{app}}" {{*commands}}
+        desc: Execute commands in Container
+        script: | 
+            $DOCKER_CMD exec {{app}} {{*commands}} 

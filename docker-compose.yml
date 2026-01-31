@@ -14,7 +14,7 @@ services:
 
   backend:
     container_name: substrack-backend
-    image: substrack-backend
+    image: ${BACKEND_IMAGE:-substrack-backend}
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -30,7 +30,7 @@ services:
 
   frontend:
     container_name: substrack-frontend
-    image: substrack-frontend
+    image: ${FRONTEND_IMAGE:-substrack-frontend}
     build:
       context: ./frontend
       dockerfile: Dockerfile

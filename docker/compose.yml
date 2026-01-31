@@ -1,0 +1,32 @@
+services:
+
+  backend:
+    container_name: substrack-backend
+    image: substrack-backend
+    build:
+      target: production
+      context: ../backend
+      dockerfile: Dockerfile
+    restart: always
+    env_file:
+      - ../.env
+    ports:
+      - "8000:8000"
+
+
+  frontend:
+    container_name: substrack-frontend
+    image: substrack-frontend
+    build:
+      target: production
+      context: ../frontend
+      dockerfile: Dockerfile
+    restart: always
+    env_file:
+      - ../.env
+    depends_on:
+      - backend
+    ports:
+      - "8001:8001"
+
+

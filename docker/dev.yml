@@ -1,0 +1,31 @@
+services:
+  backend:
+    build:
+      target: development
+    volumes:
+      - ../backend:/app
+    environment:
+      DEV: true
+      POSTGRES_HOST: db
+    command: uv run app/main.py
+
+  frontend:
+    build:
+      target: development
+    volumes:
+      - ../frontend:/app
+      - /app/node_modules
+    environment:
+      - VITE_API_TARGET=http://backend:8000
+    command: npm run dev
+
+  db:
+    container_name: substrack-db
+    image: postgres:17-alpine
+    restart: always
+    env_file:
+      - ../.env
+    volumes:
+      - ../db_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
