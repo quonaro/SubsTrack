@@ -5,18 +5,18 @@ db:
     env: TZ=UTC+7
 
     backup(!backup_path|p: str = "./backups"):
-        var filename = $(date -u +"%d-%m-%Y__%H:%M"a)_$DB_NAME.dump.gz
+        var filename = $(date -u +"%d-%m-%Y__%H:%M"a)_$POSTGRES_DB.dump.gz
         desc: Backup via temporary container (Gzipped custom format)
         before: mkdir -p "{{backup_path}}" && echo "🔄 Backing up to {{backup_path}}/{{filename}} (compressed)"
         script: |
-            docker run --rm -i --network substrack-network -e PGPASSWORD="$DB_PASSWORD" \
-              postgres:15-alpine pg_dump -h $DB_HOST -U "$DB_USER" -d "$DB_NAME" -Fc | gzip > "{{backup_path}}/{{filename}}"
+            docker run --rm -i --network substrack-network -e PGPASSWORD="$POSTGRES_PASSWORD" \
+              postgres:15-alpine pg_dump -h $POSTGRES_HOST -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc | gzip > "{{backup_path}}/{{filename}}"
         after: echo "✅ Backed up to {{backup_path}}/{{filename}}"
 
     restore(backup_file: str):
         desc: Restore database (auto-detects .dump, .sql, .gz)
-        before: echo "🔄 Restoring database $DB_NAME ..."
-        after: echo "✅ Restored database $DB_NAME"
+        before: echo "🔄 Restoring database $POSTGRES_DB ..."
+        after: echo "✅ Restored database $POSTGRES_DB"
         script: |
             if [ -z "{{backup_file}}" ]; then
                 echo "❌ Please specify a backup file."
@@ -39,29 +39,29 @@ db:
             }
 
             # Step 0: Ensure role exists
-            docker run --rm -i --network yourtask-network -e PGPASSWORD="$DB_PASSWORD" postgres:15-alpine \
-              psql -h $DB_HOST -U "$DB_USER" -d "postgres" \
+            docker run --rm -i --network substrack-network -e PGPASSWORD="$POSTGRES_PASSWORD" postgres:15-alpine \
+              psql -h $POSTGRES_HOST -U "$POSTGRES_USER" -d "postgres" \
               -c "DO \$\$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'yourtask') THEN CREATE ROLE yourtask; END IF; END \$\$;" 2>/dev/null || true
 
             # Step 1: Terminate connections
-            docker run --rm -i --network yourtask-network -e PGPASSWORD="$DB_PASSWORD" postgres:15-alpine \
-              psql -h $DB_HOST -U "$DB_USER" -d "postgres" \
-              -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '$DB_NAME' AND pid <> pg_backend_pid();" || true
+            docker run --rm -i --network substrack-network -e PGPASSWORD="$POSTGRES_PASSWORD" postgres:15-alpine \
+              psql -h $POSTGRES_HOST -U "$POSTGRES_USER" -d "postgres" \
+              -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '$POSTGRES_DB' AND pid <> pg_backend_pid();" || true
 
             # Step 2: Detect format and restore
             # We peek at the stream to detect format
             if get_stream "{{backup_file}}" | head -c 5 | grep -q "PGDMP"; then
                 echo "📦 Detected binary dump format. Using pg_restore..."
-                get_stream "{{backup_file}}" | docker run --rm -i --network yourtask-network -e PGPASSWORD="$DB_PASSWORD" postgres:15-alpine \
-                    pg_restore -h $DB_HOST -U "$DB_USER" -d "$DB_NAME" \
+                get_stream "{{backup_file}}" | docker run --rm -i --network substrack-network -e PGPASSWORD="$POSTGRES_PASSWORD" postgres:15-alpine \
+                    pg_restore -h $POSTGRES_HOST -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
                     --clean --if-exists --no-owner --no-privileges
             else
                 echo "📄 Detected plain SQL format. Using psql..."
-                docker run --rm -i --network yourtask-network -e PGPASSWORD="$DB_PASSWORD" postgres:15-alpine \
-                    psql -h $DB_HOST -U "$DB_USER" -d "$DB_NAME" \
+                docker run --rm -i --network substrack-network -e PGPASSWORD="$POSTGRES_PASSWORD" postgres:15-alpine \
+                    psql -h $POSTGRES_HOST -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
                     -c "DO \$\$ DECLARE r RECORD; BEGIN FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = 'public') LOOP EXECUTE 'DROP TABLE IF EXISTS ' || quote_ident(r.tablename) || ' CASCADE'; END LOOP; FOR r IN (SELECT sequence_name FROM information_schema.sequences WHERE sequence_schema = 'public') LOOP EXECUTE 'DROP SEQUENCE IF EXISTS ' || quote_ident(r.sequence_name) || ' CASCADE'; END LOOP; FOR r IN (SELECT viewname FROM pg_views WHERE schemaname = 'public') LOOP EXECUTE 'DROP VIEW IF EXISTS ' || quote_ident(r.viewname) || ' CASCADE'; END LOOP; END \$\$;"
-                get_stream "{{backup_file}}" | docker run --rm -i --network yourtask-network -e PGPASSWORD="$DB_PASSWORD" postgres:15-alpine \
-                    psql -h $DB_HOST -U "$DB_USER" -d "$DB_NAME" --set ON_ERROR_STOP=off || true
+                get_stream "{{backup_file}}" | docker run --rm -i --network substrack-network -e PGPASSWORD="$POSTGRES_PASSWORD" postgres:15-alpine \
+                    psql -h $POSTGRES_HOST -U "$POSTGRES_USER" -d "$POSTGRES_DB" --set ON_ERROR_STOP=off || true
             fi
 
     aerich(*):
