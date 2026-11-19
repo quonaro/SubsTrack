@@ -1,3 +1,4 @@
+import { ref } from 'vue'
 import type { AccentKey, PresetKey, Settings } from './types'
 
 export interface AccentMeta {
@@ -37,7 +38,27 @@ export interface ThemePreset {
 }
 
 export const THEME_PRESETS: Record<PresetKey, ThemePreset> = {
-  default: { label: 'Графит', accent: 'orange', light: {}, dark: {} },
+  warm: {
+    label: 'Стандартная',
+    accent: 'orange',
+    light: {
+      '--color-app-bg': '#fbf8f4',
+      '--color-app-bg2': '#f7f5f0',
+      '--color-app-card': '#f4f3f1',
+      '--color-app-border': '#f3efe7',
+      '--color-app-text': '#332819',
+      '--color-app-text-muted': '#786753',
+    },
+    dark: {
+      '--color-app-bg': '#1d1a16',
+      '--color-app-bg2': '#221f1b',
+      '--color-app-card': '#28241f',
+      '--color-app-border': '#332f28',
+      '--color-app-text': '#f1ede5',
+      '--color-app-text-muted': '#b2a599',
+    },
+  },
+  default: { label: 'Графит', accent: 'violet', light: {}, dark: {} },
   nord: {
     label: 'Nord',
     accent: 'cyan',
@@ -98,27 +119,10 @@ export const THEME_PRESETS: Record<PresetKey, ThemePreset> = {
       '--color-app-text-muted': '#cccccc',
     },
   },
-  warm: {
-    label: 'Стандартная',
-    accent: 'orange',
-    light: {
-      '--color-app-bg': '#fbf8f4',
-      '--color-app-bg2': '#f7f5f0',
-      '--color-app-card': '#f4f3f1',
-      '--color-app-border': '#f3efe7',
-      '--color-app-text': '#332819',
-      '--color-app-text-muted': '#786753',
-    },
-    dark: {
-      '--color-app-bg': '#1d1a16',
-      '--color-app-bg2': '#221f1b',
-      '--color-app-card': '#28241f',
-      '--color-app-border': '#332f28',
-      '--color-app-text': '#f1ede5',
-      '--color-app-text-muted': '#b2a599',
-    },
-  },
 }
+
+/** Theme mode actually applied to the DOM — lags store.settings during a theme wipe. */
+export const appliedThemeMode = ref<'dark' | 'light'>('dark')
 
 export function systemThemeMode(): 'dark' | 'light' {
   if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return 'dark'
@@ -137,6 +141,7 @@ export function applyThemeToDom(
 ): void {
   const root = document.documentElement
   root.classList.toggle('light', theme === 'light')
+  appliedThemeMode.value = theme
   const meta = ACCENTS[accent] ?? ACCENTS.orange
   root.style.setProperty('--color-accent', meta.value)
   root.style.setProperty('--color-accent-fg', meta.fg ?? '#ffffff')

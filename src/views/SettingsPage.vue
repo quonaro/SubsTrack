@@ -21,6 +21,7 @@ import {
 import {
   ACCENTS,
   THEME_PRESETS,
+  appliedThemeMode,
   applyThemeToDom,
   effectiveTheme,
   type AccentMeta,
@@ -28,6 +29,7 @@ import {
   type ThemePreset,
 } from '../theme'
 import type { AccentKey, PresetKey, ThemeMode } from '../types'
+import { runThemeWipe } from '../themeWipe'
 import Icon from '../components/Icon.vue'
 import Modal from '../components/Modal.vue'
 import { ref } from 'vue'
@@ -63,7 +65,9 @@ const PRESET_FALLBACK: Record<'dark' | 'light', Record<PresetVar, string>> = {
 }
 
 function presetVar(key: PresetKey, name: PresetVar): string {
-  const mode = effectiveTheme(store.settings)
+  // Preview follows the theme actually on screen — during a wipe it still
+  // shows the old mode until apply() runs under full cover.
+  const mode = appliedThemeMode.value
   return THEME_PRESETS[key][mode][name] ?? PRESET_FALLBACK[mode][name]
 }
 const notifPerm = ref('unknown')
@@ -78,21 +82,23 @@ function applyAppearance(): void {
   applyThemeToDom(effectiveTheme(store.settings), store.settings.accent, store.settings.preset)
 }
 
-async function setPreset(v: PresetKey): Promise<void> {
+async function setPreset(v: PresetKey, e: MouseEvent): Promise<void> {
   await updateSetting('preset', v)
   await updateSetting('accent', THEME_PRESETS[v].accent)
-  applyAppearance()
+  await runThemeWipe(e, applyAppearance)
 }
 
-async function setTheme(v: ThemeMode): Promise<void> {
+async function setTheme(v: ThemeMode, e: MouseEvent): Promise<void> {
   await updateSetting('themeMode', v)
   if (v !== 'system') await updateSetting('theme', v)
-  applyAppearance()
+  // Theme mode switches wipe with plain black/white; presets & accent keep the accent color.
+  const fill = effectiveTheme(store.settings) === 'light' ? '#ffffff' : '#000000'
+  await runThemeWipe(e, applyAppearance, fill)
 }
 
-async function setAccent(v: AccentKey): Promise<void> {
+async function setAccent(v: AccentKey, e: MouseEvent): Promise<void> {
   await updateSetting('accent', v)
-  applyAppearance()
+  await runThemeWipe(e, applyAppearance)
 }
 
 async function pickCurrency(c: string): Promise<void> {
@@ -170,7 +176,7 @@ const updateLabel = computed(() => {
                 ? 'border-accent bg-accent/20 text-accent-hi'
                 : 'border-app-border text-app-text-muted hover:bg-app-bg'
             "
-            @click="setTheme(t.value)"
+            @click="setTheme(t.value, $event)"
           >
             <Icon :name="t.icon" :size="16" />
             {{ t.label }}
@@ -186,13 +192,13 @@ const updateLabel = computed(() => {
             type="button"
             :aria-label="p.label"
             :aria-pressed="store.settings.preset === key"
-            class="flex flex-col gap-2 rounded-lg border p-2.5 text-left transition"
+            class="flex flex-col gap-2 rounded-lg border bg-app-bg p-2.5 text-left transition"
             :class="
               store.settings.preset === key
                 ? 'border-accent ring-1 ring-accent'
-                : 'border-app-border hover:bg-app-bg'
+                : 'border-app-border hover:bg-app-bg2'
             "
-            @click="setPreset(key)"
+            @click="setPreset(key, $event)"
           >
             <span class="flex h-10 w-full overflow-hidden rounded-md border border-app-border">
               <span
@@ -230,7 +236,7 @@ const updateLabel = computed(() => {
                 store.settings.accent === key,
             }"
             :style="{ backgroundColor: meta.value }"
-            @click="setAccent(key)"
+            @click="setAccent(key, $event)"
           >
             <Icon
               v-if="store.settings.accent === key"

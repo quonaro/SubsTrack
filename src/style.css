@@ -43,6 +43,12 @@
   inherits: true;
   initial-value: #8a8f9e;
 }
+/* Radius of the theme-wipe circle mask (themeWipe.ts). */
+@property --wipe-r {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
 
 @theme {
   --color-app-bg: #0f1115;
@@ -227,4 +233,12 @@ body {
 .px-safe {
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
+}
+
+/* During a theme wipe (themeWipe.ts) colors snap instantly — the expanding
+   circle masks the swap, then fades out to reveal the already-applied theme.
+   Kept last so the !important rule wins over every transition in the file. */
+html.theme-wipe,
+html.theme-wipe * {
+  transition: none !important;
 }
