@@ -1,0 +1,187 @@
+<script setup lang="ts">
+import { computed, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { markPaid, store } from '../store'
+import { paymentDatesInRange, todayIso } from '../domain/dates'
+import { formatMoney } from '../domain/currency'
+import Sheet from '../components/Sheet.vue'
+import Icon from '../components/Icon.vue'
+
+const router = useRouter()
+
+const now = new Date()
+const year = ref(now.getFullYear())
+const month = ref(now.getMonth()) // 0-based
+
+const MONTHS = [
+  'Январь',
+  'Февраль',
+  'Март',
+  'Апрель',
+  'Май',
+  'Июнь',
+  'Июль',
+  'Август',
+  'Сентябрь',
+  'Октябрь',
+  'Ноябрь',
+  'Декабрь',
+]
+const WEEKDAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
+
+const iso = (d: number) =>
+  `${year.value}-${String(month.value + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+
+interface DayCell {
+  date: string
+  day: number | null
+  subs: number[]
+  isToday: boolean
+  overdue: boolean
+}
+
+const cells = computed<DayCell[]>(() => {
+  const first = new Date(year.value, month.value, 1)
+  const daysInMonth = new Date(year.value, month.value + 1, 0).getDate()
+  // Monday-first offset.
+  const offset = (first.getDay() + 6) % 7
+  const fromIso = iso(1)
+  const toIso = iso(daysInMonth)
+  const byDay = new Map<string, number[]>()
+  for (const s of store.subscriptions.filter((x) => x.isActive)) {
+    for (const d of paymentDatesInRange(s.nextPaymentDate, s.periodDays, fromIso, toIso)) {
+      const list = byDay.get(d) ?? []
+      list.push(s.id)
+      byDay.set(d, list)
+    }
+  }
+  const out: DayCell[] = []
+  for (let i = 0; i < offset; i++)
+    out.push({ date: '', day: null, subs: [], isToday: false, overdue: false })
+  const today = todayIso()
+  for (let d = 1; d <= daysInMonth; d++) {
+    const date = iso(d)
+    const subs = byDay.get(date) ?? []
+    out.push({
+      date,
+      day: d,
+      subs,
+      isToday: date === today,
+      overdue: subs.length > 0 && date < today,
+    })
+  }
+  return out
+})
+
+const selected = ref<DayCell | null>(null)
+const selectedSubs = computed(() =>
+  (selected.value?.subs ?? [])
+    .map((id) => store.subscriptions.find((s) => s.id === id))
+    .filter((s): s is NonNullable<typeof s> => !!s),
+)
+
+function prev(): void {
+  if (month.value === 0) {
+    month.value = 11
+    year.value -= 1
+  } else month.value -= 1
+}
+function next(): void {
+  if (month.value === 11) {
+    month.value = 0
+    year.value += 1
+  } else month.value += 1
+}
+</script>
+
+<template>
+  <div class="mx-auto max-w-xl px-4 pb-6 pt-6">
+    <header class="mb-4 flex items-center justify-between">
+      <button
+        type="button"
+        class="flex h-10 w-10 items-center justify-center rounded-full border border-app-border bg-app-card"
+        @click="prev"
+      >
+        <Icon name="chevron-left" :size="18" />
+      </button>
+      <h1 class="text-lg font-bold">{{ MONTHS[month] }} {{ year }}</h1>
+      <button
+        type="button"
+        class="flex h-10 w-10 items-center justify-center rounded-full border border-app-border bg-app-card"
+        @click="next"
+      >
+        <Icon name="chevron-right" :size="18" />
+      </button>
+    </header>
+
+    <div class="grid grid-cols-7 gap-1 text-center text-xs text-app-text-muted">
+      <div v-for="w in WEEKDAYS" :key="w" class="py-1">{{ w }}</div>
+    </div>
+
+    <div class="grid grid-cols-7 gap-1">
+      <button
+        v-for="(c, i) in cells"
+        :key="i"
+        type="button"
+        :disabled="c.day == null"
+        class="relative flex aspect-square flex-col items-center justify-center rounded-xl text-sm transition-colors"
+        :class="[
+          c.day == null
+            ? ''
+            : c.isToday
+              ? 'bg-violet-600/30 ring-1 ring-violet-500'
+              : c.subs.length
+                ? 'bg-app-card hover:bg-app-border'
+                : 'hover:bg-app-card/60',
+        ]"
+        @click="c.subs.length && (selected = c)"
+      >
+        <span :class="{ 'font-semibold': c.isToday }">{{ c.day ?? '' }}</span>
+        <div v-if="c.subs.length" class="mt-0.5 flex gap-0.5">
+          <span
+            v-for="(_, di) in c.subs.slice(0, 3)"
+            :key="di"
+            class="h-1.5 w-1.5 rounded-full"
+            :class="c.overdue ? 'bg-red-400' : 'bg-violet-400'"
+          />
+        </div>
+      </button>
+    </div>
+
+    <Sheet
+      :open="!!selected"
+      :title="selected?.date"
+      @update:open="!$event && (selected = null)"
+    >
+      <div class="flex flex-col gap-2">
+        <div
+          v-for="s in selectedSubs"
+          :key="s.id"
+          class="flex items-center gap-3 rounded-xl border border-app-border bg-app-card p-3"
+        >
+          <span class="text-2xl">{{ s.icon }}</span>
+          <div class="min-w-0 flex-1">
+            <div class="truncate font-medium">{{ s.name }}</div>
+            <div class="text-xs text-app-text-muted">
+              {{ formatMoney(s.priceMinor, s.currency) }}
+            </div>
+          </div>
+          <button
+            type="button"
+            class="rounded-full bg-violet-600/20 px-3 py-1.5 text-xs font-medium text-violet-300"
+            @click="markPaid(s.id, selected!.date); selected = null"
+          >
+            Оплатить
+          </button>
+          <button
+            type="button"
+            class="flex h-8 w-8 items-center justify-center rounded-lg text-app-text-muted"
+            @click="router.push(`/subscriptions/${s.id}/edit`)"
+          >
+            <Icon name="chevron-right" :size="16" />
+          </button>
+        </div>
+      </div>
+    </Sheet>
+  </div>
+</template>

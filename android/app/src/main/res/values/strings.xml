@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">SubsTrack</string>
+    <string name="title_activity_main">SubsTrack</string>
+    <string name="package_name">substrack.app</string>
+    <string name="custom_url_scheme">substrack.app</string>
+</resources>

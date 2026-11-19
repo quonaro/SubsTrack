@@ -1,0 +1,42 @@
+@import "tailwindcss";
+
+@theme {
+  --color-app-bg: #0f1115;
+  --color-app-bg2: #171a21;
+  --color-app-card: #1e222b;
+  --color-app-border: #2a2f3a;
+  --color-app-text: #e8eaf0;
+  --color-app-text-muted: #8a8f9e;
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+}
+
+:root.light {
+  --color-app-bg: #f5f6f8;
+  --color-app-bg2: #ffffff;
+  --color-app-card: #ffffff;
+  --color-app-border: #e2e4ea;
+  --color-app-text: #1a1d24;
+  --color-app-text-muted: #6b7080;
+}
+
+html,
+body {
+  height: 100%;
+  background: var(--color-app-bg);
+  color: var(--color-app-text);
+  font-family: var(--font-sans);
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+
+#app {
+  height: 100%;
+}
+
+/* safe-area padding for the bottom navigation on gesture-navigation devices */
+.pb-safe {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+.pt-safe {
+  padding-top: env(safe-area-inset-top);
+}
