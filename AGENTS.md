@@ -117,7 +117,10 @@ exists.
 
 `src/components/` — Reka UI primitives (Dialog → `Sheet.vue` bottom
 sheets, Switch → `ToggleSwitch.vue`) plus `OptionField` (field → option
-sheet), `EmojiPicker`, `SubCard`, `Icon`.
+sheet), `EmojiPicker`, `SubCard`, `Icon`, `PageSkeleton` (animated
+mosaic overlay shown in `App.vue` until `store.ready` and on every
+route switch; guillotine-cut tiles reshuffle on a timer, stays up
+≥500ms then fades out).
 
 `src/views/` — Home (totals + upcoming), Subscriptions (sort/archive),
 SubscriptionForm (create/edit + rules editor + category manager),
