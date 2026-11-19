@@ -1,0 +1,397 @@
+// Demo dataset for the seeder — kept separate from the logic in seed.ts so
+// neither file grows past the project size limit.
+import type { RuleKind } from '../types'
+
+export interface SeedRule {
+  kind: RuleKind
+  daysBefore?: number
+  atTime?: string
+  intervalHours?: number
+}
+
+export interface SeedSub {
+  name: string
+  icon: string
+  priceMinor: number
+  currency: string
+  periodDays: number
+  /** Days from today to the next payment (negative = overdue). */
+  nextIn?: number
+  /** Days since the subscription started. */
+  startedAgo?: number
+  /** Explicit start date, overrides startedAgo. */
+  startDate?: string
+  category?: string
+  notes?: string
+  isActive?: boolean
+  reminderEnabled?: boolean
+  rules?: SeedRule[]
+  /** How many past payments to synthesize, stepping back from next payment. */
+  history?: number
+}
+
+export const EXTRA_CATEGORIES: { name: string; icon: string; color: string }[] = [
+  { name: 'Связь', icon: '📱', color: '#14b8a6' },
+  { name: 'Спорт', icon: '💪', color: '#84cc16' },
+  { name: 'Образование', icon: '📚', color: '#eab308' },
+  { name: 'Финансы', icon: '💳', color: '#3b82f6' },
+]
+
+export const SUBS: SeedSub[] = [
+  // --- Обычные подписки ---
+  {
+    name: 'YouTube Premium',
+    icon: '▶️',
+    priceMinor: 29900,
+    currency: 'RUB',
+    periodDays: 30,
+    nextIn: 4,
+    startedAgo: 430,
+    category: 'Видео',
+    history: 12,
+    rules: [{ kind: 'advance', daysBefore: 1, atTime: '12:00' }],
+  },
+  {
+    name: 'Spotify',
+    icon: '🎧',
+    priceMinor: 1099,
+    currency: 'USD',
+    periodDays: 30,
+    nextIn: 9,
+    startedAgo: 600,
+    category: 'Музыка',
+    history: 8,
+    rules: [{ kind: 'payment_day', atTime: '09:00' }],
+  },
+  {
+    name: 'Яндекс Плюс',
+    icon: '🟡',
+    priceMinor: 39900,
+    currency: 'RUB',
+    periodDays: 30,
+    nextIn: 0,
+    startedAgo: 200,
+    category: 'Прочее',
+    history: 6,
+    rules: [{ kind: 'payment_day', atTime: '10:00' }],
+  },
+  {
+    name: 'iCloud+ 200 ГБ',
+    icon: '☁️',
+    priceMinor: 14900,
+    currency: 'RUB',
+    periodDays: 30,
+    nextIn: 1,
+    startedAgo: 700,
+    category: 'Облако',
+    history: 10,
+    rules: [{ kind: 'advance', daysBefore: 3, atTime: '20:00' }],
+  },
+  {
+    name: 'Кинопоиск',
+    icon: '🍿',
+    priceMinor: 49900,
+    currency: 'RUB',
+    periodDays: 30,
+    nextIn: 7,
+    startedAgo: 365,
+    category: 'Видео',
+    history: 7,
+  },
+  {
+    name: 'Discord Nitro',
+    icon: '💬',
+    priceMinor: 999,
+    currency: 'USD',
+    periodDays: 30,
+    nextIn: 15,
+    startedAgo: 180,
+    category: 'Игры',
+    history: 5,
+  },
+  {
+    name: 'PS Plus Extra',
+    icon: '🎮',
+    priceMinor: 799900,
+    currency: 'RUB',
+    periodDays: 365,
+    nextIn: 120,
+    startedAgo: 245,
+    category: 'Игры',
+    rules: [
+      { kind: 'advance', daysBefore: 7, atTime: '18:00' },
+      { kind: 'advance', daysBefore: 1, atTime: '18:00' },
+    ],
+  },
+  {
+    name: 'GitHub Copilot',
+    icon: '🤖',
+    priceMinor: 10000,
+    currency: 'USD',
+    periodDays: 365,
+    nextIn: 200,
+    startedAgo: 165,
+    category: 'Работа',
+  },
+  {
+    name: 'Notion Plus',
+    icon: '📝',
+    priceMinor: 960,
+    currency: 'USD',
+    periodDays: 30,
+    nextIn: 25,
+    startedAgo: 400,
+    category: 'Работа',
+    reminderEnabled: false,
+  },
+  {
+    name: 'ChatGPT Plus',
+    icon: '🧠',
+    priceMinor: 2000,
+    currency: 'USD',
+    periodDays: 30,
+    nextIn: 18,
+    startedAgo: 210,
+    category: 'Работа',
+    notes: 'Семейный аккаунт, делим на двоих',
+    history: 6,
+    rules: [{ kind: 'recurring', intervalHours: 168 }],
+  },
+  {
+    name: 'VPN',
+    icon: '🛡️',
+    priceMinor: 290000,
+    currency: 'KZT',
+    periodDays: 31,
+    nextIn: 6,
+    startedAgo: 155,
+    notes: 'Оплата казахской картой, списывает в тенге',
+    history: 4,
+  },
+  {
+    name: 'МТС связь',
+    icon: '📱',
+    priceMinor: 55000,
+    currency: 'RUB',
+    periodDays: 30,
+    nextIn: 11,
+    startedAgo: 900,
+    category: 'Связь',
+    history: 9,
+  },
+  {
+    name: 'Ростелеком интернет',
+    icon: '🌐',
+    priceMinor: 65000,
+    currency: 'RUB',
+    periodDays: 30,
+    nextIn: 22,
+    startedAgo: 800,
+    history: 6,
+  },
+  {
+    name: 'World Class',
+    icon: '💪',
+    priceMinor: 1500000,
+    currency: 'RUB',
+    periodDays: 90,
+    nextIn: 30,
+    startedAgo: 150,
+    category: 'Спорт',
+    history: 2,
+  },
+  {
+    name: 'Duolingo Super',
+    icon: '🦉',
+    priceMinor: 8999,
+    currency: 'USD',
+    periodDays: 365,
+    nextIn: 90,
+    startedAgo: 275,
+    category: 'Образование',
+  },
+  {
+    name: 'Strava',
+    icon: '🚴',
+    priceMinor: 899,
+    currency: 'EUR',
+    periodDays: 365,
+    nextIn: 60,
+    startedAgo: 305,
+    category: 'Спорт',
+  },
+  {
+    name: 'Белтелеком',
+    icon: '📡',
+    priceMinor: 3500,
+    currency: 'BYN',
+    periodDays: 30,
+    nextIn: 16,
+    startedAgo: 500,
+    history: 3,
+  },
+  {
+    name: 'Самокат доставка',
+    icon: '🥦',
+    priceMinor: 349000,
+    currency: 'RUB',
+    periodDays: 7,
+    nextIn: 2,
+    startedAgo: 84,
+    history: 8,
+  },
+  {
+    name: 'Облако Mail.ru',
+    icon: '💾',
+    priceMinor: 19900,
+    currency: 'RUB',
+    periodDays: 30,
+    nextIn: 26,
+    startedAgo: 100,
+    category: 'Облако',
+  },
+
+  // --- Просроченные (платёж прошёл, не отмечен) ---
+  {
+    name: 'Netflix',
+    icon: '🎥',
+    priceMinor: 1549,
+    currency: 'EUR',
+    periodDays: 30,
+    nextIn: -3,
+    startedAgo: 500,
+    category: 'Видео',
+    history: 5,
+    rules: [{ kind: 'advance', daysBefore: 3, atTime: '11:00' }],
+  },
+  {
+    name: 'Xbox Game Pass Ultimate',
+    icon: '🕹️',
+    priceMinor: 69900,
+    currency: 'RUB',
+    periodDays: 30,
+    nextIn: -12,
+    startedAgo: 300,
+    category: 'Игры',
+    history: 4,
+  },
+  {
+    name: 'JetBrains Toolbox',
+    icon: '🧰',
+    priceMinor: 28900,
+    currency: 'USD',
+    periodDays: 365,
+    nextIn: -1,
+    startedAgo: 1090,
+    category: 'Работа',
+    history: 2,
+  },
+
+  // --- Архив ---
+  {
+    name: 'Иви',
+    icon: '📺',
+    priceMinor: 39900,
+    currency: 'RUB',
+    periodDays: 30,
+    nextIn: -40,
+    startedAgo: 400,
+    category: 'Видео',
+    isActive: false,
+    history: 3,
+  },
+  {
+    name: 'СберПрайм',
+    icon: '🟢',
+    priceMinor: 29900,
+    currency: 'RUB',
+    periodDays: 30,
+    nextIn: -100,
+    startedAgo: 500,
+    isActive: false,
+    history: 5,
+  },
+  {
+    name: 'Okko',
+    icon: '🎞️',
+    priceMinor: 59900,
+    currency: 'RUB',
+    periodDays: 30,
+    nextIn: -200,
+    startedAgo: 600,
+    category: 'Видео',
+    isActive: false,
+  },
+
+  // --- Краевые случаи ---
+  {
+    name: 'Очень длинное название подписки которое не должно ломать вёрстку карточек и списков даже на узком экране телефона 🎉🎉🎉',
+    icon: '📛',
+    priceMinor: 12345,
+    currency: 'RUB',
+    periodDays: 30,
+    nextIn: 3,
+    startedAgo: 60,
+  },
+  {
+    name: `O'Connor's «Странная» <Подписка> & Co`,
+    icon: '⚠️',
+    priceMinor: 77777,
+    currency: 'RUB',
+    periodDays: 45,
+    nextIn: 13,
+    startedAgo: 90,
+    notes: `Кавычки ' " \` и <теги> — проверка экранирования`,
+  },
+  {
+    name: 'Ежедневный сервис',
+    icon: '🔁',
+    priceMinor: 99,
+    currency: 'RUB',
+    periodDays: 1,
+    nextIn: 1,
+    startedAgo: 30,
+    rules: [{ kind: 'recurring', intervalHours: 24 }],
+  },
+  {
+    name: 'Десятилетняя лицензия',
+    icon: '🗓️',
+    priceMinor: 99999900,
+    currency: 'RUB',
+    periodDays: 3650,
+    nextIn: 1400,
+    startedAgo: 500,
+    notes: 'Куплено на распродаже «навсегда» — посмотрим',
+  },
+  {
+    name: 'Високосный старт',
+    icon: '🐸',
+    priceMinor: 29000,
+    currency: 'RUB',
+    periodDays: 365,
+    startDate: '2024-02-29',
+    notes: 'Старт 29 февраля високосного года',
+  },
+  {
+    name: 'Пробный период',
+    icon: '🆓',
+    priceMinor: 1,
+    currency: 'RUB',
+    periodDays: 14,
+    nextIn: 5,
+    startedAgo: 9,
+    notes: 'Потом станет 999 ₽ — не забыть отменить',
+    rules: [{ kind: 'advance', daysBefore: 2, atTime: '21:00' }],
+  },
+  {
+    name: 'Подписка с длинной заметкой',
+    icon: '📋',
+    priceMinor: 45000,
+    currency: 'RUB',
+    periodDays: 30,
+    nextIn: 20,
+    startedAgo: 45,
+    notes:
+      'Семейный тариф.\nПапа платит в чётных месяцах,\nмама — в нечётных 😅\n\nКарта *4444, автосписание около 20:00.',
+  },
+]

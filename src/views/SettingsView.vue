@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
-import { store, updateSetting } from '../store'
+import { seedDemoData, store, updateSetting } from '../store'
 import { CURRENCIES, CURRENCY_SYMBOLS } from '../domain/currency'
 import { notificationPermission, requestNotificationPermission } from '../domain/reminders'
 import {
@@ -84,6 +84,21 @@ async function askNotif(): Promise<void> {
   await requestNotificationPermission()
   notifPerm.value = await notificationPermission()
   await grantNotificationPermission()
+}
+
+const seeding = ref(false)
+const seeded = ref(false)
+
+async function seed(): Promise<void> {
+  if (seeding.value) return
+  seeding.value = true
+  seeded.value = false
+  try {
+    await seedDemoData()
+    seeded.value = true
+  } finally {
+    seeding.value = false
+  }
 }
 
 const updateLabel = computed(() => {
@@ -271,6 +286,33 @@ const updateLabel = computed(() => {
             Ошибка загрузки — попробуйте ещё раз.
           </p>
         </div>
+      </div>
+    </div>
+
+    <div class="mb-6 flex flex-col gap-2">
+      <h2 class="mb-1 text-sm font-semibold uppercase tracking-wide text-app-text-muted">
+        Для разработчика
+      </h2>
+      <div class="rounded-xl border border-app-border bg-app-card px-4 py-3">
+        <div class="flex items-center justify-between">
+          <div>
+            <div class="text-sm">Тестовые данные</div>
+            <div class="text-xs text-app-text-muted">
+              Подписки, платежи и напоминания для проверки багов
+            </div>
+          </div>
+          <button
+            type="button"
+            class="inline-flex h-8 items-center rounded-full bg-accent/20 px-4 text-xs font-medium text-accent-hi disabled:opacity-50"
+            :disabled="seeding"
+            @click="seed"
+          >
+            {{ seeding ? 'Заполняю…' : 'Заполнить' }}
+          </button>
+        </div>
+        <p v-if="seeded" class="mt-2 text-xs text-green-400">
+          Добавлено. Повторное нажатие добавит ещё одну порцию.
+        </p>
       </div>
     </div>
 

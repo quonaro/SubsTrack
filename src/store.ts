@@ -9,6 +9,7 @@ import { listRules } from './domain/rules'
 import { loadSettings, setSetting } from './domain/settings'
 import { rescheduleAll, requestNotificationPermission } from './domain/reminders'
 import { monthlyTotalMinor, yearlyTotalMinor } from './domain/stats'
+import { seedDemoData as runDemoSeed } from './dev/seed'
 import { logger } from './log'
 
 const log = logger('store')
@@ -154,6 +155,14 @@ export async function replaceRules(
 
 export async function listRulesFor(subscriptionId: number) {
   return listRules(subscriptionId)
+}
+
+/** Dev tool: fill the database with demo data for manual bug-hunting. */
+export async function seedDemoData(): Promise<void> {
+  await runDemoSeed()
+  await reload()
+  store.categories = await cats.listCategories()
+  await refreshReminders()
 }
 
 export async function updateSetting<K extends keyof Settings>(
