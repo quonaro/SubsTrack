@@ -32,9 +32,9 @@ const activeText = computed(
       </div>
       <router-link
         to="/history"
-        class="flex h-9 w-9 items-center justify-center rounded-full border border-app-border bg-app-card text-app-text-muted"
+        class="flex h-9 items-center gap-1.5 rounded-full border border-app-border bg-app-card px-3 text-sm text-app-text-muted"
       >
-        <Icon name="history" :size="16" />
+        <Icon name="history" :size="16" />История
       </router-link>
     </header>
 

@@ -44,11 +44,11 @@ const subsWord = computed(() =>
         class="flex h-9 items-center gap-1.5 rounded-full border border-app-border bg-app-card px-3 text-sm text-app-text-muted"
         @click="sortOpen = true"
       >
-        Сортировка
+        <Icon name="sort" :size="16" />Сортировка
       </button>
     </header>
 
-    <div class="mb-4 flex items-center justify-between rounded-xl border border-app-border bg-app-card px-4 py-2.5">
+    <div class="mb-2 flex items-center justify-between rounded-xl border border-app-border bg-app-card px-4 py-2.5">
       <span class="text-sm text-app-text-muted">Показывать архивные</span>
       <ToggleSwitch :checked="store.showArchived" @update:checked="store.showArchived = $event" />
     </div>
@@ -62,7 +62,7 @@ const subsWord = computed(() =>
       @update:model-value="store.sortMode = $event"
     />
 
-    <div v-if="visibleSubscriptions.length" class="@container mt-4">
+    <div v-if="visibleSubscriptions.length" class="@container mt-2">
       <div
         class="flex flex-col gap-2 @2xl:grid @2xl:grid-cols-2 @2xl:items-start @2xl:gap-3 @5xl:grid-cols-3 @[88rem]:grid-cols-4"
       >

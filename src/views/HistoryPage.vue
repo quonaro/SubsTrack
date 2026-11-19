@@ -65,20 +65,20 @@ const eventsWord = computed(() => pluralRu(events.value.length, 'событие'
 
 <template>
   <div class="mx-auto flex w-full max-w-xl flex-1 flex-col px-4 pb-6 pt-6 sm:px-6 lg:max-w-3xl lg:px-8">
-    <header class="mb-6 flex items-center gap-3">
-      <button
-        type="button"
-        class="flex h-9 w-9 items-center justify-center rounded-full border border-app-border bg-app-card"
-        @click="router.back()"
-      >
-        <Icon name="chevron-left" :size="16" />
-      </button>
+    <header class="mb-6 flex items-center justify-between">
       <div>
         <h1 class="flex items-center gap-2 text-xl font-bold">
           <Icon name="history" :size="20" class="text-accent-hi" />История
         </h1>
         <p class="text-sm text-app-text-muted">{{ events.length }} {{ eventsWord }}</p>
       </div>
+      <button
+        type="button"
+        class="flex h-9 items-center gap-1.5 rounded-full border border-app-border bg-app-card px-3 text-sm text-app-text-muted"
+        @click="router.back()"
+      >
+        <Icon name="chevron-left" :size="16" />Назад
+      </button>
     </header>
 
     <div v-if="events.length" class="flex flex-col gap-1">
