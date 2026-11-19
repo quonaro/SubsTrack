@@ -7,9 +7,13 @@ on-device SQLite and survives app updates. UI is in Russian.
 ## Commands
 
 - `pnpm install` — install deps
-- `pnpm dev` — Vite dev server on :7358 (browser uses sql.js + IndexedDB —
-  same SQL as native; `scripts/copy-wasm.mjs` copies `sql-wasm.wasm` into
-  `public/assets/` via the `predev`/`prebuild` hooks)
+- `pnpm dev` — Vite dev server on :7358. In dev the browser DB is a real
+  file at `data/substrack.db` (gitignored): `src/db/index.ts#openDevFile`
+  POSTs SQL to the `/__substrack-db` middleware in `vite.config.ts`, which
+  runs it through sql.js — inspect/seed it with `sqlite3` while vite runs.
+  If the endpoint is missing (`vite preview`, prod web build) it falls back
+  to jeep-sqlite + IndexedDB; `scripts/copy-wasm.mjs` copies `sql-wasm.wasm`
+  into `public/assets/` via the `predev`/`prebuild` hooks
 - `pnpm build` — wasm copy + typecheck + `vite build` → `dist/`
 - `pnpm typecheck` — vue-tsc
 - `pnpm lint` — Biome check; `pnpm lint:fix` — apply safe fixes.

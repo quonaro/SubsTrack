@@ -2,6 +2,9 @@ node_modules/
 dist/
 *.local
 
+# dev-mode file database (vite middleware, see vite.config.ts)
+data/
+
 # IDE / agent tooling
 .idea/
 .devin/

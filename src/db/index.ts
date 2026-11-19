@@ -96,10 +96,41 @@ async function openWeb(): Promise<Db> {
   }
 }
 
+/**
+ * Dev-server file backend: POSTs SQL ops to the vite middleware that runs
+ * them through sql.js against data/substrack.db — a real file you can open
+ * with any sqlite tool. Only reachable while `vite dev` serves the app;
+ * preview/prod web builds fall back to jeep-sqlite + IndexedDB.
+ */
+export async function openDevFile(): Promise<Db> {
+  const ping = await fetch('/__substrack-db').catch(() => null)
+  if (!ping?.ok) throw new Error('dev db endpoint unavailable')
+  const call = async <T>(body: Record<string, unknown>): Promise<T> => {
+    const res = await fetch('/__substrack-db', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+    const json = (await res.json()) as { result?: T; error?: string }
+    if (!res.ok) throw new Error(json.error ?? `dev db http ${res.status}`)
+    return json.result as T
+  }
+  return {
+    execute: (statement) => call({ method: 'execute', statement }),
+    query: (statement, values) => call({ method: 'query', statement, values }),
+    run: (statement, values) => call({ method: 'run', statement, values }),
+  }
+}
+
+function openWebBackend(): Promise<Db> {
+  if (!import.meta.env.DEV) return openWeb()
+  return openDevFile().catch(() => openWeb())
+}
+
 export function getDb(): Promise<Db> {
   if (!dbPromise) {
     const platform = Capacitor.getPlatform()
-    dbPromise = (platform === 'web' ? openWeb() : openNative()).catch((e) => {
+    dbPromise = (platform === 'web' ? openWebBackend() : openNative()).catch((e) => {
       dbPromise = null
       log.error('failed to open database', e)
       throw e
