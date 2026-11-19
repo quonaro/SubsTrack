@@ -1,4 +1,4 @@
-import { flushPromises, mount } from '@vue/test-utils'
+import { DOMWrapper, flushPromises, mount } from '@vue/test-utils'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { beforeEach, describe, expect, it } from 'vitest'
 import SubscriptionsView from './SubscriptionsView.vue'
@@ -62,10 +62,19 @@ describe('SubscriptionsView', () => {
     expect(w.text()).toContain('Gone')
   })
 
-  it('opens the sort picker', async () => {
-    const w = mount(SubscriptionsView, { global: { plugins: [router()] } })
+  it('opens the sort sheet and applies the picked option', async () => {
+    const w = mount(SubscriptionsView, {
+      global: { plugins: [router()] },
+      attachTo: document.body,
+    })
     await w.find('header button').trigger('click')
     await flushPromises()
-    expect(w.text()).toContain('По дате платежа')
+    const btn = [...document.body.querySelectorAll('button')].find((b) =>
+      b.textContent?.includes('По цене'),
+    )
+    expect(btn).toBeTruthy()
+    await new DOMWrapper(btn!).trigger('click')
+    expect(store.sortMode).toBe('price')
+    w.unmount()
   })
 })
