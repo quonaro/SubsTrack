@@ -51,6 +51,12 @@ beforeEach(() => {
 })
 
 describe('CalendarView', () => {
+  it('renders the page title', async () => {
+    const w = mount(CalendarView, { global: { plugins: [router()] } })
+    await flushPromises()
+    expect(w.find('h1').text()).toBe('Календарь')
+  })
+
   it('shows the current month and marks today', async () => {
     const now = new Date()
     const w = mount(CalendarView, { global: { plugins: [router()] } })

@@ -95,23 +95,28 @@ function next(): void {
 </script>
 
 <template>
-  <div class="mx-auto max-w-xl px-4 pb-6 pt-6">
+  <div class="mx-auto w-full max-w-xl px-4 pb-6 pt-6">
     <header class="mb-4 flex items-center justify-between">
-      <button
-        type="button"
-        class="flex h-8 w-8 items-center justify-center rounded-full border border-app-border bg-app-card"
-        @click="prev"
-      >
-        <Icon name="chevron-left" :size="16" />
-      </button>
-      <h1 class="text-lg font-bold">{{ MONTHS[month] }} {{ year }}</h1>
-      <button
-        type="button"
-        class="flex h-8 w-8 items-center justify-center rounded-full border border-app-border bg-app-card"
-        @click="next"
-      >
-        <Icon name="chevron-right" :size="16" />
-      </button>
+      <h1 class="text-2xl font-bold">Календарь</h1>
+      <div class="flex items-center gap-1">
+        <button
+          type="button"
+          class="flex h-8 w-8 items-center justify-center rounded-full border border-app-border bg-app-card"
+          @click="prev"
+        >
+          <Icon name="chevron-left" :size="16" />
+        </button>
+        <span class="w-28 text-center text-sm font-medium">
+          {{ MONTHS[month] }} {{ year }}
+        </span>
+        <button
+          type="button"
+          class="flex h-8 w-8 items-center justify-center rounded-full border border-app-border bg-app-card"
+          @click="next"
+        >
+          <Icon name="chevron-right" :size="16" />
+        </button>
+      </div>
     </header>
 
     <div class="grid grid-cols-7 gap-1 text-center text-xs text-app-text-muted">
