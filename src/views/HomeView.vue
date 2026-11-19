@@ -6,6 +6,7 @@ import { upcomingPayments } from '../domain/stats'
 import { formatMoney } from '../domain/currency'
 import { todayIso } from '../domain/dates'
 import SubCard from '../components/SubCard.vue'
+import EmptyState from '../components/EmptyState.vue'
 import Icon from '../components/Icon.vue'
 
 const router = useRouter()
@@ -58,12 +59,7 @@ const overdue = computed(() => upcoming.value.filter((s) => s.nextPaymentDate < 
           @paid="markPaid"
         />
       </div>
-      <div
-        v-else
-        class="flex flex-1 items-center justify-center rounded-2xl border border-dashed border-app-border p-6 text-center text-sm text-app-text-muted"
-      >
-        В ближайшие 7 дней платежей нет
-      </div>
+      <EmptyState v-else icon="calendar">В ближайшие 7 дней платежей нет</EmptyState>
     </section>
   </div>
 </template>

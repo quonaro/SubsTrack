@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { store, monthlyTotal, yearlyTotal } from '../store'
 import { categoryBreakdown, paymentHistoryByMonth } from '../domain/stats'
 import { formatMoney } from '../domain/currency'
+import EmptyState from '../components/EmptyState.vue'
 
 const cur = computed(() => store.settings.baseCurrency)
 const breakdown = computed(() =>
@@ -65,12 +66,7 @@ const monthLabel = (m: string) => MONTH_SHORT[Number(m.slice(5)) - 1]
           </div>
         </div>
       </div>
-      <div
-        v-else
-        class="flex flex-1 items-center justify-center rounded-2xl border border-dashed border-app-border p-6 text-center text-sm text-app-text-muted"
-      >
-        Нет данных
-      </div>
+      <EmptyState v-else icon="chart">Нет данных</EmptyState>
     </section>
 
     <section class="flex flex-col" :class="{ 'flex-1': !byMonth.length }">
@@ -95,12 +91,7 @@ const monthLabel = (m: string) => MONTH_SHORT[Number(m.slice(5)) - 1]
           </div>
         </div>
       </div>
-      <div
-        v-else
-        class="flex flex-1 items-center justify-center rounded-2xl border border-dashed border-app-border p-6 text-center text-sm text-app-text-muted"
-      >
-        Платежей ещё не было
-      </div>
+      <EmptyState v-else icon="chart">Платежей ещё не было</EmptyState>
     </section>
   </div>
 </template>

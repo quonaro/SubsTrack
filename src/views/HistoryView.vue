@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { store } from '../store'
 import type { SubEvent } from '../types'
 import { formatMoney } from '../domain/currency'
+import EmptyState from '../components/EmptyState.vue'
 import Icon from '../components/Icon.vue'
 
 const router = useRouter()
@@ -88,11 +89,6 @@ const events = computed(() => store.events)
         </div>
       </div>
     </div>
-    <div
-      v-else
-      class="flex flex-1 items-center justify-center rounded-2xl border border-dashed border-app-border p-8 text-center text-app-text-muted"
-    >
-      Событий пока нет
-    </div>
+    <EmptyState v-else icon="history">Событий пока нет</EmptyState>
   </div>
 </template>

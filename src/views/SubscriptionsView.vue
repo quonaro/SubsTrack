@@ -3,6 +3,7 @@ import { useRouter } from 'vue-router'
 import { markPaid, store, visibleSubscriptions } from '../store'
 import type { SortMode } from '../types'
 import SubCard from '../components/SubCard.vue'
+import EmptyState from '../components/EmptyState.vue'
 import OptionSheet from '../components/OptionSheet.vue'
 import ToggleSwitch from '../components/ToggleSwitch.vue'
 import Icon from '../components/Icon.vue'
@@ -20,7 +21,10 @@ const sortOpen = ref(false)
 </script>
 
 <template>
-  <div class="mx-auto flex w-full max-w-xl flex-1 flex-col px-4 pb-24 pt-6">
+  <div
+    class="mx-auto flex w-full max-w-xl flex-1 flex-col px-4 pt-6"
+    :class="visibleSubscriptions.length ? 'pb-24' : 'pb-6'"
+  >
     <header class="mb-4 flex items-center justify-between">
       <h1 class="text-2xl font-bold">Подписки</h1>
       <button
@@ -55,12 +59,9 @@ const sortOpen = ref(false)
         @paid="markPaid"
       />
     </div>
-    <div
-      v-else
-      class="mt-4 flex flex-1 items-center justify-center rounded-2xl border border-dashed border-app-border p-8 text-center text-app-text-muted"
-    >
+    <EmptyState v-else class="mt-4" icon="list">
       Подписок пока нет.<br />Нажмите «+», чтобы добавить первую.
-    </div>
+    </EmptyState>
 
     <router-link
       to="/subscriptions/new"

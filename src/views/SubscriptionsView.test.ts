@@ -51,6 +51,18 @@ describe('SubscriptionsView', () => {
     expect(w.text()).toContain('Подписок пока нет')
   })
 
+  it('reserves bottom padding for the FAB only when the list is non-empty', async () => {
+    const w = mount(SubscriptionsView, { global: { plugins: [router()] } })
+    await flushPromises()
+    const root = w.find('div')
+    expect(root.classes()).toContain('pb-6')
+    expect(root.classes()).not.toContain('pb-24')
+    store.subscriptions = [sub()]
+    await flushPromises()
+    expect(root.classes()).toContain('pb-24')
+    expect(root.classes()).not.toContain('pb-6')
+  })
+
   it('hides archived subs until the toggle is on', async () => {
     store.subscriptions = [sub({ name: 'Active' }), sub({ id: 2, name: 'Gone', isActive: false })]
     const w = mount(SubscriptionsView, { global: { plugins: [router()] } })
