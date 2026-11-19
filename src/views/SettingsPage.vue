@@ -2,7 +2,11 @@
 import { computed, onMounted } from 'vue'
 import { seedDemoData, store, updateSetting } from '../store'
 import { CURRENCIES, CURRENCY_SYMBOLS } from '../domain/currency'
-import { notificationPermission, requestNotificationPermission } from '../domain/reminders'
+import {
+  notificationPermission,
+  requestNotificationPermission,
+  sendTestNotification,
+} from '../domain/reminders'
 import {
   appVersion,
   checkForUpdate,
@@ -18,12 +22,12 @@ import {
   ACCENTS,
   THEME_PRESETS,
   applyThemeToDom,
+  effectiveTheme,
   type AccentMeta,
   type PresetVar,
   type ThemePreset,
 } from '../theme'
-import type { AccentKey, PresetKey } from '../types'
-import ToggleSwitch from '../components/ToggleSwitch.vue'
+import type { AccentKey, PresetKey, ThemeMode } from '../types'
 import Icon from '../components/Icon.vue'
 import { ref } from 'vue'
 
@@ -31,6 +35,12 @@ const isDev = import.meta.env.DEV
 
 const accentEntries = Object.entries(ACCENTS) as [AccentKey, AccentMeta][]
 const presetEntries = Object.entries(THEME_PRESETS) as [PresetKey, ThemePreset][]
+
+const THEME_OPTIONS: { value: ThemeMode; label: string; icon: string }[] = [
+  { value: 'dark', label: 'Темная', icon: 'moon' },
+  { value: 'system', label: 'Системная', icon: 'monitor' },
+  { value: 'light', label: 'Светлая', icon: 'sun' },
+]
 
 const PRESET_FALLBACK: Record<'dark' | 'light', Record<PresetVar, string>> = {
   dark: {
@@ -52,7 +62,7 @@ const PRESET_FALLBACK: Record<'dark' | 'light', Record<PresetVar, string>> = {
 }
 
 function presetVar(key: PresetKey, name: PresetVar): string {
-  const mode = store.settings.theme
+  const mode = effectiveTheme(store.settings)
   return THEME_PRESETS[key][mode][name] ?? PRESET_FALLBACK[mode][name]
 }
 const notifPerm = ref('unknown')
@@ -63,7 +73,7 @@ onMounted(async () => {
 })
 
 function applyAppearance(): void {
-  applyThemeToDom(store.settings.theme, store.settings.accent, store.settings.preset)
+  applyThemeToDom(effectiveTheme(store.settings), store.settings.accent, store.settings.preset)
 }
 
 async function setPreset(v: PresetKey): Promise<void> {
@@ -72,8 +82,9 @@ async function setPreset(v: PresetKey): Promise<void> {
   applyAppearance()
 }
 
-async function toggleTheme(v: boolean): Promise<void> {
-  await updateSetting('theme', v ? 'light' : 'dark')
+async function setTheme(v: ThemeMode): Promise<void> {
+  await updateSetting('themeMode', v)
+  if (v !== 'system') await updateSetting('theme', v)
   applyAppearance()
 }
 
@@ -90,6 +101,19 @@ async function askNotif(): Promise<void> {
 
 const seeding = ref(false)
 const seeded = ref(false)
+
+type TestNotifState = 'idle' | 'sending' | 'sent' | 'denied' | 'web' | 'error'
+const testNotif = ref<TestNotifState>('idle')
+
+async function testNotifSend(): Promise<void> {
+  if (testNotif.value === 'sending') return
+  testNotif.value = 'sending'
+  try {
+    testNotif.value = await sendTestNotification()
+  } catch {
+    testNotif.value = 'error'
+  }
+}
 
 async function seed(): Promise<void> {
   if (seeding.value) return
@@ -124,12 +148,27 @@ const updateLabel = computed(() => {
     <div class="lg:columns-2 lg:gap-6 2xl:columns-3">
     <div class="mb-6 flex break-inside-avoid flex-col gap-2">
       <h2 class="mb-1 text-sm font-semibold uppercase tracking-wide text-app-text-muted">Внешний вид</h2>
-      <div class="flex items-center justify-between rounded-xl border border-app-border bg-app-card px-4 py-3">
-        <span class="text-sm">Светлая тема</span>
-        <ToggleSwitch
-          :checked="store.settings.theme === 'light'"
-          @update:checked="toggleTheme"
-        />
+      <div class="rounded-xl border border-app-border bg-app-card px-4 py-3">
+        <div class="mb-3 text-sm">Тема</div>
+        <div class="flex gap-2" role="radiogroup" aria-label="Тема">
+          <button
+            v-for="t in THEME_OPTIONS"
+            :key="t.value"
+            type="button"
+            role="radio"
+            :aria-checked="store.settings.themeMode === t.value"
+            class="flex h-9 flex-1 items-center justify-center gap-1 rounded-lg border text-sm font-medium transition"
+            :class="
+              store.settings.themeMode === t.value
+                ? 'border-accent bg-accent/20 text-accent-hi'
+                : 'border-app-border text-app-text-muted hover:bg-app-bg'
+            "
+            @click="setTheme(t.value)"
+          >
+            <Icon :name="t.icon" :size="16" />
+            {{ t.label }}
+          </button>
+        </div>
       </div>
       <div class="rounded-xl border border-app-border bg-app-card px-4 py-3">
         <div class="mb-3 text-sm">Цветовая тема</div>
@@ -212,7 +251,7 @@ const updateLabel = computed(() => {
             "
             @click="updateSetting('baseCurrency', c)"
           >
-            <span class="text-base">{{ CURRENCY_SYMBOLS[c] }}</span>
+            <span class="text-base leading-none">{{ CURRENCY_SYMBOLS[c] }}</span>
             {{ c }}
           </button>
         </div>
@@ -320,6 +359,35 @@ const updateLabel = computed(() => {
         </div>
         <p v-if="seeded" class="mt-2 text-xs text-green-400">
           Добавлено. Повторное нажатие добавит ещё одну порцию.
+        </p>
+      </div>
+      <div class="rounded-xl border border-app-border bg-app-card px-4 py-3">
+        <div class="flex items-center justify-between">
+          <div>
+            <div class="text-sm">Уведомления</div>
+            <div class="text-xs text-app-text-muted">
+              Тестовое уведомление через ~5 секунд (Capacitor)
+            </div>
+          </div>
+          <button
+            type="button"
+            aria-label="Тестовое уведомление"
+            class="inline-flex h-9 items-center rounded-full bg-accent/20 px-4 text-xs font-medium text-accent-hi disabled:opacity-50"
+            :disabled="testNotif === 'sending'"
+            @click="testNotifSend"
+          >
+            {{ testNotif === 'sending' ? 'Отправляю…' : 'Проверить' }}
+          </button>
+        </div>
+        <p
+          v-if="testNotif !== 'idle' && testNotif !== 'sending'"
+          class="mt-2 text-xs"
+          :class="testNotif === 'sent' ? 'text-green-400' : 'text-red-400'"
+        >
+          <template v-if="testNotif === 'sent'">Запланировано — проверьте шторку через ~5 секунд.</template>
+          <template v-else-if="testNotif === 'denied'">Нет разрешения на уведомления.</template>
+          <template v-else-if="testNotif === 'web'">Недоступно в браузере — только на устройстве.</template>
+          <template v-else>Ошибка планирования уведомления.</template>
         </p>
       </div>
     </div>

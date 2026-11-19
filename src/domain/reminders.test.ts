@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { computeReminders, fireDate } from './reminders'
+import { computeReminders, fireDate, sendTestNotification } from './reminders'
 import type { NotifyRule, Subscription } from '../types'
 
 const sub = (over: Partial<Subscription> = {}): Subscription => ({
@@ -76,5 +76,9 @@ describe('reminders', () => {
   it('falls back to the default notification time', () => {
     expect(fireDate('2026-03-15', null).getHours()).toBe(10)
     expect(fireDate('2026-03-15', '07:45').getHours()).toBe(7)
+  })
+
+  it('sendTestNotification is a no-op off native platforms', async () => {
+    expect(await sendTestNotification()).toBe('web')
   })
 })

@@ -1,4 +1,4 @@
-import type { AccentKey, PresetKey } from './types'
+import type { AccentKey, PresetKey, Settings } from './types'
 
 export interface AccentMeta {
   label: string
@@ -118,6 +118,16 @@ export const THEME_PRESETS: Record<PresetKey, ThemePreset> = {
       '--color-app-text-muted': '#b2a599',
     },
   },
+}
+
+export function systemThemeMode(): 'dark' | 'light' {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return 'dark'
+  return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
+}
+
+export function effectiveTheme(settings: Settings): 'dark' | 'light' {
+  if (settings.themeMode === 'system') return systemThemeMode()
+  return settings.themeMode === 'light' ? 'light' : 'dark'
 }
 
 export function applyThemeToDom(

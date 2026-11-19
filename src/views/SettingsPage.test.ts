@@ -19,7 +19,13 @@ beforeEach(async () => {
   const db = await makeTestDb()
   setDbForTesting(db)
   await migrate(db)
-  store.settings = { baseCurrency: 'RUB', theme: 'dark', accent: 'orange', preset: 'default' }
+  store.settings = {
+    baseCurrency: 'RUB',
+    theme: 'dark',
+    themeMode: 'dark',
+    accent: 'orange',
+    preset: 'default',
+  }
 })
 
 describe('SettingsPage', () => {
@@ -35,7 +41,7 @@ describe('SettingsPage', () => {
   it('currency radio persists the setting', async () => {
     const w = mount(SettingsPage, { global: { plugins: [router()] } })
     await flushPromises()
-    const group = w.find('[role="radiogroup"]')
+    const group = w.find('[role="radiogroup"][aria-label="Основная валюта"]')
     expect(group.exists()).toBe(true)
     const usd = group.findAll('[role="radio"]').find((b) => b.text().includes('USD'))
     expect(usd).toBeDefined()
@@ -45,15 +51,35 @@ describe('SettingsPage', () => {
     expect(await getSetting('baseCurrency')).toBe('USD')
   })
 
-  it('theme switch persists the setting', async () => {
+  it('theme radio persists the setting', async () => {
     const w = mount(SettingsPage, { global: { plugins: [router()] } })
     await flushPromises()
-    await w.find('[role="switch"]').trigger('click')
+    const group = w.find('[role="radiogroup"][aria-label="Тема"]')
+    expect(group.exists()).toBe(true)
+    const light = group.findAll('[role="radio"]').find((b) => b.text().includes('Светлая'))
+    expect(light).toBeDefined()
+    await light?.trigger('click')
     await flushPromises()
+    expect(store.settings.themeMode).toBe('light')
     expect(store.settings.theme).toBe('light')
-    expect(await getSetting('theme')).toBe('light')
+    expect(await getSetting('themeMode')).toBe('light')
     expect(document.documentElement.classList.contains('light')).toBe(true)
     document.documentElement.classList.remove('light')
+  })
+
+  it('system theme persists and resolves via prefers-color-scheme', async () => {
+    const w = mount(SettingsPage, { global: { plugins: [router()] } })
+    await flushPromises()
+    const group = w.find('[role="radiogroup"][aria-label="Тема"]')
+    const system = group.findAll('[role="radio"]').find((b) => b.text().includes('Системная'))
+    await system?.trigger('click')
+    await flushPromises()
+    expect(store.settings.themeMode).toBe('system')
+    expect(await getSetting('themeMode')).toBe('system')
+    // legacy theme key keeps the last explicit choice for older builds
+    expect(store.settings.theme).toBe('dark')
+    // test.setup matchMedia stub reports matches: false → dark
+    expect(document.documentElement.classList.contains('light')).toBe(false)
   })
 
   it('accent swatch persists the setting and updates the DOM', async () => {
@@ -80,6 +106,16 @@ describe('SettingsPage', () => {
     await flushPromises()
     expect(store.subscriptions.length).toBeGreaterThan(0)
     expect(w.text()).toContain('Добавлено')
+  })
+
+  it('dev notification test button reports web platform', async () => {
+    const w = mount(SettingsPage, { global: { plugins: [router()] } })
+    await flushPromises()
+    const btn = w.find('button[aria-label="Тестовое уведомление"]')
+    expect(btn.exists()).toBe(true)
+    await btn?.trigger('click')
+    await flushPromises()
+    expect(w.text()).toContain('только на устройстве')
   })
 
   it('preset card persists the preset and its accent', async () => {

@@ -1,9 +1,10 @@
 import { getDb, rows } from '../db'
-import type { Settings } from '../types'
+import type { Settings, ThemeMode } from '../types'
 
 const DEFAULTS: Settings = {
   baseCurrency: 'RUB',
   theme: 'dark',
+  themeMode: 'dark',
   accent: 'orange',
   preset: 'default',
 }
@@ -24,9 +25,15 @@ export async function setSetting<K extends keyof Settings>(
 }
 
 export async function loadSettings(): Promise<Settings> {
+  const db = await getDb()
+  const res = await db.query('SELECT value FROM settings WHERE key=?', ['themeMode'])
+  const stored = rows<{ value: string }>(res)[0]?.value as ThemeMode | undefined
+  const theme = await getSetting('theme')
   return {
     baseCurrency: await getSetting('baseCurrency'),
-    theme: await getSetting('theme'),
+    theme,
+    // themeMode was added later — fall back to the legacy theme key.
+    themeMode: stored ?? theme,
     accent: await getSetting('accent'),
     preset: await getSetting('preset'),
   }

@@ -64,7 +64,13 @@ beforeEach(async () => {
   store.categories = []
   store.events = []
   store.payments = []
-  store.settings = { baseCurrency: 'RUB', theme: 'dark', accent: 'orange', preset: 'default' }
+  store.settings = {
+    baseCurrency: 'RUB',
+    theme: 'dark',
+    themeMode: 'dark',
+    accent: 'orange',
+    preset: 'default',
+  }
   store.sortMode = 'next_date'
   store.showArchived = false
 })

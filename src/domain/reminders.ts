@@ -116,6 +116,33 @@ export async function requestNotificationPermission(): Promise<void> {
   }
 }
 
+export type TestNotificationResult = 'sent' | 'denied' | 'web' | 'error'
+
+/** Dev helper: schedule a one-shot notification ~5s ahead to verify the pipeline. */
+export async function sendTestNotification(): Promise<TestNotificationResult> {
+  if (!Capacitor.isNativePlatform()) return 'web'
+  if ((await notificationPermission()) !== 'granted') {
+    await requestNotificationPermission()
+    if ((await notificationPermission()) !== 'granted') return 'denied'
+  }
+  try {
+    await LocalNotifications.schedule({
+      notifications: [
+        {
+          id: (Date.now() % 2000000000) + 1,
+          title: 'SubsTrack',
+          body: 'Тестовое уведомление — всё работает',
+          schedule: { at: new Date(Date.now() + 5000), allowWhileIdle: true },
+        },
+      ],
+    })
+    return 'sent'
+  } catch (e) {
+    log.error('test notification failed', e)
+    return 'error'
+  }
+}
+
 /**
  * Recompute and reschedule all pending local notifications. Called on app
  * start and after any mutation affecting rules or payment dates — full

@@ -15,6 +15,7 @@ describe('settings (sqlite)', () => {
   it('returns defaults for unset keys', async () => {
     expect(await getSetting('baseCurrency')).toBe('RUB')
     expect(await getSetting('theme')).toBe('dark')
+    expect(await getSetting('themeMode')).toBe('dark')
     expect(await getSetting('accent')).toBe('orange')
     expect(await getSetting('preset')).toBe('default')
   })
@@ -26,6 +27,8 @@ describe('settings (sqlite)', () => {
     expect(await getSetting('baseCurrency')).toBe('EUR')
     await setSetting('theme', 'light')
     expect(await getSetting('theme')).toBe('light')
+    await setSetting('themeMode', 'system')
+    expect(await getSetting('themeMode')).toBe('system')
     await setSetting('accent', 'blue')
     expect(await getSetting('accent')).toBe('blue')
     await setSetting('preset', 'nord')
@@ -37,8 +40,17 @@ describe('settings (sqlite)', () => {
     expect(await loadSettings()).toEqual({
       baseCurrency: 'RUB',
       theme: 'light',
+      themeMode: 'light',
       accent: 'orange',
       preset: 'default',
     })
+  })
+
+  it('loadSettings prefers a stored themeMode over the legacy theme key', async () => {
+    await setSetting('theme', 'light')
+    await setSetting('themeMode', 'system')
+    const s = await loadSettings()
+    expect(s.theme).toBe('light')
+    expect(s.themeMode).toBe('system')
   })
 })

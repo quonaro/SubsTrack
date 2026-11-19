@@ -83,7 +83,10 @@ export type ThemeMode = 'dark' | 'light' | 'system'
 
 export interface Settings {
   baseCurrency: string
-  theme: ThemeMode
+  /** Last explicitly chosen light/dark — kept in sync for older builds. */
+  theme: 'dark' | 'light'
+  /** Active theme preference; 'system' follows the OS color scheme. */
+  themeMode: ThemeMode
   accent: AccentKey
   preset: PresetKey
 }
