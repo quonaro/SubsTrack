@@ -11,9 +11,7 @@ describe('Icon', () => {
   it('falls back to the home icon for unknown names', () => {
     const known = mount(Icon, { props: { name: 'home' } })
     const unknown = mount(Icon, { props: { name: 'no-such-icon' } })
-    expect(unknown.find('svg path').attributes('d')).toBe(
-      known.find('svg path').attributes('d'),
-    )
+    expect(unknown.find('svg path').attributes('d')).toBe(known.find('svg path').attributes('d'))
   })
 
   it('honors the size prop', () => {

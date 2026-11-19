@@ -37,11 +37,15 @@ describe('SubCard', () => {
   })
 
   it('hides the pay button for archived subs and compact mode', () => {
-    expect(mount(SubCard, { props: { sub: sub({ isActive: false }) } }).find('button').exists()).toBe(
-      false,
-    )
     expect(
-      mount(SubCard, { props: { sub: sub(), compact: true } }).find('button').exists(),
+      mount(SubCard, { props: { sub: sub({ isActive: false }) } })
+        .find('button')
+        .exists(),
+    ).toBe(false)
+    expect(
+      mount(SubCard, { props: { sub: sub(), compact: true } })
+        .find('button')
+        .exists(),
     ).toBe(false)
   })
 

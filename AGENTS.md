@@ -139,6 +139,13 @@ and `pnpm lint` must be green. `*.test.ts` live next to sources.
 Anything testable through real SQL goes through `src/db/testdb.ts`
 instead of mocks.
 
+Aim to cover everything coverable — when you add or change code, ship
+tests for it too: pure functions in `src/domain/` (unit), repositories
+and migrations through `testdb.ts` (real SQLite, no mocks), store
+computeds/mutations, router guards, and components/views via
+`@vue/test-utils` (Reka sheets teleport to `document.body`, so query
+there).
+
 ## File size
 
 Keep Vue SFCs around 600 lines and below 700, domain modules around 300
