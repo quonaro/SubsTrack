@@ -8,7 +8,7 @@ import BottomNav from './components/BottomNav.vue'
     <div v-if="!store.ready" class="flex flex-1 items-center justify-center">
       <div class="text-app-text-muted">Загрузка…</div>
     </div>
-    <main v-else class="min-h-0 flex-1 overflow-y-auto pt-safe">
+    <main v-else class="flex min-h-0 flex-1 flex-col overflow-y-auto pt-safe">
       <router-view />
     </main>
     <BottomNav v-if="store.ready" />
