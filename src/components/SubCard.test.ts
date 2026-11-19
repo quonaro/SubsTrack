@@ -1,4 +1,4 @@
-import { mount } from '@vue/test-utils'
+import { DOMWrapper, flushPromises, mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import SubCard from './SubCard.vue'
 import { store } from '../store'
@@ -30,10 +30,31 @@ describe('SubCard', () => {
     expect(w.text()).toContain('Ежемесячно')
   })
 
-  it('emits paid with the subscription id', async () => {
+  it('emits paid with the subscription id after confirming in the sheet', async () => {
     const w = mount(SubCard, { props: { sub: sub({ id: 42 }) } })
     await w.find('button').trigger('click')
+    await flushPromises()
+    expect(w.emitted('paid')).toBeUndefined()
+    const confirm = [...document.body.querySelectorAll('button')].find(
+      (b) => b.textContent?.trim() === 'Оплатить',
+    )
+    expect(confirm).toBeTruthy()
+    await new DOMWrapper(confirm!).trigger('click')
     expect(w.emitted('paid')).toEqual([[42]])
+    w.unmount()
+  })
+
+  it('does not emit paid when the sheet is cancelled', async () => {
+    const w = mount(SubCard, { props: { sub: sub() } })
+    await w.find('button').trigger('click')
+    await flushPromises()
+    const cancel = [...document.body.querySelectorAll('button')].find(
+      (b) => b.textContent?.trim() === 'Отмена',
+    )
+    expect(cancel).toBeTruthy()
+    await new DOMWrapper(cancel!).trigger('click')
+    expect(w.emitted('paid')).toBeUndefined()
+    w.unmount()
   })
 
   it('hides the pay button for archived subs and compact mode', () => {

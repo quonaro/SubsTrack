@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import type { Subscription } from '../types'
 import { categoryOf } from '../store'
 import { formatMoney } from '../domain/currency'
 import { daysUntilText, diffDays, formatDateRu, periodLabel, todayIso } from '../domain/dates'
+import Sheet from './Sheet.vue'
 
 const props = defineProps<{ sub: Subscription; compact?: boolean }>()
 const emit = defineEmits<{ paid: [number] }>()
@@ -11,6 +12,12 @@ const emit = defineEmits<{ paid: [number] }>()
 const cat = computed(() => categoryOf(props.sub))
 const days = computed(() => diffDays(props.sub.nextPaymentDate, todayIso()))
 const overdue = computed(() => props.sub.isActive && days.value < 0)
+
+const confirmOpen = ref(false)
+function confirmPaid() {
+  confirmOpen.value = false
+  emit('paid', props.sub.id)
+}
 </script>
 
 <template>
@@ -48,9 +55,30 @@ const overdue = computed(() => props.sub.isActive && days.value < 0)
       v-if="sub.isActive && !compact"
       type="button"
       class="flex h-8 shrink-0 items-center rounded-full bg-accent/20 px-3 text-xs font-medium text-accent-hi transition-colors hover:bg-accent/40"
-      @click.stop="emit('paid', sub.id)"
+      @click.stop="confirmOpen = true"
     >
       Оплатить
     </button>
+    <Sheet :open="confirmOpen" title="Оплатить подписку?" @update:open="confirmOpen = $event">
+      <p class="mb-5 text-sm text-app-text-muted">
+        Отметить «{{ sub.name }}» оплаченной на {{ formatMoney(sub.priceMinor, sub.currency) }}?
+      </p>
+      <div class="flex gap-3">
+        <button
+          type="button"
+          class="flex h-8 flex-1 items-center justify-center rounded-xl border border-app-border"
+          @click="confirmOpen = false"
+        >
+          Отмена
+        </button>
+        <button
+          type="button"
+          class="flex h-8 flex-1 items-center justify-center rounded-xl bg-accent font-medium text-accent-fg"
+          @click="confirmPaid"
+        >
+          Оплатить
+        </button>
+      </div>
+    </Sheet>
   </div>
 </template>
