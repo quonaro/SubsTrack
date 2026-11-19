@@ -79,8 +79,9 @@ distribution — not Play Store policy.
 (sql.js → IndexedDB) on the web dev build. Every `Db` implementation
 gets `PRAGMA foreign_keys = ON` — SQLite defaults it OFF and the
 CASCADE/SET NULL clauses silently no-op without it. `schema.ts` holds
-versioned migrations applied under `PRAGMA user_version` inside a
-transaction.
+versioned migrations tracked via `PRAGMA user_version` — no explicit
+transaction (jeep-sqlite rejects nested ones), statements are
+idempotent instead. See **Database** for the compatibility rules.
 
 Schema (see `schema.ts`): `categories`, `subscriptions` (money as
 `price_minor` integer minor units, `period_days` flexible cycle, ISO
@@ -117,8 +118,41 @@ sheet), `EmojiPicker`, `SubCard`, `Icon`.
 `src/views/` — Home (totals + upcoming), Subscriptions (sort/archive),
 SubscriptionForm (create/edit + rules editor + category manager),
 Calendar (month grid via `paymentDatesInRange` + day sheet), History
-(events feed), Stats (totals/breakdown/monthly), Settings (theme, base
+(events feed), Stats (totals/breakdown/monthly), Settings (theme, palette
+presets, accent, base
 currency, notification/install permissions, self-update).
+
+## Database
+
+The SQLite file is the only data store and it survives app updates
+_and_ downgrades: a user can sideload an older APK over data written by
+a newer build ("keep app data" reinstall on some OEMs), or point an old
+dev build at a newer IndexedDB copy. `migrate()` only moves forward
+(`while version < SCHEMA.length`), so a `user_version` above the
+bundled schema is left untouched and old code keeps running against the
+newer schema. Every schema/data change must preserve that:
+
+- Only additive migrations: `CREATE TABLE`, `CREATE INDEX`,
+  `ALTER TABLE ... ADD COLUMN`. Never `DROP`/`RENAME` a column or
+  table, never retype one, never rebuild a table — released builds
+  still read and write the old shape.
+- New `NOT NULL` columns need a `DEFAULT`, otherwise INSERTs from an
+  old build (which doesn't know the column) fail.
+- New constraints (`CHECK`, `UNIQUE`, FK) must accept every value an
+  old build can write — SQLite enforces them against old INSERTs too.
+- Never repurpose a column for a new meaning — old builds read it
+  literally. Add a new column instead.
+- Enum-like values (`notify_rules.kind`, `events.type`, settings keys):
+  only ship a new value if the previous released build ignores unknown
+  values rather than misreads or crashes on them (`reminders.ts`
+  if/else chain ignores unknown `kind`; repositories select explicit
+  columns or tolerate extra ones via `SELECT *`). When in doubt, add a
+  column/table instead of overloading an existing value.
+- Never edit a shipped migration: devices already past that
+  `user_version` won't re-run it and their schema diverges. Append a
+  new `SCHEMA` entry instead.
+- Keep statements idempotent (`IF NOT EXISTS`, version bump last) — a
+  crashed migration is retried on next launch.
 
 ## Capacitor
 
@@ -131,6 +165,10 @@ currency, notification/install permissions, self-update).
   OEMs, verified on Honor/MagicOS); permissions: INTERNET,
   REQUEST_INSTALL_PACKAGES, POST_NOTIFICATIONS, SCHEDULE_EXACT_ALARM
 - Frontend work is mobile-first: design for touch + small screens first
+
+## UI
+
+- All buttons must be the same height: 32px.
 
 ## Testing
 
