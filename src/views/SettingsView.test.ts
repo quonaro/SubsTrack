@@ -70,6 +70,18 @@ describe('SettingsView', () => {
     )
   })
 
+  it('dev section fills the database with demo data', async () => {
+    const w = mount(SettingsView, { global: { plugins: [router()] } })
+    await flushPromises()
+    expect(w.text()).toContain('Тестовые данные')
+    const btn = w.findAll('button').find((b) => b.text() === 'Заполнить')
+    expect(btn).toBeDefined()
+    await btn?.trigger('click')
+    await flushPromises()
+    expect(store.subscriptions.length).toBeGreaterThan(0)
+    expect(w.text()).toContain('Добавлено')
+  })
+
   it('preset card persists the preset and its accent', async () => {
     const w = mount(SettingsView, { global: { plugins: [router()] } })
     await flushPromises()

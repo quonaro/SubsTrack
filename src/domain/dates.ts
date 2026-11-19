@@ -1,5 +1,6 @@
 // Pure date helpers. All calendar dates are ISO 'YYYY-MM-DD' strings in the
 // device-local timezone; timestamps are ISO datetimes.
+import { pluralRu } from './plural'
 
 export function toIsoDate(d: Date): string {
   const y = d.getFullYear()
@@ -136,15 +137,6 @@ export function daysUntilText(days: number): string {
   if (days === 0) return 'сегодня'
   if (days === 1) return 'завтра'
   const abs = Math.abs(days)
-  const last = abs % 10
-  const lastTwo = abs % 100
-  const word =
-    lastTwo >= 11 && lastTwo <= 14
-      ? 'дней'
-      : last === 1
-        ? 'день'
-        : last >= 2 && last <= 4
-          ? 'дня'
-          : 'дней'
+  const word = pluralRu(abs, 'день', 'дня', 'дней')
   return days > 0 ? `через ${abs} ${word}` : `${abs} ${word} назад`
 }

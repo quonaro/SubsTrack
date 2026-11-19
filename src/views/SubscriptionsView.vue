@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
 import { markPaid, store, visibleSubscriptions } from '../store'
 import type { SortMode } from '../types'
 import SubCard from '../components/SubCard.vue'
@@ -8,10 +7,10 @@ import OptionSheet from '../components/OptionSheet.vue'
 import ToggleSwitch from '../components/ToggleSwitch.vue'
 import Sheet from '../components/Sheet.vue'
 import SubscriptionForm from '../components/SubscriptionForm.vue'
+import SubscriptionEditSheet from '../components/SubscriptionEditSheet.vue'
 import Icon from '../components/Icon.vue'
-import { ref } from 'vue'
-
-const router = useRouter()
+import { pluralRu } from '../domain/plural'
+import { computed, ref } from 'vue'
 
 const sortOptions: { value: SortMode; label: string }[] = [
   { value: 'next_date', label: 'По дате платежа' },
@@ -21,6 +20,11 @@ const sortOptions: { value: SortMode; label: string }[] = [
 
 const sortOpen = ref(false)
 const formOpen = ref(false)
+const editId = ref<number | null>(null)
+
+const subsWord = computed(() =>
+  pluralRu(visibleSubscriptions.value.length, 'подписка', 'подписки', 'подписок'),
+)
 </script>
 
 <template>
@@ -29,7 +33,12 @@ const formOpen = ref(false)
     :class="visibleSubscriptions.length ? 'pb-24' : 'pb-6'"
   >
     <header class="mb-4 flex items-center justify-between">
-      <h1 class="text-2xl font-bold">Подписки</h1>
+      <div>
+        <h1 class="flex items-center gap-2 text-2xl font-bold">
+          <Icon name="list" :size="22" class="text-accent-hi" />Подписки
+        </h1>
+        <p class="text-sm text-app-text-muted">{{ visibleSubscriptions.length }} {{ subsWord }}</p>
+      </div>
       <button
         type="button"
         class="flex h-9 items-center gap-1.5 rounded-full border border-app-border bg-app-card px-3 text-sm text-app-text-muted"
@@ -61,7 +70,7 @@ const formOpen = ref(false)
           v-for="s in visibleSubscriptions"
           :key="s.id"
           :sub="s"
-          @click="router.push(`/subscriptions/${s.id}/edit`)"
+          @click="editId = s.id"
           @paid="markPaid"
         />
       </div>
@@ -82,5 +91,11 @@ const formOpen = ref(false)
     <Sheet :open="formOpen" title="Новая подписка" @update:open="formOpen = $event">
       <SubscriptionForm @saved="formOpen = false" />
     </Sheet>
+
+    <SubscriptionEditSheet
+      :sub-id="editId"
+      @close="editId = null"
+      @deleted="editId = null"
+    />
   </div>
 </template>

@@ -1,27 +1,34 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, ref } from 'vue'
 import { activeSubscriptions, markPaid, monthlyTotal, store, yearlyTotal } from '../store'
 import { upcomingPayments } from '../domain/stats'
 import { formatMoney } from '../domain/currency'
 import { todayIso } from '../domain/dates'
+import { pluralRu } from '../domain/plural'
 import SubCard from '../components/SubCard.vue'
+import SubscriptionEditSheet from '../components/SubscriptionEditSheet.vue'
 import EmptyState from '../components/EmptyState.vue'
 import Icon from '../components/Icon.vue'
 
-const router = useRouter()
+const editId = ref<number | null>(null)
 const cur = computed(() => store.settings.baseCurrency)
 
 const upcoming = computed(() => upcomingPayments(store.subscriptions, todayIso(), 7))
 const overdue = computed(() => upcoming.value.filter((s) => s.nextPaymentDate < todayIso()))
+const activeText = computed(
+  () =>
+    `${activeSubscriptions.value.length} ${pluralRu(activeSubscriptions.value.length, 'активный платёж', 'активных платежа', 'активных платежей')}`,
+)
 </script>
 
 <template>
   <div class="mx-auto flex w-full max-w-xl flex-1 flex-col px-4 pb-6 pt-6 sm:px-6 md:max-w-none lg:px-8">
     <header class="mb-6 flex items-center justify-between">
       <div>
-        <h1 class="text-2xl font-bold">SubsTrack</h1>
-        <p class="text-sm text-app-text-muted">{{ activeSubscriptions.length }} активных платежей</p>
+        <h1 class="flex items-center gap-2 text-2xl font-bold">
+          <Icon name="home" :size="22" class="text-accent-hi" />SubsTrack
+        </h1>
+        <p class="text-sm text-app-text-muted">{{ activeText }}</p>
       </div>
       <router-link
         to="/history"
@@ -56,12 +63,18 @@ const overdue = computed(() => upcoming.value.filter((s) => s.nextPaymentDate < 
           v-for="s in upcoming.slice(0, 6)"
           :key="s.id"
           :sub="s"
-          @click="router.push(`/subscriptions/${s.id}/edit`)"
+          @click="editId = s.id"
           @paid="markPaid"
         />
         </div>
       </div>
       <EmptyState v-else icon="calendar">В ближайшие 7 дней платежей нет</EmptyState>
     </section>
+
+    <SubscriptionEditSheet
+      :sub-id="editId"
+      @close="editId = null"
+      @deleted="editId = null"
+    />
   </div>
 </template>

@@ -20,7 +20,7 @@ import ToggleSwitch from './ToggleSwitch.vue'
 import Sheet from './Sheet.vue'
 import Icon from './Icon.vue'
 
-// The same form serves both surfaces: `subId` set → edit mode (page),
+// The same form serves both surfaces: `subId` set → edit mode (sheet),
 // null/undefined → create mode (sheet on the subscriptions list).
 const props = defineProps<{ subId?: number | null }>()
 const emit = defineEmits<{ saved: []; deleted: [] }>()

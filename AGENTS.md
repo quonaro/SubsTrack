@@ -111,15 +111,17 @@ per subscription), `events` (audit log), `settings` (key/value).
 reloads affected slices and triggers `rescheduleAll`.
 
 `src/router.ts` — vue-router; `afterEach` persists `fullPath` into
-`substrack:nav` localStorage, `beforeEach` restores it once on boot and
-falls back to the list when a `/subscriptions/:id/edit` target no longer
-exists.
+`substrack:nav` localStorage, `beforeEach` restores it once on boot. The
+legacy `/subscriptions/new` and `/subscriptions/:id/edit` paths redirect
+to the list — create/edit live in sheets, not routes.
 
 `src/components/` — Reka UI primitives (Dialog → `Sheet.vue` bottom
 sheets, Switch → `ToggleSwitch.vue`) plus `OptionField` (field → option
 sheet), `EmojiPicker`, `SubCard`, `Icon`, `SubscriptionForm` (shared
 create/edit form + rules editor + category manager — `subId` prop:
-null → create, id → edit; emits `saved`/`deleted`), `PageSkeleton`
+null → create, id → edit; emits `saved`/`deleted`),
+`SubscriptionEditSheet` (edit `Sheet` wrapping `SubscriptionForm`;
+`subId` null → closed, emits `close`/`deleted`), `PageSkeleton`
 (animated
 mosaic overlay shown in `App.vue` until `store.ready` and on every
 route switch; guillotine-cut tiles reshuffle on a timer, stays up
@@ -127,8 +129,6 @@ route switch; guillotine-cut tiles reshuffle on a timer, stays up
 
 `src/views/` — Home (totals + upcoming), Subscriptions (sort/archive,
 FAB opens `SubscriptionForm` in a `Sheet` for create),
-SubscriptionFormView (edit page wrapping `SubscriptionForm`; legacy
-`/subscriptions/new` redirects to the list),
 Calendar (month grid via `paymentDatesInRange` + day sheet), History
 (events feed), Stats (totals/breakdown/monthly), Settings (theme, palette
 presets, accent, base

@@ -4,6 +4,7 @@ import { store, monthlyTotal, yearlyTotal } from '../store'
 import { categoryBreakdown, paymentHistoryByMonth } from '../domain/stats'
 import { formatMoney } from '../domain/currency'
 import EmptyState from '../components/EmptyState.vue'
+import Icon from '../components/Icon.vue'
 
 const cur = computed(() => store.settings.baseCurrency)
 const breakdown = computed(() =>
@@ -32,7 +33,12 @@ const monthLabel = (m: string) => MONTH_SHORT[Number(m.slice(5)) - 1]
 
 <template>
   <div class="mx-auto flex w-full max-w-xl flex-1 flex-col px-4 pb-6 pt-6 sm:px-6 md:max-w-none lg:px-8">
-    <h1 class="mb-6 text-2xl font-bold">Статистика</h1>
+    <header class="mb-6">
+      <h1 class="flex items-center gap-2 text-2xl font-bold">
+        <Icon name="chart" :size="22" class="text-accent-hi" />Статистика
+      </h1>
+      <p class="text-sm text-app-text-muted">Все суммы приведены в {{ cur }}</p>
+    </header>
 
     <div class="mb-6 grid grid-cols-2 gap-3">
       <div class="rounded-2xl border border-app-border bg-app-card p-4">

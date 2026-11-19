@@ -28,6 +28,7 @@ describe('SubCard', () => {
     expect(w.text()).toContain('Netflix')
     expect(w.text()).toContain('999')
     expect(w.text()).toContain('Ежемесячно')
+    expect(w.find('button').text()).toContain('999')
   })
 
   it('emits paid with the subscription id after confirming in the sheet', async () => {

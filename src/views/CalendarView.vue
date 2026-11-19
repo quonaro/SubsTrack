@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { useRouter } from 'vue-router'
 import { markPaid, store } from '../store'
 import { paymentDatesInRange, todayIso } from '../domain/dates'
 import { formatMoney } from '../domain/currency'
 import Sheet from '../components/Sheet.vue'
+import SubscriptionEditSheet from '../components/SubscriptionEditSheet.vue'
 import Icon from '../components/Icon.vue'
+import { pluralRu } from '../domain/plural'
 
-const router = useRouter()
+const editId = ref<number | null>(null)
 
 const now = new Date()
 const year = ref(now.getFullYear())
@@ -26,6 +27,20 @@ const MONTHS = [
   'Октябрь',
   'Ноябрь',
   'Декабрь',
+]
+const MONTHS_PREP = [
+  'январе',
+  'феврале',
+  'марте',
+  'апреле',
+  'мае',
+  'июне',
+  'июле',
+  'августе',
+  'сентябре',
+  'октябре',
+  'ноябре',
+  'декабре',
 ]
 const WEEKDAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
 
@@ -73,6 +88,9 @@ const cells = computed<DayCell[]>(() => {
   return out
 })
 
+const monthPayments = computed(() => cells.value.reduce((n, c) => n + c.subs.length, 0))
+const paymentsWord = computed(() => pluralRu(monthPayments.value, 'платёж', 'платежа', 'платежей'))
+
 const selected = ref<DayCell | null>(null)
 const selectedSubs = computed(() =>
   (selected.value?.subs ?? [])
@@ -97,7 +115,14 @@ function next(): void {
 <template>
   <div class="mx-auto w-full max-w-xl px-4 pb-6 pt-6 sm:px-6 lg:max-w-3xl lg:px-8">
     <header class="mb-4 flex items-center justify-between">
-      <h1 class="text-2xl font-bold">Календарь</h1>
+      <div>
+        <h1 class="flex items-center gap-2 text-2xl font-bold">
+          <Icon name="calendar" :size="22" class="text-accent-hi" />Календарь
+        </h1>
+        <p class="text-sm text-app-text-muted">
+          {{ monthPayments }} {{ paymentsWord }} в {{ MONTHS_PREP[month] }}
+        </p>
+      </div>
       <div class="flex items-center gap-1">
         <button
           type="button"
@@ -181,12 +206,18 @@ function next(): void {
           <button
             type="button"
             class="flex h-9 w-9 items-center justify-center rounded-lg text-app-text-muted"
-            @click="router.push(`/subscriptions/${s.id}/edit`)"
+            @click="selected = null; editId = s.id"
           >
             <Icon name="chevron-right" :size="16" />
           </button>
         </div>
       </div>
     </Sheet>
+
+    <SubscriptionEditSheet
+      :sub-id="editId"
+      @close="editId = null"
+      @deleted="editId = null"
+    />
   </div>
 </template>

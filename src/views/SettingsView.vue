@@ -27,6 +27,8 @@ import ToggleSwitch from '../components/ToggleSwitch.vue'
 import Icon from '../components/Icon.vue'
 import { ref } from 'vue'
 
+const isDev = import.meta.env.DEV
+
 const accentEntries = Object.entries(ACCENTS) as [AccentKey, AccentMeta][]
 const presetEntries = Object.entries(THEME_PRESETS) as [PresetKey, ThemePreset][]
 
@@ -112,7 +114,12 @@ const updateLabel = computed(() => {
 
 <template>
   <div class="mx-auto w-full max-w-xl px-4 pb-6 pt-6 sm:px-6 md:max-w-none lg:px-8">
-    <h1 class="mb-6 text-2xl font-bold">Настройки</h1>
+    <header class="mb-6">
+      <h1 class="flex items-center gap-2 text-2xl font-bold">
+        <Icon name="cog" :size="22" class="text-accent-hi" />Настройки
+      </h1>
+      <p class="text-sm text-app-text-muted">Версия {{ appVersion }}</p>
+    </header>
 
     <div class="lg:columns-2 lg:gap-6 2xl:columns-3">
     <div class="mb-6 flex break-inside-avoid flex-col gap-2">
@@ -290,7 +297,7 @@ const updateLabel = computed(() => {
       </div>
     </div>
 
-    <div class="mb-6 flex break-inside-avoid flex-col gap-2">
+    <div v-if="isDev" class="mb-6 flex break-inside-avoid flex-col gap-2">
       <h2 class="mb-1 text-sm font-semibold uppercase tracking-wide text-app-text-muted">
         Для разработчика
       </h2>

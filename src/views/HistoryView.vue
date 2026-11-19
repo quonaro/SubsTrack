@@ -6,6 +6,7 @@ import type { SubEvent } from '../types'
 import { formatMoney } from '../domain/currency'
 import EmptyState from '../components/EmptyState.vue'
 import Icon from '../components/Icon.vue'
+import { pluralRu } from '../domain/plural'
 
 const router = useRouter()
 
@@ -59,6 +60,7 @@ const fmtTime = (iso: string) => {
 }
 
 const events = computed(() => store.events)
+const eventsWord = computed(() => pluralRu(events.value.length, 'событие', 'события', 'событий'))
 </script>
 
 <template>
@@ -71,7 +73,12 @@ const events = computed(() => store.events)
       >
         <Icon name="chevron-left" :size="16" />
       </button>
-      <h1 class="text-xl font-bold">История</h1>
+      <div>
+        <h1 class="flex items-center gap-2 text-xl font-bold">
+          <Icon name="history" :size="20" class="text-accent-hi" />История
+        </h1>
+        <p class="text-sm text-app-text-muted">{{ events.length }} {{ eventsWord }}</p>
+      </div>
     </header>
 
     <div v-if="events.length" class="flex flex-col gap-1">

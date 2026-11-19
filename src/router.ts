@@ -1,5 +1,4 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { store } from './store'
 import { logger } from './log'
 
 const log = logger('router')
@@ -13,14 +12,11 @@ const routes = [
     name: 'subscriptions',
     component: () => import('./views/SubscriptionsView.vue'),
   },
-  // Creation happens in a sheet on the list; keep the old path as a redirect
-  // so a saved route from a previous build still lands somewhere sensible.
+  // Creation and editing happen in sheets on the pages themselves; keep the
+  // old paths as redirects so a saved route from a previous build still
+  // lands somewhere sensible.
   { path: '/subscriptions/new', redirect: { name: 'subscriptions' } },
-  {
-    path: '/subscriptions/:id(\\d+)/edit',
-    name: 'sub-edit',
-    component: () => import('./views/SubscriptionFormView.vue'),
-  },
+  { path: '/subscriptions/:id(\\d+)/edit', redirect: { name: 'subscriptions' } },
   { path: '/calendar', name: 'calendar', component: () => import('./views/CalendarView.vue') },
   { path: '/history', name: 'history', component: () => import('./views/HistoryView.vue') },
   { path: '/stats', name: 'stats', component: () => import('./views/StatsView.vue') },
@@ -34,8 +30,7 @@ export const router = createRouter({
 })
 
 // Restore the last open page on app start (native WebView always boots on
-// '/'): the saved route is applied once the store is ready so guards can
-// fall back when the target entity no longer exists.
+// '/'): the saved route is applied once, on the first navigation.
 let restored = false
 
 router.beforeEach((to) => {
@@ -45,14 +40,6 @@ router.beforeEach((to) => {
     if (saved && saved !== to.fullPath) {
       log.debug('restoring last route', saved)
       return saved
-    }
-  }
-  // Edit page for a subscription that no longer exists -> back to the list.
-  if (to.name === 'sub-edit' && store.ready) {
-    const id = Number(to.params.id)
-    if (!store.subscriptions.some((s) => s.id === id)) {
-      log.debug('nav target subscription missing, falling back to list', id)
-      return { name: 'subscriptions' }
     }
   }
   return true

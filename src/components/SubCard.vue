@@ -34,7 +34,9 @@ function confirmPaid() {
     <div class="min-w-0 flex-1">
       <div class="flex items-baseline justify-between gap-2">
         <span class="truncate font-medium">{{ sub.name }}</span>
-        <span class="shrink-0 font-semibold">{{ formatMoney(sub.priceMinor, sub.currency) }}</span>
+        <span v-if="!sub.isActive || compact" class="shrink-0 font-semibold"
+          >{{ formatMoney(sub.priceMinor, sub.currency) }}</span
+        >
       </div>
       <div class="mt-0.5 flex items-center justify-between gap-2 text-xs text-app-text-muted">
         <span class="truncate">
@@ -57,9 +59,9 @@ function confirmPaid() {
       class="flex h-9 shrink-0 items-center rounded-full bg-accent/20 px-3 text-xs font-medium text-accent-hi transition-colors hover:bg-accent/40"
       @click.stop="confirmOpen = true"
     >
-      Оплатить
+      {{ formatMoney(sub.priceMinor, sub.currency) }}
     </button>
-    <Sheet :open="confirmOpen" title="Оплатить подписку?" @update:open="confirmOpen = $event">
+    <Sheet :open="confirmOpen" title="Отметить подписку оплаченной?" @update:open="confirmOpen = $event">
       <p class="mb-5 text-sm text-app-text-muted">
         Отметить «{{ sub.name }}» оплаченной на {{ formatMoney(sub.priceMinor, sub.currency) }}?
       </p>

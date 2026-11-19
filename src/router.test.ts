@@ -6,26 +6,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const fresh = async () => {
   vi.resetModules()
   const { router, NAV_KEY } = await import('./router')
-  const { store } = await import('./store')
-  return { router, store, NAV_KEY }
+  return { router, NAV_KEY }
 }
-
-const sub = (id: number) => ({
-  id,
-  name: 'S',
-  priceMinor: 100,
-  currency: 'RUB',
-  periodDays: 30,
-  startDate: '2026-01-01',
-  nextPaymentDate: '2026-01-01',
-  icon: '📦',
-  isActive: true,
-  reminderEnabled: true,
-  categoryId: null,
-  notes: null,
-  createdAt: '',
-  updatedAt: '',
-})
 
 beforeEach(() => {
   localStorage.clear()
@@ -63,28 +45,10 @@ describe('router guards', () => {
     expect(router.currentRoute.value.path).toBe('/stats')
   })
 
-  it('redirects sub-edit to the list when the subscription is gone', async () => {
-    const { router, store } = await fresh()
-    store.ready = true
-    store.subscriptions = []
+  it('redirects the legacy edit path to the list', async () => {
+    const { router } = await fresh()
     await router.push('/subscriptions/7/edit')
     expect(router.currentRoute.value.name).toBe('subscriptions')
-  })
-
-  it('lets sub-edit through for an existing subscription', async () => {
-    const { router, store } = await fresh()
-    store.ready = true
-    store.subscriptions = [sub(7)]
-    await router.push('/subscriptions/7/edit')
-    expect(router.currentRoute.value.name).toBe('sub-edit')
-    expect(router.currentRoute.value.params.id).toBe('7')
-  })
-
-  it('lets sub-edit through while the store is not ready yet', async () => {
-    const { router, store } = await fresh()
-    store.ready = false
-    await router.push('/subscriptions/7/edit')
-    expect(router.currentRoute.value.name).toBe('sub-edit')
   })
 
   it('redirects the legacy /subscriptions/new path to the list', async () => {
