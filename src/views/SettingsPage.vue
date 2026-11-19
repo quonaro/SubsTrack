@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
 import { seedDemoData, store, updateSetting } from '../store'
-import { CURRENCIES, CURRENCY_SYMBOLS } from '../domain/currency'
+import { CURRENCIES, CURRENCY_FLAGS, CURRENCY_NAMES, CURRENCY_SYMBOLS } from '../domain/currency'
 import {
   notificationPermission,
   requestNotificationPermission,
@@ -29,6 +29,7 @@ import {
 } from '../theme'
 import type { AccentKey, PresetKey, ThemeMode } from '../types'
 import Icon from '../components/Icon.vue'
+import Modal from '../components/Modal.vue'
 import { ref } from 'vue'
 
 const isDev = import.meta.env.DEV
@@ -66,6 +67,7 @@ function presetVar(key: PresetKey, name: PresetVar): string {
   return THEME_PRESETS[key][mode][name] ?? PRESET_FALLBACK[mode][name]
 }
 const notifPerm = ref('unknown')
+const currencyOpen = ref(false)
 
 onMounted(async () => {
   notifPerm.value = await notificationPermission()
@@ -91,6 +93,11 @@ async function setTheme(v: ThemeMode): Promise<void> {
 async function setAccent(v: AccentKey): Promise<void> {
   await updateSetting('accent', v)
   applyAppearance()
+}
+
+async function pickCurrency(c: string): Promise<void> {
+  await updateSetting('baseCurrency', c)
+  currencyOpen.value = false
 }
 
 async function askNotif(): Promise<void> {
@@ -236,25 +243,22 @@ const updateLabel = computed(() => {
       </div>
       <div class="rounded-xl border border-app-border bg-app-card px-4 py-3">
         <div class="mb-3 text-sm">Основная валюта</div>
-        <div class="flex gap-2" role="radiogroup" aria-label="Основная валюта">
-          <button
-            v-for="c in CURRENCIES"
-            :key="c"
-            type="button"
-            role="radio"
-            :aria-checked="store.settings.baseCurrency === c"
-            class="flex h-9 flex-1 items-center justify-center gap-1 rounded-lg border text-sm font-medium transition"
-            :class="
-              store.settings.baseCurrency === c
-                ? 'border-accent bg-accent/20 text-accent-hi'
-                : 'border-app-border text-app-text-muted hover:bg-app-bg'
-            "
-            @click="updateSetting('baseCurrency', c)"
-          >
-            <span class="text-base leading-none">{{ CURRENCY_SYMBOLS[c] }}</span>
-            {{ c }}
-          </button>
-        </div>
+        <button
+          type="button"
+          class="flex h-9 w-full items-center justify-between rounded-xl border border-app-border bg-app-card px-4 text-left"
+          @click="currencyOpen = true"
+        >
+          <span class="flex items-center gap-2">
+            <span class="text-xl leading-none">
+              {{ CURRENCY_FLAGS[store.settings.baseCurrency] }}
+            </span>
+            <span class="text-sm font-medium">{{ store.settings.baseCurrency }}</span>
+            <span class="text-xs text-app-text-muted">
+              {{ CURRENCY_SYMBOLS[store.settings.baseCurrency] }}
+            </span>
+          </span>
+          <Icon name="chevron-down" :size="16" class="text-app-text-muted" />
+        </button>
       </div>
     </div>
 
@@ -392,6 +396,33 @@ const updateLabel = computed(() => {
       </div>
     </div>
     </div>
+
+    <Modal :open="currencyOpen" title="Основная валюта" @update:open="currencyOpen = $event">
+      <div class="grid grid-cols-2 gap-2">
+        <button
+          v-for="c in CURRENCIES"
+          :key="c"
+          type="button"
+          class="relative flex flex-col items-center gap-1 rounded-xl border px-3 py-3 text-center transition"
+          :class="
+            store.settings.baseCurrency === c
+              ? 'border-accent bg-accent/20'
+              : 'border-app-border hover:bg-app-card'
+          "
+          @click="pickCurrency(c)"
+        >
+          <span class="text-3xl leading-none">{{ CURRENCY_FLAGS[c] }}</span>
+          <span class="text-sm font-semibold">{{ c }}</span>
+          <span class="text-xs text-app-text-muted">{{ CURRENCY_NAMES[c] }}</span>
+          <Icon
+            v-if="store.settings.baseCurrency === c"
+            name="check"
+            :size="16"
+            class="absolute right-2 top-2 text-accent-hi"
+          />
+        </button>
+      </div>
+    </Modal>
 
     <p class="text-center text-xs text-app-text-muted/60">SubsTrack · local-first · данные хранятся на устройстве</p>
   </div>

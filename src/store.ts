@@ -25,7 +25,7 @@ export const store = reactive({
     theme: 'dark',
     themeMode: 'dark',
     accent: 'orange',
-    preset: 'default',
+    preset: 'warm',
   } as Settings,
   sortMode: 'next_date' as SortMode,
   showArchived: false,

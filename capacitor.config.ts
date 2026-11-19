@@ -16,6 +16,11 @@ const config: CapacitorConfig = {
       androidIsEncryption: false,
       iosIsEncryption: false,
     },
+    LocalNotifications: {
+      // Monochrome silhouette of the logo — Android tints it with iconColor.
+      smallIcon: 'ic_stat_substrack',
+      iconColor: '#f15a24',
+    },
   },
 }
 

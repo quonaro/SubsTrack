@@ -38,14 +38,19 @@ describe('SettingsPage', () => {
     expect(w.text()).toContain('Уведомления')
   })
 
-  it('currency radio persists the setting', async () => {
+  it('currency field opens a flag picker and persists the setting', async () => {
     const w = mount(SettingsPage, { global: { plugins: [router()] } })
     await flushPromises()
-    const group = w.find('[role="radiogroup"][aria-label="Основная валюта"]')
-    expect(group.exists()).toBe(true)
-    const usd = group.findAll('[role="radio"]').find((b) => b.text().includes('USD'))
+    const field = w.findAll('button').find((b) => b.text().includes('RUB'))
+    expect(field).toBeDefined()
+    await field?.trigger('click')
+    await flushPromises()
+    // the picker modal teleports to document.body
+    const usd = [...document.body.querySelectorAll('button')].find((b) =>
+      b.textContent?.includes('USD'),
+    )
     expect(usd).toBeDefined()
-    await usd?.trigger('click')
+    usd?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
     await flushPromises()
     expect(store.settings.baseCurrency).toBe('USD')
     expect(await getSetting('baseCurrency')).toBe('USD')

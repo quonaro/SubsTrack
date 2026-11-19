@@ -6,7 +6,7 @@ const DEFAULTS: Settings = {
   theme: 'dark',
   themeMode: 'dark',
   accent: 'orange',
-  preset: 'default',
+  preset: 'warm',
 }
 
 export async function getSetting<K extends keyof Settings>(key: K): Promise<Settings[K]> {

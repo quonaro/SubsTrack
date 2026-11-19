@@ -1,5 +1,49 @@
 @import "tailwindcss";
 
+/* Registering theme colors as <color> custom properties makes accent,
+   preset and light/dark switches interpolate smoothly instead of snapping.
+   initial-values mirror the dark defaults in @theme. */
+@property --color-accent {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #f15a24;
+}
+@property --color-accent-fg {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #ffffff;
+}
+@property --color-app-bg {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #0f1115;
+}
+@property --color-app-bg2 {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #171a21;
+}
+@property --color-app-card {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #1e222b;
+}
+@property --color-app-border {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #2a2f3a;
+}
+@property --color-app-text {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #e8eaf0;
+}
+@property --color-app-text-muted {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #8a8f9e;
+}
+
 @theme {
   --color-app-bg: #0f1115;
   --color-app-bg2: #171a21;
@@ -60,7 +104,12 @@
   }
 }
 
+:root {
+  color-scheme: dark;
+}
+
 :root.light {
+  color-scheme: light;
   --color-app-bg: #f5f6f8;
   --color-app-bg2: #ffffff;
   --color-app-card: #ffffff;
@@ -69,6 +118,18 @@
   --color-app-text-muted: #6b7080;
   --color-accent-hi: color-mix(in srgb, var(--color-accent) 75%, black);
   --color-accent-hover: color-mix(in srgb, var(--color-accent) 85%, black);
+}
+
+html {
+  transition:
+    --color-accent 450ms ease,
+    --color-accent-fg 450ms ease,
+    --color-app-bg 450ms ease,
+    --color-app-bg2 450ms ease,
+    --color-app-card 450ms ease,
+    --color-app-border 450ms ease,
+    --color-app-text 450ms ease,
+    --color-app-text-muted 450ms ease;
 }
 
 html,
@@ -134,6 +195,9 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  html {
+    transition: none;
+  }
   .slide-fwd-leave-active,
   .slide-fwd-enter-active,
   .slide-back-leave-active,

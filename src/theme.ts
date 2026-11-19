@@ -37,7 +37,7 @@ export interface ThemePreset {
 }
 
 export const THEME_PRESETS: Record<PresetKey, ThemePreset> = {
-  default: { label: 'Стандартная', accent: 'orange', light: {}, dark: {} },
+  default: { label: 'Графит', accent: 'orange', light: {}, dark: {} },
   nord: {
     label: 'Nord',
     accent: 'cyan',
@@ -99,7 +99,7 @@ export const THEME_PRESETS: Record<PresetKey, ThemePreset> = {
     },
   },
   warm: {
-    label: 'Тёплая',
+    label: 'Стандартная',
     accent: 'orange',
     light: {
       '--color-app-bg': '#fbf8f4',

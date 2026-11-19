@@ -18,6 +18,22 @@ export const CURRENCY_SYMBOLS: Record<string, string> = {
   BYN: 'Br',
 }
 
+export const CURRENCY_FLAGS: Record<string, string> = {
+  RUB: '🇷🇺',
+  USD: '🇺🇸',
+  EUR: '🇪🇺',
+  KZT: '🇰🇿',
+  BYN: '🇧🇾',
+}
+
+export const CURRENCY_NAMES: Record<string, string> = {
+  RUB: 'Российский рубль',
+  USD: 'Доллар США',
+  EUR: 'Евро',
+  KZT: 'Казахстанский тенге',
+  BYN: 'Белорусский рубль',
+}
+
 /** Convert an amount in minor units between currencies. */
 export function convertMinor(amountMinor: number, from: string, to: string): number {
   if (from === to) return amountMinor

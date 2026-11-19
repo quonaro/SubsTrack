@@ -17,7 +17,7 @@ describe('settings (sqlite)', () => {
     expect(await getSetting('theme')).toBe('dark')
     expect(await getSetting('themeMode')).toBe('dark')
     expect(await getSetting('accent')).toBe('orange')
-    expect(await getSetting('preset')).toBe('default')
+    expect(await getSetting('preset')).toBe('warm')
   })
 
   it('persists values and overwrites them', async () => {
@@ -42,7 +42,7 @@ describe('settings (sqlite)', () => {
       theme: 'light',
       themeMode: 'light',
       accent: 'orange',
-      preset: 'default',
+      preset: 'warm',
     })
   })
 
