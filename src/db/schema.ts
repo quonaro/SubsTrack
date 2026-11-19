@@ -15,7 +15,7 @@ const SCHEMA: string[][] = [
     `CREATE TABLE IF NOT EXISTS categories (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL UNIQUE,
-      color TEXT NOT NULL DEFAULT '#8b5cf6',
+      color TEXT NOT NULL DEFAULT '#f15a24',
       icon TEXT NOT NULL DEFAULT '📁',
       created_at TEXT NOT NULL
     )`,
@@ -68,6 +68,9 @@ const SCHEMA: string[][] = [
       value TEXT NOT NULL
     )`,
   ],
+  // v1 -> v2: recolor categories created with the old violet default to the
+  // accent color.
+  [`UPDATE categories SET color='#f15a24' WHERE color='#8b5cf6'`],
 ]
 
 export async function migrate(db?: Db): Promise<void> {

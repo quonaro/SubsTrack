@@ -1,4 +1,6 @@
 import { getDb, rows, lastId } from '../db'
+import { getSetting } from './settings'
+import { ACCENTS } from '../theme'
 import type { Category } from '../types'
 
 interface CatRow {
@@ -18,20 +20,20 @@ const toCat = (r: CatRow): Category => ({
 })
 
 export const CATEGORY_COLORS = [
-  '#8b5cf6',
+  '#f15a24',
   '#ec4899',
-  '#f97316',
   '#eab308',
   '#22c55e',
   '#14b8a6',
   '#3b82f6',
   '#ef4444',
+  '#84cc16',
 ]
 
 const DEFAULT_CATEGORIES: { name: string; icon: string; color: string }[] = [
   { name: 'Видео', icon: '🎬', color: '#ef4444' },
   { name: 'Музыка', icon: '🎵', color: '#22c55e' },
-  { name: 'Игры', icon: '🎮', color: '#8b5cf6' },
+  { name: 'Игры', icon: '🎮', color: '#f15a24' },
   { name: 'Облако', icon: '☁️', color: '#3b82f6' },
   { name: 'Работа', icon: '💼', color: '#eab308' },
   { name: 'Прочее', icon: '📦', color: '#6b7280' },
@@ -49,9 +51,10 @@ export async function createCategory(input: {
   color?: string
 }): Promise<Category> {
   const db = await getDb()
+  const accent = ACCENTS[await getSetting('accent')]?.value ?? ACCENTS.orange.value
   const res = await db.run(
     'INSERT INTO categories (name, icon, color, created_at) VALUES (?,?,?,?)',
-    [input.name, input.icon ?? '📁', input.color ?? CATEGORY_COLORS[0], new Date().toISOString()],
+    [input.name, input.icon ?? '📁', input.color ?? accent, new Date().toISOString()],
   )
   const id = lastId(res)
   const cats = await listCategories()

@@ -10,6 +10,14 @@ export const CURRENCY_RATES: Record<string, number> = {
 
 export const CURRENCIES = Object.keys(CURRENCY_RATES)
 
+export const CURRENCY_SYMBOLS: Record<string, string> = {
+  RUB: '₽',
+  USD: '$',
+  EUR: '€',
+  KZT: '₸',
+  BYN: 'Br',
+}
+
 /** Convert an amount in minor units between currencies. */
 export function convertMinor(amountMinor: number, from: string, to: string): number {
   if (from === to) return amountMinor

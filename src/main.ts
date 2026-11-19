@@ -21,7 +21,7 @@ async function boot(): Promise<void> {
     log.error('boot failed', e)
     // Mount anyway — a broken DB shouldn't leave the user on a white screen.
   }
-  applyThemeToDom(store.settings.theme)
+  applyThemeToDom(store.settings.theme, store.settings.accent, store.settings.preset)
   app.use(router)
   app.mount('#app')
   // Non-blocking follow-ups.

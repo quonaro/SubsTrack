@@ -1,16 +1,17 @@
 // Integration tests against real SQLite (sql.js in memory).
 import { beforeEach, describe, expect, it } from 'vitest'
 import { makeTestDb } from '../db/testdb'
-import { setDbForTesting } from '../db'
+import { getDb, setDbForTesting } from '../db'
 import { migrate } from '../db/schema'
+import { ACCENTS } from '../theme'
 import {
-  CATEGORY_COLORS,
   createCategory,
   deleteCategory,
   listCategories,
   seedCategoriesIfEmpty,
   updateCategory,
 } from './categories'
+import { setSetting } from './settings'
 import { createSubscription, getSubscription } from './subscriptions'
 
 const catInput = { name: 'Стриминг', icon: '📺', color: '#123456' }
@@ -41,10 +42,26 @@ describe('categories (sqlite)', () => {
     expect(c.createdAt).toBeTruthy()
   })
 
-  it('falls back to default icon and color', async () => {
+  it('falls back to default icon and the accent color', async () => {
     const c = await createCategory({ name: 'Без всего' })
     expect(c.icon).toBe('📁')
-    expect(c.color).toBe(CATEGORY_COLORS[0])
+    expect(c.color).toBe(ACCENTS.orange.value)
+  })
+
+  it('uses the currently selected accent for the default color', async () => {
+    await setSetting('accent', 'blue')
+    const c = await createCategory({ name: 'Синяя' })
+    expect(c.color).toBe(ACCENTS.blue.value)
+  })
+
+  it('recolors legacy violet categories on migration', async () => {
+    const db = await getDb()
+    await db.execute('PRAGMA user_version = 1')
+    await db.run(
+      "INSERT INTO categories (name, color, created_at) VALUES ('Старая', '#8b5cf6', 'x')",
+    )
+    await migrate()
+    expect((await listCategories())[0].color).toBe('#f15a24')
   })
 
   it('lists categories sorted by name', async () => {

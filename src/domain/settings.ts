@@ -4,6 +4,8 @@ import type { Settings } from '../types'
 const DEFAULTS: Settings = {
   baseCurrency: 'RUB',
   theme: 'dark',
+  accent: 'orange',
+  preset: 'default',
 }
 
 export async function getSetting<K extends keyof Settings>(key: K): Promise<Settings[K]> {
@@ -25,5 +27,7 @@ export async function loadSettings(): Promise<Settings> {
   return {
     baseCurrency: await getSetting('baseCurrency'),
     theme: await getSetting('theme'),
+    accent: await getSetting('accent'),
+    preset: await getSetting('preset'),
   }
 }

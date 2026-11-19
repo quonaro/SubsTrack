@@ -75,7 +75,13 @@ export interface SubEvent {
 
 export type SortMode = 'next_date' | 'name' | 'price'
 
+export type AccentKey = 'orange' | 'violet' | 'blue' | 'emerald' | 'pink' | 'amber' | 'cyan'
+
+export type PresetKey = 'default' | 'nord' | 'solarized' | 'contrast' | 'warm'
+
 export interface Settings {
   baseCurrency: string
   theme: 'dark' | 'light'
+  accent: AccentKey
+  preset: PresetKey
 }

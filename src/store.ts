@@ -19,7 +19,7 @@ export const store = reactive({
   categories: [] as Category[],
   events: [] as SubEvent[],
   payments: [] as Payment[],
-  settings: { baseCurrency: 'RUB', theme: 'dark' } as Settings,
+  settings: { baseCurrency: 'RUB', theme: 'dark', accent: 'orange', preset: 'default' } as Settings,
   sortMode: 'next_date' as SortMode,
   showArchived: false,
 })

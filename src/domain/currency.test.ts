@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { convertMinor, formatMoney, parseMoney } from './currency'
+import { convertMinor, CURRENCIES, CURRENCY_SYMBOLS, formatMoney, parseMoney } from './currency'
 
 describe('currency', () => {
+  it('has a symbol for every currency', () => {
+    for (const c of CURRENCIES) expect(CURRENCY_SYMBOLS[c]).toBeTruthy()
+  })
+
   it('converts between currencies via RUB rates', () => {
     expect(convertMinor(10000, 'RUB', 'RUB')).toBe(10000)
     // 100 RUB -> USD at 95 RUB/USD ≈ 105 US cents
