@@ -1,6 +1,6 @@
 <script setup lang="ts" generic="T">
 import Icon from './Icon.vue'
-import Sheet from './Sheet.vue'
+import Modal from './Modal.vue'
 
 export interface Option<T> {
   value: T
@@ -24,7 +24,7 @@ function pick(o: Option<T>) {
 </script>
 
 <template>
-  <Sheet :open="open" :title="title" @update:open="emit('update:open', $event)">
+  <Modal :open="open" :title="title" @update:open="emit('update:open', $event)">
     <div class="flex flex-col">
       <button
         v-for="o in options"
@@ -42,5 +42,5 @@ function pick(o: Option<T>) {
         <Icon v-if="o.value === modelValue" name="check" :size="18" class="text-accent-hi" />
       </button>
     </div>
-  </Sheet>
+  </Modal>
 </template>

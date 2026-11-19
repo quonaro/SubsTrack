@@ -67,7 +67,7 @@ export async function refreshPermissions(): Promise<void> {
 
 // Called once on app start: asks for the notification runtime permission.
 // "Install unknown apps" has no runtime dialog — it's granted from a system
-// settings screen, so it's only surfaced in the settings sheet / install flow.
+// settings screen, so it's only surfaced in the settings modal / install flow.
 export async function requestStartupPermissions(): Promise<void> {
   if (!onAndroid()) return
   try {

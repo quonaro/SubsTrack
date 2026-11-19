@@ -1,7 +1,7 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { beforeEach, describe, expect, it } from 'vitest'
-import CalendarView from './CalendarView.vue'
+import CalendarPage from './CalendarPage.vue'
 import { store } from '../store'
 import { todayIso } from '../domain/dates'
 import type { Subscription } from '../types'
@@ -50,16 +50,16 @@ beforeEach(() => {
   store.categories = []
 })
 
-describe('CalendarView', () => {
+describe('CalendarPage', () => {
   it('renders the page title', async () => {
-    const w = mount(CalendarView, { global: { plugins: [router()] } })
+    const w = mount(CalendarPage, { global: { plugins: [router()] } })
     await flushPromises()
     expect(w.find('h1').text()).toBe('Календарь')
   })
 
   it('shows the current month and marks today', async () => {
     const now = new Date()
-    const w = mount(CalendarView, { global: { plugins: [router()] } })
+    const w = mount(CalendarPage, { global: { plugins: [router()] } })
     await flushPromises()
     expect(w.text()).toContain(`${MONTHS[now.getMonth()]} ${now.getFullYear()}`)
     expect(w.find('.ring-accent').exists()).toBe(true)
@@ -67,7 +67,7 @@ describe('CalendarView', () => {
 
   it('renders payment dots for subscriptions in the month', async () => {
     store.subscriptions = [sub()]
-    const w = mount(CalendarView, { global: { plugins: [router()] } })
+    const w = mount(CalendarPage, { global: { plugins: [router()] } })
     await flushPromises()
     // dot spans carry w-1.5; the today cell shows them for the anchored date
     expect(w.find('span[class*="w-1.5"]').exists()).toBe(true)
@@ -75,7 +75,7 @@ describe('CalendarView', () => {
 
   it('navigates between months', async () => {
     const now = new Date()
-    const w = mount(CalendarView, { global: { plugins: [router()] } })
+    const w = mount(CalendarPage, { global: { plugins: [router()] } })
     const [prevBtn, nextBtn] = w.findAll('header button')
     await nextBtn.trigger('click')
     const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1)

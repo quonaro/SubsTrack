@@ -4,7 +4,7 @@ import type { Subscription } from '../types'
 import { categoryOf } from '../store'
 import { formatMoney } from '../domain/currency'
 import { daysUntilText, diffDays, formatDateRu, periodLabel, todayIso } from '../domain/dates'
-import Sheet from './Sheet.vue'
+import Modal from './Modal.vue'
 
 const props = defineProps<{ sub: Subscription; compact?: boolean }>()
 const emit = defineEmits<{ paid: [number] }>()
@@ -61,7 +61,7 @@ function confirmPaid() {
     >
       {{ formatMoney(sub.priceMinor, sub.currency) }}
     </button>
-    <Sheet :open="confirmOpen" title="Отметить подписку оплаченной?" @update:open="confirmOpen = $event">
+    <Modal :open="confirmOpen" title="Отметить подписку оплаченной?" @update:open="confirmOpen = $event">
       <p class="mb-5 text-sm text-app-text-muted">
         Отметить «{{ sub.name }}» оплаченной на {{ formatMoney(sub.priceMinor, sub.currency) }}?
       </p>
@@ -81,6 +81,6 @@ function confirmPaid() {
           Оплатить
         </button>
       </div>
-    </Sheet>
+    </Modal>
   </div>
 </template>

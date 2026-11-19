@@ -3,11 +3,11 @@ import { markPaid, store, visibleSubscriptions } from '../store'
 import type { SortMode } from '../types'
 import SubCard from '../components/SubCard.vue'
 import EmptyState from '../components/EmptyState.vue'
-import OptionSheet from '../components/OptionSheet.vue'
+import OptionModal from '../components/OptionModal.vue'
 import ToggleSwitch from '../components/ToggleSwitch.vue'
-import Sheet from '../components/Sheet.vue'
+import Modal from '../components/Modal.vue'
 import SubscriptionForm from '../components/SubscriptionForm.vue'
-import SubscriptionEditSheet from '../components/SubscriptionEditSheet.vue'
+import SubscriptionEditModal from '../components/SubscriptionEditModal.vue'
 import Icon from '../components/Icon.vue'
 import { pluralRu } from '../domain/plural'
 import { computed, ref } from 'vue'
@@ -53,7 +53,7 @@ const subsWord = computed(() =>
       <ToggleSwitch :checked="store.showArchived" @update:checked="store.showArchived = $event" />
     </div>
 
-    <OptionSheet
+    <OptionModal
       :open="sortOpen"
       title="Сортировка"
       :model-value="store.sortMode"
@@ -88,11 +88,11 @@ const subsWord = computed(() =>
       <Icon name="plus" :size="26" />
     </button>
 
-    <Sheet :open="formOpen" title="Новая подписка" @update:open="formOpen = $event">
+    <Modal :open="formOpen" title="Новая подписка" @update:open="formOpen = $event">
       <SubscriptionForm @saved="formOpen = false" />
-    </Sheet>
+    </Modal>
 
-    <SubscriptionEditSheet
+    <SubscriptionEditModal
       :sub-id="editId"
       @close="editId = null"
       @deleted="editId = null"

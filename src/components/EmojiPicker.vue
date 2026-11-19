@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import Sheet from './Sheet.vue'
+import Modal from './Modal.vue'
 
 const props = defineProps<{ modelValue: string }>()
 const emit = defineEmits<{ 'update:modelValue': [string] }>()
@@ -76,7 +76,7 @@ function pick(e: string) {
     >
       {{ modelValue }}
     </button>
-    <Sheet :open="open" title="Иконка" @update:open="open = $event">
+    <Modal :open="open" title="Иконка" @update:open="open = $event">
       <div class="grid grid-cols-6 gap-1 sm:grid-cols-8">
         <button
           v-for="e in EMOJIS"
@@ -89,6 +89,6 @@ function pick(e: string) {
           {{ e }}
         </button>
       </div>
-    </Sheet>
+    </Modal>
   </div>
 </template>

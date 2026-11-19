@@ -1,8 +1,8 @@
 <script setup lang="ts" generic="T">
 import { ref } from 'vue'
 import Icon from './Icon.vue'
-import OptionSheet from './OptionSheet.vue'
-import type { Option } from './OptionSheet.vue'
+import OptionModal from './OptionModal.vue'
+import type { Option } from './OptionModal.vue'
 
 defineProps<{
   modelValue: T
@@ -28,7 +28,7 @@ const open = ref(false)
       </span>
       <Icon name="chevron-down" :size="16" class="text-app-text-muted" />
     </button>
-    <OptionSheet
+    <OptionModal
       :open="open"
       :model-value="modelValue"
       :options="options"

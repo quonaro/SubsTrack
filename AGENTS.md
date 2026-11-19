@@ -115,12 +115,12 @@ reloads affected slices and triggers `rescheduleAll`.
 legacy `/subscriptions/new` and `/subscriptions/:id/edit` paths redirect
 to the list — create/edit live in sheets, not routes.
 
-`src/components/` — Reka UI primitives (Dialog → `Sheet.vue` bottom
+`src/components/` — Reka UI primitives (Dialog → `Modal.vue` bottom
 sheets, Switch → `ToggleSwitch.vue`) plus `OptionField` (field → option
-sheet), `EmojiPicker`, `SubCard`, `Icon`, `SubscriptionForm` (shared
+modal), `EmojiPicker`, `SubCard`, `Icon`, `SubscriptionForm` (shared
 create/edit form + rules editor + category manager — `subId` prop:
 null → create, id → edit; emits `saved`/`deleted`),
-`SubscriptionEditSheet` (edit `Sheet` wrapping `SubscriptionForm`;
+`SubscriptionEditModal` (edit `Modal` wrapping `SubscriptionForm`;
 `subId` null → closed, emits `close`/`deleted`), `PageSkeleton`
 (animated
 mosaic overlay shown in `App.vue` until `store.ready` and on every
@@ -128,7 +128,7 @@ route switch; guillotine-cut tiles reshuffle on a timer, stays up
 ≥500ms then fades out).
 
 `src/views/` — Home (totals + upcoming), Subscriptions (sort/archive,
-FAB opens `SubscriptionForm` in a `Sheet` for create),
+FAB opens `SubscriptionForm` in a `Modal` for create),
 Calendar (month grid via `paymentDatesInRange` + day sheet), History
 (events feed), Stats (totals/breakdown/monthly), Settings (theme, palette
 presets, accent, base

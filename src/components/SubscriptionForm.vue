@@ -17,11 +17,11 @@ import { DEFAULT_NOTIFY_TIME } from '../domain/reminders'
 import EmojiPicker from './EmojiPicker.vue'
 import OptionField from './OptionField.vue'
 import ToggleSwitch from './ToggleSwitch.vue'
-import Sheet from './Sheet.vue'
+import Modal from './Modal.vue'
 import Icon from './Icon.vue'
 
-// The same form serves both surfaces: `subId` set → edit mode (sheet),
-// null/undefined → create mode (sheet on the subscriptions list).
+// The same form serves both surfaces: `subId` set → edit mode (modal),
+// null/undefined → create mode (modal on the subscriptions list).
 const props = defineProps<{ subId?: number | null }>()
 const emit = defineEmits<{ saved: []; deleted: [] }>()
 
@@ -361,7 +361,7 @@ async function addCategory(): Promise<void> {
       <Icon name="trash" :size="16" /> Удалить подписку
     </button>
 
-    <Sheet :open="confirmDelete" title="Удалить подписку?" @update:open="confirmDelete = $event">
+    <Modal :open="confirmDelete" title="Удалить подписку?" @update:open="confirmDelete = $event">
       <p class="mb-5 text-sm text-app-text-muted">
         «{{ name }}» и история её платежей будут удалены безвозвратно.
       </p>
@@ -377,9 +377,9 @@ async function addCategory(): Promise<void> {
           Удалить
         </button>
       </div>
-    </Sheet>
+    </Modal>
 
-    <Sheet :open="catsOpen" title="Категории" @update:open="catsOpen = $event">
+    <Modal :open="catsOpen" title="Категории" @update:open="catsOpen = $event">
       <div class="mb-4 flex items-center gap-2">
         <EmojiPicker v-model="newCatIcon" />
         <input
@@ -418,6 +418,6 @@ async function addCategory(): Promise<void> {
           </button>
         </div>
       </div>
-    </Sheet>
+    </Modal>
   </div>
 </template>

@@ -1,7 +1,7 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { beforeEach, describe, expect, it } from 'vitest'
-import HistoryView from './HistoryView.vue'
+import HistoryPage from './HistoryPage.vue'
 import { store } from '../store'
 
 const router = () =>
@@ -15,9 +15,9 @@ beforeEach(() => {
   store.subscriptions = []
 })
 
-describe('HistoryView', () => {
+describe('HistoryPage', () => {
   it('shows the empty state', async () => {
-    const w = mount(HistoryView, { global: { plugins: [router()] } })
+    const w = mount(HistoryPage, { global: { plugins: [router()] } })
     await flushPromises()
     expect(w.text()).toContain('Событий пока нет')
   })
@@ -61,7 +61,7 @@ describe('HistoryView', () => {
         createdAt: '2026-01-01T09:00:00.000Z',
       },
     ]
-    const w = mount(HistoryView, { global: { plugins: [router()] } })
+    const w = mount(HistoryPage, { global: { plugins: [router()] } })
     await flushPromises()
     expect(w.text()).toContain('Платёж')
     expect(w.text()).toContain('Netflix')
@@ -80,7 +80,7 @@ describe('HistoryView', () => {
         createdAt: '2026-01-01T10:00:00.000Z',
       },
     ]
-    const w = mount(HistoryView, { global: { plugins: [router()] } })
+    const w = mount(HistoryPage, { global: { plugins: [router()] } })
     await flushPromises()
     expect(w.text()).toContain('Изменена')
   })

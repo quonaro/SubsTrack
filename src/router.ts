@@ -6,21 +6,21 @@ const log = logger('router')
 export const NAV_KEY = 'substrack:nav'
 
 const routes = [
-  { path: '/', name: 'home', component: () => import('./views/HomeView.vue') },
+  { path: '/', name: 'home', component: () => import('./views/HomePage.vue') },
   {
     path: '/subscriptions',
     name: 'subscriptions',
-    component: () => import('./views/SubscriptionsView.vue'),
+    component: () => import('./views/SubscriptionsPage.vue'),
   },
-  // Creation and editing happen in sheets on the pages themselves; keep the
+  // Creation and editing happen in modals on the pages themselves; keep the
   // old paths as redirects so a saved route from a previous build still
   // lands somewhere sensible.
   { path: '/subscriptions/new', redirect: { name: 'subscriptions' } },
   { path: '/subscriptions/:id(\\d+)/edit', redirect: { name: 'subscriptions' } },
-  { path: '/calendar', name: 'calendar', component: () => import('./views/CalendarView.vue') },
-  { path: '/history', name: 'history', component: () => import('./views/HistoryView.vue') },
-  { path: '/stats', name: 'stats', component: () => import('./views/StatsView.vue') },
-  { path: '/settings', name: 'settings', component: () => import('./views/SettingsView.vue') },
+  { path: '/calendar', name: 'calendar', component: () => import('./views/CalendarPage.vue') },
+  { path: '/history', name: 'history', component: () => import('./views/HistoryPage.vue') },
+  { path: '/stats', name: 'stats', component: () => import('./views/StatsPage.vue') },
+  { path: '/settings', name: 'settings', component: () => import('./views/SettingsPage.vue') },
   { path: '/:pathMatch(.*)*', redirect: '/' },
 ]
 

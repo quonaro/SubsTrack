@@ -1,8 +1,8 @@
-// The sheet is a thin edit wrapper around SubscriptionForm: it feeds subId
+// The modal is a thin edit wrapper around SubscriptionForm: it feeds subId
 // in as the edit target and translates saved/deleted into close events.
 import { DOMWrapper, flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it } from 'vitest'
-import SubscriptionEditSheet from './SubscriptionEditSheet.vue'
+import SubscriptionEditModal from './SubscriptionEditModal.vue'
 import { createSubscription, store } from '../store'
 import { getSubscription } from '../domain/subscriptions'
 import { makeTestDb } from '../db/testdb'
@@ -29,12 +29,12 @@ const seed = () =>
     nextPaymentDate: '2026-02-10',
   })
 
-const mountSheet = (subId: number | null) =>
-  mount(SubscriptionEditSheet, { props: { subId }, attachTo: document.body })
+const mountModal = (subId: number | null) =>
+  mount(SubscriptionEditModal, { props: { subId }, attachTo: document.body })
 
-describe('SubscriptionEditSheet', () => {
+describe('SubscriptionEditModal', () => {
   it('stays closed while subId is null', async () => {
-    const w = mountSheet(null)
+    const w = mountModal(null)
     await flushPromises()
     expect(document.body.textContent).not.toContain('Редактировать')
     w.unmount()
@@ -42,7 +42,7 @@ describe('SubscriptionEditSheet', () => {
 
   it('renders the edit form for subId and emits close on save', async () => {
     const s = await seed()
-    const w = mountSheet(s.id)
+    const w = mountModal(s.id)
     await flushPromises()
     expect(document.body.textContent).toContain('Редактировать')
     const nameInput = document.body.querySelector<HTMLInputElement>(
@@ -65,7 +65,7 @@ describe('SubscriptionEditSheet', () => {
 
   it('emits deleted after the subscription is removed', async () => {
     const s = await seed()
-    const w = mountSheet(s.id)
+    const w = mountModal(s.id)
     await flushPromises()
     const del = [...document.body.querySelectorAll('button')].find((b) =>
       b.textContent?.includes('Удалить подписку'),

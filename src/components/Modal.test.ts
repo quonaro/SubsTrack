@@ -1,13 +1,13 @@
 import { mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
 import { describe, expect, it } from 'vitest'
-import Sheet from './Sheet.vue'
+import Modal from './Modal.vue'
 
 // Reka Dialog teleports its content to document.body — assertions query the
 // document rather than the wrapper tree.
-describe('Sheet', () => {
+describe('Modal', () => {
   it('renders title and slot content into the body when open', async () => {
-    const w = mount(Sheet, {
+    const w = mount(Modal, {
       props: { open: true, title: 'Мой шит' },
       slots: { default: '<p>содержимое</p>' },
       attachTo: document.body,
@@ -19,7 +19,7 @@ describe('Sheet', () => {
   })
 
   it('opts out of aria-describedby so Reka does not warn about a missing Description', async () => {
-    const w = mount(Sheet, {
+    const w = mount(Modal, {
       props: { open: true, title: 'Без описания' },
       attachTo: document.body,
     })
@@ -30,7 +30,7 @@ describe('Sheet', () => {
   })
 
   it('renders nothing when closed', async () => {
-    const w = mount(Sheet, {
+    const w = mount(Modal, {
       props: { open: false, title: 'Скрыто' },
       slots: { default: '<p>невидимое</p>' },
       attachTo: document.body,

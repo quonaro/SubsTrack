@@ -3,8 +3,8 @@ import { computed, ref } from 'vue'
 import { markPaid, store } from '../store'
 import { paymentDatesInRange, todayIso } from '../domain/dates'
 import { formatMoney } from '../domain/currency'
-import Sheet from '../components/Sheet.vue'
-import SubscriptionEditSheet from '../components/SubscriptionEditSheet.vue'
+import Modal from '../components/Modal.vue'
+import SubscriptionEditModal from '../components/SubscriptionEditModal.vue'
 import Icon from '../components/Icon.vue'
 import { pluralRu } from '../domain/plural'
 
@@ -178,7 +178,7 @@ function next(): void {
       </button>
     </div>
 
-    <Sheet
+    <Modal
       :open="!!selected"
       :title="selected?.date"
       @update:open="!$event && (selected = null)"
@@ -212,9 +212,9 @@ function next(): void {
           </button>
         </div>
       </div>
-    </Sheet>
+    </Modal>
 
-    <SubscriptionEditSheet
+    <SubscriptionEditModal
       :sub-id="editId"
       @close="editId = null"
       @deleted="editId = null"

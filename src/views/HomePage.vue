@@ -6,7 +6,7 @@ import { formatMoney } from '../domain/currency'
 import { todayIso } from '../domain/dates'
 import { pluralRu } from '../domain/plural'
 import SubCard from '../components/SubCard.vue'
-import SubscriptionEditSheet from '../components/SubscriptionEditSheet.vue'
+import SubscriptionEditModal from '../components/SubscriptionEditModal.vue'
 import EmptyState from '../components/EmptyState.vue'
 import Icon from '../components/Icon.vue'
 
@@ -71,7 +71,7 @@ const activeText = computed(
       <EmptyState v-else icon="calendar">В ближайшие 7 дней платежей нет</EmptyState>
     </section>
 
-    <SubscriptionEditSheet
+    <SubscriptionEditModal
       :sub-id="editId"
       @close="editId = null"
       @deleted="editId = null"

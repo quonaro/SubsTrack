@@ -1,7 +1,7 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { beforeEach, describe, expect, it } from 'vitest'
-import StatsView from './StatsView.vue'
+import StatsPage from './StatsPage.vue'
 import { store } from '../store'
 import type { Subscription } from '../types'
 
@@ -36,11 +36,11 @@ beforeEach(() => {
   store.settings = { baseCurrency: 'RUB', theme: 'dark', accent: 'orange', preset: 'default' }
 })
 
-describe('StatsView', () => {
+describe('StatsPage', () => {
   it('renders totals and the category breakdown', async () => {
     store.categories = [{ id: 4, name: 'Видео', color: '#fff', icon: '🎬', createdAt: '' }]
     store.subscriptions = [sub({ categoryId: 4 })]
-    const w = mount(StatsView, { global: { plugins: [router()] } })
+    const w = mount(StatsPage, { global: { plugins: [router()] } })
     await flushPromises()
     expect(w.text()).toContain('Статистика')
     expect(w.text()).toContain('В месяц')
@@ -48,7 +48,7 @@ describe('StatsView', () => {
   })
 
   it('renders an empty state gracefully', async () => {
-    const w = mount(StatsView, { global: { plugins: [router()] } })
+    const w = mount(StatsPage, { global: { plugins: [router()] } })
     await flushPromises()
     expect(w.text()).toContain('Статистика')
   })

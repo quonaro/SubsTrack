@@ -1,7 +1,7 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { beforeEach, describe, expect, it } from 'vitest'
-import HomeView from './HomeView.vue'
+import HomePage from './HomePage.vue'
 import { store } from '../store'
 import { addDays, todayIso } from '../domain/dates'
 import type { Subscription } from '../types'
@@ -36,10 +36,10 @@ beforeEach(() => {
   store.settings = { baseCurrency: 'RUB', theme: 'dark', accent: 'orange', preset: 'default' }
 })
 
-describe('HomeView', () => {
+describe('HomePage', () => {
   it('shows totals and the upcoming list', async () => {
     store.subscriptions = [sub()]
-    const w = mount(HomeView, { global: { plugins: [router()] } })
+    const w = mount(HomePage, { global: { plugins: [router()] } })
     await flushPromises()
     expect(w.text()).toContain('SubsTrack')
     expect(w.text()).toContain('В месяц')
@@ -50,7 +50,7 @@ describe('HomeView', () => {
 
   it('shows the empty upcoming state and hides far-future subs', async () => {
     store.subscriptions = [sub({ nextPaymentDate: addDays(todayIso(), 30) })]
-    const w = mount(HomeView, { global: { plugins: [router()] } })
+    const w = mount(HomePage, { global: { plugins: [router()] } })
     await flushPromises()
     expect(w.text()).toContain('В ближайшие 7 дней платежей нет')
   })

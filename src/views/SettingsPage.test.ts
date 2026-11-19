@@ -1,7 +1,7 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { beforeEach, describe, expect, it } from 'vitest'
-import SettingsView from './SettingsView.vue'
+import SettingsPage from './SettingsPage.vue'
 import { store } from '../store'
 import { getSetting } from '../domain/settings'
 import { ACCENTS, THEME_PRESETS } from '../theme'
@@ -22,9 +22,9 @@ beforeEach(async () => {
   store.settings = { baseCurrency: 'RUB', theme: 'dark', accent: 'orange', preset: 'default' }
 })
 
-describe('SettingsView', () => {
+describe('SettingsPage', () => {
   it('renders sections, version and the update check button', async () => {
-    const w = mount(SettingsView, { global: { plugins: [router()] } })
+    const w = mount(SettingsPage, { global: { plugins: [router()] } })
     await flushPromises()
     expect(w.text()).toContain('Настройки')
     expect(w.text()).toContain('Версия')
@@ -33,7 +33,7 @@ describe('SettingsView', () => {
   })
 
   it('currency radio persists the setting', async () => {
-    const w = mount(SettingsView, { global: { plugins: [router()] } })
+    const w = mount(SettingsPage, { global: { plugins: [router()] } })
     await flushPromises()
     const group = w.find('[role="radiogroup"]')
     expect(group.exists()).toBe(true)
@@ -46,7 +46,7 @@ describe('SettingsView', () => {
   })
 
   it('theme switch persists the setting', async () => {
-    const w = mount(SettingsView, { global: { plugins: [router()] } })
+    const w = mount(SettingsPage, { global: { plugins: [router()] } })
     await flushPromises()
     await w.find('[role="switch"]').trigger('click')
     await flushPromises()
@@ -57,7 +57,7 @@ describe('SettingsView', () => {
   })
 
   it('accent swatch persists the setting and updates the DOM', async () => {
-    const w = mount(SettingsView, { global: { plugins: [router()] } })
+    const w = mount(SettingsPage, { global: { plugins: [router()] } })
     await flushPromises()
     const swatch = w.find('button[aria-label="Синий"]')
     expect(swatch.exists()).toBe(true)
@@ -71,7 +71,7 @@ describe('SettingsView', () => {
   })
 
   it('dev section fills the database with demo data', async () => {
-    const w = mount(SettingsView, { global: { plugins: [router()] } })
+    const w = mount(SettingsPage, { global: { plugins: [router()] } })
     await flushPromises()
     expect(w.text()).toContain('Тестовые данные')
     const btn = w.findAll('button').find((b) => b.text() === 'Заполнить')
@@ -83,7 +83,7 @@ describe('SettingsView', () => {
   })
 
   it('preset card persists the preset and its accent', async () => {
-    const w = mount(SettingsView, { global: { plugins: [router()] } })
+    const w = mount(SettingsPage, { global: { plugins: [router()] } })
     await flushPromises()
     const card = w.find('button[aria-label="Nord"]')
     expect(card.exists()).toBe(true)
