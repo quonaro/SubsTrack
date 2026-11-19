@@ -61,14 +61,14 @@ const events = computed(() => store.events)
 </script>
 
 <template>
-  <div class="mx-auto max-w-xl px-4 pb-6 pt-6">
+  <div class="mx-auto flex w-full max-w-xl flex-1 flex-col px-4 pb-6 pt-6">
     <header class="mb-6 flex items-center gap-3">
       <button
         type="button"
-        class="flex h-10 w-10 items-center justify-center rounded-full border border-app-border bg-app-card"
+        class="flex h-8 w-8 items-center justify-center rounded-full border border-app-border bg-app-card"
         @click="router.back()"
       >
-        <Icon name="chevron-left" :size="20" />
+        <Icon name="chevron-left" :size="16" />
       </button>
       <h1 class="text-xl font-bold">История</h1>
     </header>
@@ -88,7 +88,10 @@ const events = computed(() => store.events)
         </div>
       </div>
     </div>
-    <div v-else class="rounded-2xl border border-dashed border-app-border p-8 text-center text-app-text-muted">
+    <div
+      v-else
+      class="flex flex-1 items-center justify-center rounded-2xl border border-dashed border-app-border p-8 text-center text-app-text-muted"
+    >
       Событий пока нет
     </div>
   </div>

@@ -71,7 +71,7 @@ function pick(e: string) {
   <div>
     <button
       type="button"
-      class="flex h-12 w-12 items-center justify-center rounded-xl border border-app-border bg-app-card text-2xl"
+      class="flex h-8 w-8 items-center justify-center rounded-xl border border-app-border bg-app-card text-xl"
       @click="open = true"
     >
       {{ modelValue }}
@@ -82,8 +82,8 @@ function pick(e: string) {
           v-for="e in EMOJIS"
           :key="e"
           type="button"
-          class="flex h-12 items-center justify-center rounded-xl text-2xl transition-colors"
-          :class="e === modelValue ? 'bg-violet-600/30 ring-1 ring-violet-500' : 'hover:bg-app-card'"
+          class="flex h-8 items-center justify-center rounded-xl text-xl transition-colors"
+          :class="e === modelValue ? 'bg-accent/30 ring-1 ring-accent' : 'hover:bg-app-card'"
           @click="pick(e)"
         >
           {{ e }}

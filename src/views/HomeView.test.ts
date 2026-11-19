@@ -33,7 +33,7 @@ const sub = (over: Partial<Subscription> = {}): Subscription => ({
 beforeEach(() => {
   store.subscriptions = []
   store.categories = []
-  store.settings = { baseCurrency: 'RUB', theme: 'dark' }
+  store.settings = { baseCurrency: 'RUB', theme: 'dark', accent: 'orange', preset: 'default' }
 })
 
 describe('HomeView', () => {

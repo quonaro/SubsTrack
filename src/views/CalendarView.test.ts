@@ -56,7 +56,7 @@ describe('CalendarView', () => {
     const w = mount(CalendarView, { global: { plugins: [router()] } })
     await flushPromises()
     expect(w.text()).toContain(`${MONTHS[now.getMonth()]} ${now.getFullYear()}`)
-    expect(w.find('.ring-violet-500').exists()).toBe(true)
+    expect(w.find('.ring-accent').exists()).toBe(true)
   })
 
   it('renders payment dots for subscriptions in the month', async () => {

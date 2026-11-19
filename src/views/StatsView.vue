@@ -30,7 +30,7 @@ const monthLabel = (m: string) => MONTH_SHORT[Number(m.slice(5)) - 1]
 </script>
 
 <template>
-  <div class="mx-auto max-w-xl px-4 pb-6 pt-6">
+  <div class="mx-auto flex w-full max-w-xl flex-1 flex-col px-4 pb-6 pt-6">
     <h1 class="mb-6 text-2xl font-bold">Статистика</h1>
 
     <div class="mb-6 grid grid-cols-2 gap-3">
@@ -44,7 +44,7 @@ const monthLabel = (m: string) => MONTH_SHORT[Number(m.slice(5)) - 1]
       </div>
     </div>
 
-    <section class="mb-6">
+    <section class="mb-6 flex flex-col" :class="{ 'flex-1': !breakdown.length }">
       <h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-app-text-muted">
         По категориям / месяц
       </h2>
@@ -59,18 +59,21 @@ const monthLabel = (m: string) => MONTH_SHORT[Number(m.slice(5)) - 1]
               class="h-full rounded-full transition-all"
               :style="{
                 width: `${(b.totalMinor / maxSlice) * 100}%`,
-                backgroundColor: b.category?.color ?? '#8b5cf6',
+                backgroundColor: b.category?.color ?? 'var(--color-accent)',
               }"
             />
           </div>
         </div>
       </div>
-      <div v-else class="rounded-2xl border border-dashed border-app-border p-6 text-center text-sm text-app-text-muted">
+      <div
+        v-else
+        class="flex flex-1 items-center justify-center rounded-2xl border border-dashed border-app-border p-6 text-center text-sm text-app-text-muted"
+      >
         Нет данных
       </div>
     </section>
 
-    <section>
+    <section class="flex flex-col" :class="{ 'flex-1': !byMonth.length }">
       <h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-app-text-muted">
         Платежи по месяцам
       </h2>
@@ -85,14 +88,17 @@ const monthLabel = (m: string) => MONTH_SHORT[Number(m.slice(5)) - 1]
               {{ formatMoney(b.totalMinor, cur).replace(/[ \s]/g, ' ') }}
             </div>
             <div
-              class="w-full rounded-t-lg bg-violet-600/70"
+              class="w-full rounded-t-lg bg-accent/70"
               :style="{ height: `${Math.max(4, (b.totalMinor / maxMonth) * 100)}%` }"
             />
             <div class="text-[10px] text-app-text-muted">{{ monthLabel(b.month) }}</div>
           </div>
         </div>
       </div>
-      <div v-else class="rounded-2xl border border-dashed border-app-border p-6 text-center text-sm text-app-text-muted">
+      <div
+        v-else
+        class="flex flex-1 items-center justify-center rounded-2xl border border-dashed border-app-border p-6 text-center text-sm text-app-text-muted"
+      >
         Платежей ещё не было
       </div>
     </section>

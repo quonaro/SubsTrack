@@ -99,18 +99,18 @@ function next(): void {
     <header class="mb-4 flex items-center justify-between">
       <button
         type="button"
-        class="flex h-10 w-10 items-center justify-center rounded-full border border-app-border bg-app-card"
+        class="flex h-8 w-8 items-center justify-center rounded-full border border-app-border bg-app-card"
         @click="prev"
       >
-        <Icon name="chevron-left" :size="18" />
+        <Icon name="chevron-left" :size="16" />
       </button>
       <h1 class="text-lg font-bold">{{ MONTHS[month] }} {{ year }}</h1>
       <button
         type="button"
-        class="flex h-10 w-10 items-center justify-center rounded-full border border-app-border bg-app-card"
+        class="flex h-8 w-8 items-center justify-center rounded-full border border-app-border bg-app-card"
         @click="next"
       >
-        <Icon name="chevron-right" :size="18" />
+        <Icon name="chevron-right" :size="16" />
       </button>
     </header>
 
@@ -129,7 +129,7 @@ function next(): void {
           c.day == null
             ? ''
             : c.isToday
-              ? 'bg-violet-600/30 ring-1 ring-violet-500'
+              ? 'bg-accent/30 ring-1 ring-accent'
               : c.subs.length
                 ? 'bg-app-card hover:bg-app-border'
                 : 'hover:bg-app-card/60',
@@ -142,7 +142,7 @@ function next(): void {
             v-for="(_, di) in c.subs.slice(0, 3)"
             :key="di"
             class="h-1.5 w-1.5 rounded-full"
-            :class="c.overdue ? 'bg-red-400' : 'bg-violet-400'"
+            :class="c.overdue ? 'bg-red-400' : 'bg-accent'"
           />
         </div>
       </button>
@@ -168,7 +168,7 @@ function next(): void {
           </div>
           <button
             type="button"
-            class="rounded-full bg-violet-600/20 px-3 py-1.5 text-xs font-medium text-violet-300"
+            class="flex h-8 items-center rounded-full bg-accent/20 px-3 text-xs font-medium text-accent-hi"
             @click="markPaid(s.id, selected!.date); selected = null"
           >
             Оплатить

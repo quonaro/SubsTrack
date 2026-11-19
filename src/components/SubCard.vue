@@ -47,7 +47,7 @@ const overdue = computed(() => props.sub.isActive && days.value < 0)
     <button
       v-if="sub.isActive && !compact"
       type="button"
-      class="shrink-0 rounded-full bg-violet-600/20 px-3 py-1.5 text-xs font-medium text-violet-300 transition-colors hover:bg-violet-600/40"
+      class="flex h-8 shrink-0 items-center rounded-full bg-accent/20 px-3 text-xs font-medium text-accent-hi transition-colors hover:bg-accent/40"
       @click.stop="emit('paid', sub.id)"
     >
       Оплатить

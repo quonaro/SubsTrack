@@ -197,10 +197,10 @@ async function addCategory(): Promise<void> {
     <header class="mb-6 flex items-center gap-3">
       <button
         type="button"
-        class="flex h-10 w-10 items-center justify-center rounded-full border border-app-border bg-app-card"
+        class="flex h-8 w-8 items-center justify-center rounded-full border border-app-border bg-app-card"
         @click="router.back()"
       >
-        <Icon name="chevron-left" :size="20" />
+        <Icon name="chevron-left" :size="16" />
       </button>
       <h1 class="text-xl font-bold">{{ isEdit ? 'Редактировать' : 'Новая подписка' }}</h1>
     </header>
@@ -214,7 +214,7 @@ async function addCategory(): Promise<void> {
             v-model="name"
             type="text"
             placeholder="Netflix, Spotify…"
-            class="w-full rounded-xl border border-app-border bg-app-card px-4 py-3 outline-none focus:border-violet-500"
+            class="w-full rounded-xl border border-app-border bg-app-card px-4 py-3 focus:border-accent"
           />
         </div>
       </div>
@@ -226,7 +226,7 @@ async function addCategory(): Promise<void> {
             v-model="priceText"
             inputmode="decimal"
             placeholder="499"
-            class="w-full rounded-xl border border-app-border bg-app-card px-4 py-3 outline-none focus:border-violet-500"
+            class="w-full rounded-xl border border-app-border bg-app-card px-4 py-3 focus:border-accent"
           />
         </div>
         <OptionField v-model="currency" :options="currencyOptions" label="Валюта" />
@@ -240,7 +240,7 @@ async function addCategory(): Promise<void> {
           v-model.number="customDays"
           type="number"
           min="1"
-          class="w-full rounded-xl border border-app-border bg-app-card px-4 py-3 outline-none focus:border-violet-500"
+          class="w-full rounded-xl border border-app-border bg-app-card px-4 py-3 focus:border-accent"
         />
       </div>
 
@@ -251,7 +251,7 @@ async function addCategory(): Promise<void> {
         <input
           v-model="nextDate"
           type="date"
-          class="w-full rounded-xl border border-app-border bg-app-card px-4 py-3 text-app-text outline-none focus:border-violet-500"
+          class="w-full rounded-xl border border-app-border bg-app-card px-4 py-3 text-app-text focus:border-accent"
         />
       </div>
 
@@ -261,7 +261,7 @@ async function addCategory(): Promise<void> {
         </div>
         <button
           type="button"
-          class="flex h-[46px] w-[46px] items-center justify-center rounded-xl border border-app-border bg-app-card text-app-text-muted"
+          class="flex h-8 w-8 items-center justify-center rounded-xl border border-app-border bg-app-card text-app-text-muted"
           @click="catsOpen = true"
         >
           <Icon name="cog" :size="18" />
@@ -274,7 +274,7 @@ async function addCategory(): Promise<void> {
           v-model="notes"
           type="text"
           placeholder="необязательно"
-          class="w-full rounded-xl border border-app-border bg-app-card px-4 py-3 outline-none focus:border-violet-500"
+          class="w-full rounded-xl border border-app-border bg-app-card px-4 py-3 focus:border-accent"
         />
       </div>
 
@@ -286,7 +286,7 @@ async function addCategory(): Promise<void> {
       <div v-if="reminderEnabled" class="rounded-xl border border-app-border bg-app-card p-4">
         <div class="mb-3 flex items-center justify-between">
           <span class="text-sm font-medium">Правила напоминаний</span>
-          <button type="button" class="text-sm text-violet-400" @click="addRule">+ Добавить</button>
+          <button type="button" class="inline-flex h-8 items-center text-sm text-accent-hi" @click="addRule">+ Добавить</button>
         </div>
         <div v-if="!rules.length" class="text-xs text-app-text-muted">
           Нет правил — уведомлений не будет.
@@ -302,7 +302,7 @@ async function addCategory(): Promise<void> {
             </div>
             <button
               type="button"
-              class="flex h-9 w-9 items-center justify-center rounded-lg text-app-text-muted hover:text-red-400"
+              class="flex h-8 w-8 items-center justify-center rounded-lg text-app-text-muted hover:text-red-400"
               @click="rules.splice(i, 1)"
             >
               <Icon name="x" :size="16" />
@@ -357,7 +357,7 @@ async function addCategory(): Promise<void> {
       <button
         type="button"
         :disabled="saving"
-        class="rounded-xl bg-violet-600 py-3.5 font-semibold text-white transition-colors hover:bg-violet-500 disabled:opacity-50"
+        class="flex h-8 items-center justify-center rounded-xl bg-accent font-semibold text-accent-fg transition-colors hover:bg-accent-hover disabled:opacity-50"
         @click="save"
       >
         {{ saving ? 'Сохранение…' : isEdit ? 'Сохранить' : 'Добавить подписку' }}
@@ -366,7 +366,7 @@ async function addCategory(): Promise<void> {
       <button
         v-if="isEdit"
         type="button"
-        class="flex items-center justify-center gap-2 rounded-xl border border-red-900/50 py-3 text-sm text-red-400"
+        class="flex h-8 items-center justify-center gap-2 rounded-xl border border-red-900/50 text-sm text-red-400"
         @click="confirmDelete = true"
       >
         <Icon name="trash" :size="16" /> Удалить подписку
@@ -380,30 +380,30 @@ async function addCategory(): Promise<void> {
       <div class="flex gap-3">
         <button
           type="button"
-          class="flex-1 rounded-xl border border-app-border py-3"
+          class="flex h-8 flex-1 items-center justify-center rounded-xl border border-app-border"
           @click="confirmDelete = false"
         >
           Отмена
         </button>
-        <button type="button" class="flex-1 rounded-xl bg-red-600 py-3 font-medium" @click="remove">
+        <button type="button" class="flex h-8 flex-1 items-center justify-center rounded-xl bg-red-600 font-medium" @click="remove">
           Удалить
         </button>
       </div>
     </Sheet>
 
     <Sheet :open="catsOpen" title="Категории" @update:open="catsOpen = $event">
-      <div class="mb-4 flex gap-2">
+      <div class="mb-4 flex items-center gap-2">
         <EmojiPicker v-model="newCatIcon" />
         <input
           v-model="newCatName"
           type="text"
           placeholder="Новая категория"
-          class="flex-1 rounded-xl border border-app-border bg-app-card px-4 py-2.5 outline-none"
+          class="flex-1 rounded-xl border border-app-border bg-app-card px-4 py-2.5"
           @keyup.enter="addCategory"
         />
         <button
           type="button"
-          class="rounded-xl bg-violet-600 px-4 font-medium"
+          class="flex h-8 items-center rounded-xl bg-accent px-4 font-medium text-accent-fg"
           @click="addCategory"
         >
           +

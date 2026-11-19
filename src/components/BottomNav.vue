@@ -11,15 +11,15 @@ const items = [
 </script>
 
 <template>
-  <nav class="border-t border-app-border bg-app-bg2/90 pb-safe backdrop-blur-xl">
-    <div class="flex items-stretch justify-between px-2 pt-1">
+  <nav class="border-t border-app-border bg-app-bg2/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl">
+    <div class="flex items-stretch justify-between px-2">
       <router-link
         v-for="item in items"
         :key="item.to"
         :to="item.to"
         :aria-label="item.label"
-        class="group flex flex-1 flex-col items-center py-2.5 text-app-text-muted transition-colors"
-        active-class="!text-violet-400"
+        class="group flex flex-1 flex-col items-center py-4 text-app-text-muted transition-colors"
+        active-class="!text-accent-hi"
       >
         <Icon :name="item.icon" :size="22" />
       </router-link>

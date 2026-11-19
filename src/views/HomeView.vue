@@ -16,17 +16,17 @@ const overdue = computed(() => upcoming.value.filter((s) => s.nextPaymentDate < 
 </script>
 
 <template>
-  <div class="mx-auto max-w-xl px-4 pb-6 pt-6">
+  <div class="mx-auto flex w-full max-w-xl flex-1 flex-col px-4 pb-6 pt-6">
     <header class="mb-6 flex items-center justify-between">
       <div>
         <h1 class="text-2xl font-bold">SubsTrack</h1>
-        <p class="text-sm text-app-text-muted">{{ activeSubscriptions.length }} активных подписок</p>
+        <p class="text-sm text-app-text-muted">{{ activeSubscriptions.length }} активных платежей</p>
       </div>
       <router-link
         to="/history"
-        class="flex h-10 w-10 items-center justify-center rounded-full border border-app-border bg-app-card text-app-text-muted"
+        class="flex h-8 w-8 items-center justify-center rounded-full border border-app-border bg-app-card text-app-text-muted"
       >
-        <Icon name="history" :size="20" />
+        <Icon name="history" :size="16" />
       </router-link>
     </header>
 
@@ -41,12 +41,12 @@ const overdue = computed(() => upcoming.value.filter((s) => s.nextPaymentDate < 
       </div>
     </div>
 
-    <section>
+    <section class="flex flex-1 flex-col">
       <div class="mb-3 flex items-center justify-between">
         <h2 class="text-sm font-semibold uppercase tracking-wide text-app-text-muted">
           Ближайшие платежи
         </h2>
-        <router-link to="/subscriptions" class="text-sm text-violet-400">Все →</router-link>
+        <router-link to="/subscriptions" class="text-sm text-accent-hi">Все →</router-link>
       </div>
 
       <div v-if="upcoming.length" class="flex flex-col gap-2">
@@ -60,7 +60,7 @@ const overdue = computed(() => upcoming.value.filter((s) => s.nextPaymentDate < 
       </div>
       <div
         v-else
-        class="rounded-2xl border border-dashed border-app-border p-6 text-center text-sm text-app-text-muted"
+        class="flex flex-1 items-center justify-center rounded-2xl border border-dashed border-app-border p-6 text-center text-sm text-app-text-muted"
       >
         В ближайшие 7 дней платежей нет
       </div>
