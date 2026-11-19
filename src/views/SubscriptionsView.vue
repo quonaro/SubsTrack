@@ -6,6 +6,8 @@ import SubCard from '../components/SubCard.vue'
 import EmptyState from '../components/EmptyState.vue'
 import OptionSheet from '../components/OptionSheet.vue'
 import ToggleSwitch from '../components/ToggleSwitch.vue'
+import Sheet from '../components/Sheet.vue'
+import SubscriptionForm from '../components/SubscriptionForm.vue'
 import Icon from '../components/Icon.vue'
 import { ref } from 'vue'
 
@@ -18,18 +20,19 @@ const sortOptions: { value: SortMode; label: string }[] = [
 ]
 
 const sortOpen = ref(false)
+const formOpen = ref(false)
 </script>
 
 <template>
   <div
-    class="mx-auto flex w-full max-w-xl flex-1 flex-col px-4 pt-6"
+    class="mx-auto flex w-full max-w-xl flex-1 flex-col px-4 pt-6 sm:px-6 md:max-w-none lg:px-8"
     :class="visibleSubscriptions.length ? 'pb-24' : 'pb-6'"
   >
     <header class="mb-4 flex items-center justify-between">
       <h1 class="text-2xl font-bold">Подписки</h1>
       <button
         type="button"
-        class="flex h-8 items-center gap-1.5 rounded-full border border-app-border bg-app-card px-3 text-sm text-app-text-muted"
+        class="flex h-9 items-center gap-1.5 rounded-full border border-app-border bg-app-card px-3 text-sm text-app-text-muted"
         @click="sortOpen = true"
       >
         Сортировка
@@ -50,24 +53,34 @@ const sortOpen = ref(false)
       @update:model-value="store.sortMode = $event"
     />
 
-    <div v-if="visibleSubscriptions.length" class="mt-4 flex flex-col gap-2">
-      <SubCard
-        v-for="s in visibleSubscriptions"
-        :key="s.id"
-        :sub="s"
-        @click="router.push(`/subscriptions/${s.id}/edit`)"
-        @paid="markPaid"
-      />
+    <div v-if="visibleSubscriptions.length" class="@container mt-4">
+      <div
+        class="flex flex-col gap-2 @2xl:grid @2xl:grid-cols-2 @2xl:items-start @2xl:gap-3 @5xl:grid-cols-3 @[88rem]:grid-cols-4"
+      >
+        <SubCard
+          v-for="s in visibleSubscriptions"
+          :key="s.id"
+          :sub="s"
+          @click="router.push(`/subscriptions/${s.id}/edit`)"
+          @paid="markPaid"
+        />
+      </div>
     </div>
     <EmptyState v-else class="mt-4" icon="list">
       Подписок пока нет.<br />Нажмите «+», чтобы добавить первую.
     </EmptyState>
 
-    <router-link
-      to="/subscriptions/new"
-      class="fixed bottom-24 right-5 flex h-14 w-14 items-center justify-center rounded-full bg-accent text-accent-fg shadow-lg shadow-accent/40"
+    <button
+      type="button"
+      aria-label="Добавить подписку"
+      class="fixed bottom-24 right-5 flex h-14 w-14 items-center justify-center rounded-full bg-accent text-accent-fg shadow-lg shadow-accent/40 md:bottom-8 md:right-8"
+      @click="formOpen = true"
     >
       <Icon name="plus" :size="26" />
-    </router-link>
+    </button>
+
+    <Sheet :open="formOpen" title="Новая подписка" @update:open="formOpen = $event">
+      <SubscriptionForm @saved="formOpen = false" />
+    </Sheet>
   </div>
 </template>

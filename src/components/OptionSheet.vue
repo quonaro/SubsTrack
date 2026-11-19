@@ -30,7 +30,7 @@ function pick(o: Option<T>) {
         v-for="o in options"
         :key="String(o.value)"
         type="button"
-        class="flex min-h-8 items-center gap-3 rounded-xl px-3 py-1 text-left transition-colors hover:bg-app-card"
+        class="flex min-h-9 items-center gap-3 rounded-xl px-3 py-1 text-left transition-colors hover:bg-app-card"
         :class="{ 'bg-app-card': o.value === modelValue }"
         @click="pick(o)"
       >

@@ -95,13 +95,13 @@ function next(): void {
 </script>
 
 <template>
-  <div class="mx-auto w-full max-w-xl px-4 pb-6 pt-6">
+  <div class="mx-auto w-full max-w-xl px-4 pb-6 pt-6 sm:px-6 lg:max-w-3xl lg:px-8">
     <header class="mb-4 flex items-center justify-between">
       <h1 class="text-2xl font-bold">Календарь</h1>
       <div class="flex items-center gap-1">
         <button
           type="button"
-          class="flex h-8 w-8 items-center justify-center rounded-full border border-app-border bg-app-card"
+          class="flex h-9 w-9 items-center justify-center rounded-full border border-app-border bg-app-card"
           @click="prev"
         >
           <Icon name="chevron-left" :size="16" />
@@ -111,7 +111,7 @@ function next(): void {
         </span>
         <button
           type="button"
-          class="flex h-8 w-8 items-center justify-center rounded-full border border-app-border bg-app-card"
+          class="flex h-9 w-9 items-center justify-center rounded-full border border-app-border bg-app-card"
           @click="next"
         >
           <Icon name="chevron-right" :size="16" />
@@ -173,14 +173,14 @@ function next(): void {
           </div>
           <button
             type="button"
-            class="flex h-8 items-center rounded-full bg-accent/20 px-3 text-xs font-medium text-accent-hi"
+            class="flex h-9 items-center rounded-full bg-accent/20 px-3 text-xs font-medium text-accent-hi"
             @click="markPaid(s.id, selected!.date); selected = null"
           >
             Оплатить
           </button>
           <button
             type="button"
-            class="flex h-8 w-8 items-center justify-center rounded-lg text-app-text-muted"
+            class="flex h-9 w-9 items-center justify-center rounded-lg text-app-text-muted"
             @click="router.push(`/subscriptions/${s.id}/edit`)"
           >
             <Icon name="chevron-right" :size="16" />

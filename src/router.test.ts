@@ -87,6 +87,12 @@ describe('router guards', () => {
     expect(router.currentRoute.value.name).toBe('sub-edit')
   })
 
+  it('redirects the legacy /subscriptions/new path to the list', async () => {
+    const { router } = await fresh()
+    await router.push('/subscriptions/new')
+    expect(router.currentRoute.value.name).toBe('subscriptions')
+  })
+
   it('redirects unknown paths to home', async () => {
     const { router } = await fresh()
     await router.push('/no/such/page')

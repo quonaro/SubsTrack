@@ -22,8 +22,8 @@ watch(
 </script>
 
 <template>
-  <div class="flex h-full flex-col bg-app-bg text-app-text">
-    <main class="relative flex min-h-0 flex-1 flex-col overflow-y-auto pt-safe">
+  <div class="px-safe flex h-full flex-col bg-app-bg text-app-text md:flex-row">
+    <main class="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto pt-safe">
       <router-view v-if="store.ready" />
       <PageSkeleton :active="!store.ready || switching" />
     </main>

@@ -130,14 +130,14 @@ onBeforeUnmount(() => {
 <template>
   <Transition name="page-skeleton">
     <div v-if="visible" class="absolute inset-0 z-20 bg-app-bg pt-safe" aria-hidden="true">
-      <div class="mx-auto flex h-full w-full max-w-xl flex-col px-4 pb-6 pt-6">
+      <div class="mx-auto flex h-full w-full max-w-xl flex-col px-4 pb-6 pt-6 sm:px-6 md:max-w-none lg:px-8">
         <div v-if="header" class="mb-6 flex shrink-0 items-center justify-between">
           <div class="flex flex-col gap-2">
             <div class="h-7 w-40 animate-pulse rounded-lg bg-app-text/10" />
             <div class="h-4 w-28 animate-pulse rounded bg-app-text/5" />
           </div>
           <div
-            class="h-8 w-8 animate-pulse rounded-full border border-app-border bg-app-card"
+            class="h-9 w-9 animate-pulse rounded-full border border-app-border bg-app-card"
           />
         </div>
 

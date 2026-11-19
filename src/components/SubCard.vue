@@ -54,7 +54,7 @@ function confirmPaid() {
     <button
       v-if="sub.isActive && !compact"
       type="button"
-      class="flex h-8 shrink-0 items-center rounded-full bg-accent/20 px-3 text-xs font-medium text-accent-hi transition-colors hover:bg-accent/40"
+      class="flex h-9 shrink-0 items-center rounded-full bg-accent/20 px-3 text-xs font-medium text-accent-hi transition-colors hover:bg-accent/40"
       @click.stop="confirmOpen = true"
     >
       Оплатить
@@ -66,14 +66,14 @@ function confirmPaid() {
       <div class="flex gap-3">
         <button
           type="button"
-          class="flex h-8 flex-1 items-center justify-center rounded-xl border border-app-border"
+          class="flex h-9 flex-1 items-center justify-center rounded-xl border border-app-border"
           @click="confirmOpen = false"
         >
           Отмена
         </button>
         <button
           type="button"
-          class="flex h-8 flex-1 items-center justify-center rounded-xl bg-accent font-medium text-accent-fg"
+          class="flex h-9 flex-1 items-center justify-center rounded-xl bg-accent font-medium text-accent-fg"
           @click="confirmPaid"
         >
           Оплатить

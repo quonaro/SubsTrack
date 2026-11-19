@@ -13,11 +13,9 @@ const routes = [
     name: 'subscriptions',
     component: () => import('./views/SubscriptionsView.vue'),
   },
-  {
-    path: '/subscriptions/new',
-    name: 'sub-new',
-    component: () => import('./views/SubscriptionFormView.vue'),
-  },
+  // Creation happens in a sheet on the list; keep the old path as a redirect
+  // so a saved route from a previous build still lands somewhere sensible.
+  { path: '/subscriptions/new', redirect: { name: 'subscriptions' } },
   {
     path: '/subscriptions/:id(\\d+)/edit',
     name: 'sub-edit',

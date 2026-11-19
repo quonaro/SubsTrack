@@ -117,13 +117,18 @@ exists.
 
 `src/components/` — Reka UI primitives (Dialog → `Sheet.vue` bottom
 sheets, Switch → `ToggleSwitch.vue`) plus `OptionField` (field → option
-sheet), `EmojiPicker`, `SubCard`, `Icon`, `PageSkeleton` (animated
+sheet), `EmojiPicker`, `SubCard`, `Icon`, `SubscriptionForm` (shared
+create/edit form + rules editor + category manager — `subId` prop:
+null → create, id → edit; emits `saved`/`deleted`), `PageSkeleton`
+(animated
 mosaic overlay shown in `App.vue` until `store.ready` and on every
 route switch; guillotine-cut tiles reshuffle on a timer, stays up
 ≥500ms then fades out).
 
-`src/views/` — Home (totals + upcoming), Subscriptions (sort/archive),
-SubscriptionForm (create/edit + rules editor + category manager),
+`src/views/` — Home (totals + upcoming), Subscriptions (sort/archive,
+FAB opens `SubscriptionForm` in a `Sheet` for create),
+SubscriptionFormView (edit page wrapping `SubscriptionForm`; legacy
+`/subscriptions/new` redirects to the list),
 Calendar (month grid via `paymentDatesInRange` + day sheet), History
 (events feed), Stats (totals/breakdown/monthly), Settings (theme, palette
 presets, accent, base
@@ -175,7 +180,7 @@ newer schema. Every schema/data change must preserve that:
 
 ## UI
 
-- All buttons must be the same height: 32px.
+- All buttons must be the same height: 36px.
 
 ## Testing
 

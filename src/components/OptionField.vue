@@ -20,7 +20,7 @@ const open = ref(false)
     <label v-if="label" class="mb-1.5 block text-xs font-medium text-app-text-muted">{{ label }}</label>
     <button
       type="button"
-      class="flex h-8 w-full items-center justify-between rounded-xl border border-app-border bg-app-card px-4 text-left"
+      class="flex h-9 w-full items-center justify-between rounded-xl border border-app-border bg-app-card px-4 text-left"
       @click="open = true"
     >
       <span :class="{ 'text-app-text-muted': modelValue == null }">

@@ -1,11 +1,11 @@
-// Form view end-to-end-ish: mount at a route, fill fields, save — the write
-// path goes through the store into a real in-memory SQLite db.
+// The view is a thin edit-page wrapper around SubscriptionForm: it feeds the
+// route param in as subId and translates saved/deleted into navigation.
 import { DOMWrapper, flushPromises, mount } from '@vue/test-utils'
 import { createMemoryHistory, createRouter, type Router } from 'vue-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import SubscriptionFormView from './SubscriptionFormView.vue'
 import { createSubscription, store } from '../store'
-import { getSubscription, listSubscriptions } from '../domain/subscriptions'
+import { getSubscription } from '../domain/subscriptions'
 import { makeTestDb } from '../db/testdb'
 import { setDbForTesting } from '../db'
 import { migrate } from '../db/schema'
@@ -14,7 +14,6 @@ const makeRouter = () =>
   createRouter({
     history: createMemoryHistory(),
     routes: [
-      { path: '/subscriptions/new', name: 'sub-new', component: SubscriptionFormView },
       { path: '/subscriptions/:id(\\d+)/edit', name: 'sub-edit', component: SubscriptionFormView },
       { path: '/:pathMatch(.*)*', component: { template: '<div/>' } },
     ],
@@ -40,47 +39,19 @@ beforeEach(async () => {
   store.payments = []
 })
 
+const seed = () =>
+  createSubscription({
+    name: 'Old Name',
+    priceMinor: 12300,
+    currency: 'RUB',
+    periodDays: 30,
+    startDate: '2026-01-10',
+    nextPaymentDate: '2026-02-10',
+  })
+
 describe('SubscriptionFormView', () => {
-  it('validates required fields before writing', async () => {
-    const router = makeRouter()
-    const w = await mountAt(router, '/subscriptions/new')
-    expect(w.text()).toContain('Новая подписка')
-    const save = w.findAll('button').find((b) => b.text() === 'Добавить подписку')!
-    await save.trigger('click')
-    expect(w.text()).toContain('Введите название')
-    await w.find('input[placeholder="Netflix, Spotify…"]').setValue('X')
-    await save.trigger('click')
-    await flushPromises()
-    expect(w.text()).toContain('Введите корректную цену')
-    expect(await listSubscriptions()).toHaveLength(0)
-    w.unmount()
-  })
-
-  it('creates a subscription and returns back', async () => {
-    const router = makeRouter()
-    const w = await mountAt(router, '/subscriptions/new')
-    await w.find('input[placeholder="Netflix, Spotify…"]').setValue('Netflix')
-    await w.find('input[inputmode="decimal"]').setValue('499.50')
-    const save = w.findAll('button').find((b) => b.text() === 'Добавить подписку')!
-    await save.trigger('click')
-    await flushPromises()
-    const subs = await listSubscriptions()
-    expect(subs).toHaveLength(1)
-    expect(subs[0].name).toBe('Netflix')
-    expect(subs[0].priceMinor).toBe(49950)
-    expect(router.back).toHaveBeenCalled()
-    w.unmount()
-  })
-
-  it('prefills fields in edit mode and saves changes', async () => {
-    const s = await createSubscription({
-      name: 'Old Name',
-      priceMinor: 12300,
-      currency: 'RUB',
-      periodDays: 30,
-      startDate: '2026-01-10',
-      nextPaymentDate: '2026-02-10',
-    })
+  it('renders the edit form for the route param and navigates back on save', async () => {
+    const s = await seed()
     const router = makeRouter()
     const w = await mountAt(router, `/subscriptions/${s.id}/edit`)
     await flushPromises()
@@ -92,20 +63,12 @@ describe('SubscriptionFormView', () => {
     await save.trigger('click')
     await flushPromises()
     expect((await getSubscription(s.id))?.name).toBe('New Name')
-    // startDate is preserved from the stored row
-    expect((await getSubscription(s.id))?.startDate).toBe('2026-01-10')
+    expect(router.back).toHaveBeenCalled()
     w.unmount()
   })
 
-  it('deletes via the confirm sheet', async () => {
-    const s = await createSubscription({
-      name: 'Doomed',
-      priceMinor: 100,
-      currency: 'RUB',
-      periodDays: 30,
-      startDate: '2026-01-10',
-      nextPaymentDate: '2026-02-10',
-    })
+  it('replaces to the list after delete', async () => {
+    const s = await seed()
     const router = makeRouter()
     const w = await mountAt(router, `/subscriptions/${s.id}/edit`)
     await flushPromises()

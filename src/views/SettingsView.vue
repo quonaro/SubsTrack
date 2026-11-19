@@ -111,10 +111,11 @@ const updateLabel = computed(() => {
 </script>
 
 <template>
-  <div class="mx-auto w-full max-w-xl px-4 pb-6 pt-6">
+  <div class="mx-auto w-full max-w-xl px-4 pb-6 pt-6 sm:px-6 md:max-w-none lg:px-8">
     <h1 class="mb-6 text-2xl font-bold">Настройки</h1>
 
-    <div class="mb-6 flex flex-col gap-2">
+    <div class="lg:columns-2 lg:gap-6 2xl:columns-3">
+    <div class="mb-6 flex break-inside-avoid flex-col gap-2">
       <h2 class="mb-1 text-sm font-semibold uppercase tracking-wide text-app-text-muted">Внешний вид</h2>
       <div class="flex items-center justify-between rounded-xl border border-app-border bg-app-card px-4 py-3">
         <span class="text-sm">Светлая тема</span>
@@ -170,7 +171,7 @@ const updateLabel = computed(() => {
             :aria-label="meta.label"
             :aria-pressed="store.settings.accent === key"
             :title="meta.label"
-            class="flex h-8 w-8 items-center justify-center rounded-full transition-transform hover:scale-110"
+            class="flex h-9 w-9 items-center justify-center rounded-full transition-transform hover:scale-110"
             :class="{
               'ring-2 ring-app-text ring-offset-2 ring-offset-app-card':
                 store.settings.accent === key,
@@ -196,7 +197,7 @@ const updateLabel = computed(() => {
             type="button"
             role="radio"
             :aria-checked="store.settings.baseCurrency === c"
-            class="flex h-8 flex-1 items-center justify-center gap-1 rounded-lg border text-sm font-medium transition"
+            class="flex h-9 flex-1 items-center justify-center gap-1 rounded-lg border text-sm font-medium transition"
             :class="
               store.settings.baseCurrency === c
                 ? 'border-accent bg-accent/20 text-accent-hi'
@@ -211,7 +212,7 @@ const updateLabel = computed(() => {
       </div>
     </div>
 
-    <div class="mb-6 flex flex-col gap-2">
+    <div class="mb-6 flex break-inside-avoid flex-col gap-2">
       <h2 class="mb-1 text-sm font-semibold uppercase tracking-wide text-app-text-muted">
         Уведомления
       </h2>
@@ -225,7 +226,7 @@ const updateLabel = computed(() => {
         <button
           v-if="notifPerm !== 'granted'"
           type="button"
-          class="inline-flex h-8 items-center rounded-full bg-accent/20 px-4 text-xs font-medium text-accent-hi"
+          class="inline-flex h-9 items-center rounded-full bg-accent/20 px-4 text-xs font-medium text-accent-hi"
           @click="askNotif"
         >
           Разрешить
@@ -239,7 +240,7 @@ const updateLabel = computed(() => {
         <div class="text-sm">Установка из неизвестных источников</div>
         <button
           type="button"
-          class="inline-flex h-8 items-center rounded-full bg-accent/20 px-4 text-xs font-medium text-accent-hi"
+          class="inline-flex h-9 items-center rounded-full bg-accent/20 px-4 text-xs font-medium text-accent-hi"
           @click="grantInstallPermission"
         >
           Открыть настройки
@@ -247,7 +248,7 @@ const updateLabel = computed(() => {
       </div>
     </div>
 
-    <div class="mb-6 flex flex-col gap-2">
+    <div class="mb-6 flex break-inside-avoid flex-col gap-2">
       <h2 class="mb-1 text-sm font-semibold uppercase tracking-wide text-app-text-muted">
         Обновление
       </h2>
@@ -260,7 +261,7 @@ const updateLabel = computed(() => {
           <button
             v-if="update.status !== 'available'"
             type="button"
-            class="inline-flex h-8 items-center rounded-full bg-accent/20 px-4 text-xs font-medium text-accent-hi disabled:opacity-50"
+            class="inline-flex h-9 items-center rounded-full bg-accent/20 px-4 text-xs font-medium text-accent-hi disabled:opacity-50"
             :disabled="update.busy"
             @click="checkForUpdate"
           >
@@ -277,7 +278,7 @@ const updateLabel = computed(() => {
           <button
             v-else
             type="button"
-            class="flex h-8 w-full items-center justify-center rounded-xl bg-accent text-sm font-medium text-accent-fg"
+            class="flex h-9 w-full items-center justify-center rounded-xl bg-accent text-sm font-medium text-accent-fg"
             @click="downloadUpdate"
           >
             {{ update.dl === 'ready' ? 'Установить снова' : 'Скачать и установить' }}
@@ -289,7 +290,7 @@ const updateLabel = computed(() => {
       </div>
     </div>
 
-    <div class="mb-6 flex flex-col gap-2">
+    <div class="mb-6 flex break-inside-avoid flex-col gap-2">
       <h2 class="mb-1 text-sm font-semibold uppercase tracking-wide text-app-text-muted">
         Для разработчика
       </h2>
@@ -303,7 +304,7 @@ const updateLabel = computed(() => {
           </div>
           <button
             type="button"
-            class="inline-flex h-8 items-center rounded-full bg-accent/20 px-4 text-xs font-medium text-accent-hi disabled:opacity-50"
+            class="inline-flex h-9 items-center rounded-full bg-accent/20 px-4 text-xs font-medium text-accent-hi disabled:opacity-50"
             :disabled="seeding"
             @click="seed"
           >
@@ -314,6 +315,7 @@ const updateLabel = computed(() => {
           Добавлено. Повторное нажатие добавит ещё одну порцию.
         </p>
       </div>
+    </div>
     </div>
 
     <p class="text-center text-xs text-app-text-muted/60">SubsTrack · local-first · данные хранятся на устройстве</p>

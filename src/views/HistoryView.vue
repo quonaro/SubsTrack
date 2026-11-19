@@ -62,11 +62,11 @@ const events = computed(() => store.events)
 </script>
 
 <template>
-  <div class="mx-auto flex w-full max-w-xl flex-1 flex-col px-4 pb-6 pt-6">
+  <div class="mx-auto flex w-full max-w-xl flex-1 flex-col px-4 pb-6 pt-6 sm:px-6 lg:max-w-3xl lg:px-8">
     <header class="mb-6 flex items-center gap-3">
       <button
         type="button"
-        class="flex h-8 w-8 items-center justify-center rounded-full border border-app-border bg-app-card"
+        class="flex h-9 w-9 items-center justify-center rounded-full border border-app-border bg-app-card"
         @click="router.back()"
       >
         <Icon name="chevron-left" :size="16" />
@@ -76,7 +76,7 @@ const events = computed(() => store.events)
 
     <div v-if="events.length" class="flex flex-col gap-1">
       <div v-for="e in events" :key="e.id" class="flex items-start gap-3 rounded-xl px-2 py-2.5">
-        <div class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-app-card text-app-text-muted">
+        <div class="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-app-card text-app-text-muted">
           <Icon :name="ICONS[e.type] ?? 'history'" :size="15" />
         </div>
         <div class="min-w-0 flex-1">

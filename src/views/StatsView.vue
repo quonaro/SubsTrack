@@ -31,7 +31,7 @@ const monthLabel = (m: string) => MONTH_SHORT[Number(m.slice(5)) - 1]
 </script>
 
 <template>
-  <div class="mx-auto flex w-full max-w-xl flex-1 flex-col px-4 pb-6 pt-6">
+  <div class="mx-auto flex w-full max-w-xl flex-1 flex-col px-4 pb-6 pt-6 sm:px-6 md:max-w-none lg:px-8">
     <h1 class="mb-6 text-2xl font-bold">Статистика</h1>
 
     <div class="mb-6 grid grid-cols-2 gap-3">
@@ -45,6 +45,7 @@ const monthLabel = (m: string) => MONTH_SHORT[Number(m.slice(5)) - 1]
       </div>
     </div>
 
+    <div class="flex flex-1 flex-col lg:grid lg:grid-cols-2 lg:items-start lg:gap-6">
     <section class="mb-6 flex flex-col" :class="{ 'flex-1': !breakdown.length }">
       <h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-app-text-muted">
         По категориям / месяц
@@ -74,24 +75,27 @@ const monthLabel = (m: string) => MONTH_SHORT[Number(m.slice(5)) - 1]
         Платежи по месяцам
       </h2>
       <div v-if="byMonth.length" class="rounded-2xl border border-app-border bg-app-card p-4">
-        <div class="flex h-36 items-end gap-2">
+        <div class="flex h-36 items-stretch gap-2">
           <div
             v-for="b in byMonth"
             :key="b.month"
-            class="flex flex-1 flex-col items-center justify-end gap-1"
+            class="flex flex-1 flex-col items-center gap-1"
           >
             <div class="text-[10px] text-app-text-muted">
               {{ formatMoney(b.totalMinor, cur).replace(/[ \s]/g, ' ') }}
             </div>
-            <div
-              class="w-full rounded-t-lg bg-accent/70"
-              :style="{ height: `${Math.max(4, (b.totalMinor / maxMonth) * 100)}%` }"
-            />
+            <div class="flex min-h-0 w-full flex-1 flex-col justify-end">
+              <div
+                class="w-full rounded-t-lg bg-accent/70"
+                :style="{ height: `${Math.max(4, (b.totalMinor / maxMonth) * 100)}%` }"
+              />
+            </div>
             <div class="text-[10px] text-app-text-muted">{{ monthLabel(b.month) }}</div>
           </div>
         </div>
       </div>
       <EmptyState v-else icon="chart">Платежей ещё не было</EmptyState>
     </section>
+    </div>
   </div>
 </template>

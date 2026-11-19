@@ -17,7 +17,7 @@ const overdue = computed(() => upcoming.value.filter((s) => s.nextPaymentDate < 
 </script>
 
 <template>
-  <div class="mx-auto flex w-full max-w-xl flex-1 flex-col px-4 pb-6 pt-6">
+  <div class="mx-auto flex w-full max-w-xl flex-1 flex-col px-4 pb-6 pt-6 sm:px-6 md:max-w-none lg:px-8">
     <header class="mb-6 flex items-center justify-between">
       <div>
         <h1 class="text-2xl font-bold">SubsTrack</h1>
@@ -25,7 +25,7 @@ const overdue = computed(() => upcoming.value.filter((s) => s.nextPaymentDate < 
       </div>
       <router-link
         to="/history"
-        class="flex h-8 w-8 items-center justify-center rounded-full border border-app-border bg-app-card text-app-text-muted"
+        class="flex h-9 w-9 items-center justify-center rounded-full border border-app-border bg-app-card text-app-text-muted"
       >
         <Icon name="history" :size="16" />
       </router-link>
@@ -50,7 +50,8 @@ const overdue = computed(() => upcoming.value.filter((s) => s.nextPaymentDate < 
         <router-link to="/subscriptions" class="text-sm text-accent-hi">Все →</router-link>
       </div>
 
-      <div v-if="upcoming.length" class="flex flex-col gap-2">
+      <div v-if="upcoming.length" class="@container">
+        <div class="flex flex-col gap-2 @2xl:grid @2xl:grid-cols-2 @2xl:items-start @2xl:gap-3 @5xl:grid-cols-3">
         <SubCard
           v-for="s in upcoming.slice(0, 6)"
           :key="s.id"
@@ -58,6 +59,7 @@ const overdue = computed(() => upcoming.value.filter((s) => s.nextPaymentDate < 
           @click="router.push(`/subscriptions/${s.id}/edit`)"
           @paid="markPaid"
         />
+        </div>
       </div>
       <EmptyState v-else icon="calendar">В ближайшие 7 дней платежей нет</EmptyState>
     </section>

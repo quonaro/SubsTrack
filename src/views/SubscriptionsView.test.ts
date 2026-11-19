@@ -74,6 +74,20 @@ describe('SubscriptionsView', () => {
     expect(w.text()).toContain('Gone')
   })
 
+  it('opens the new-subscription sheet from the FAB', async () => {
+    const w = mount(SubscriptionsView, {
+      global: { plugins: [router()] },
+      attachTo: document.body,
+    })
+    await flushPromises()
+    expect(document.body.textContent).not.toContain('Дата первого платежа')
+    await w.find('button.fixed').trigger('click')
+    await flushPromises()
+    expect(document.body.textContent).toContain('Новая подписка')
+    expect(document.body.querySelector('input[placeholder="Netflix, Spotify…"]')).toBeTruthy()
+    w.unmount()
+  })
+
   it('opens the sort sheet and applies the picked option', async () => {
     const w = mount(SubscriptionsView, {
       global: { plugins: [router()] },
