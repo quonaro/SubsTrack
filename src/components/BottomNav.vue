@@ -17,11 +17,11 @@ const items = [
         v-for="item in items"
         :key="item.to"
         :to="item.to"
-        class="group flex flex-1 flex-col items-center gap-0.5 py-2 text-app-text-muted transition-colors"
+        :aria-label="item.label"
+        class="group flex flex-1 flex-col items-center py-2.5 text-app-text-muted transition-colors"
         active-class="!text-violet-400"
       >
         <Icon :name="item.icon" :size="22" />
-        <span class="text-[10px] font-medium">{{ item.label }}</span>
       </router-link>
     </div>
   </nav>

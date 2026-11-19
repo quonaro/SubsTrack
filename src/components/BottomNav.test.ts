@@ -14,7 +14,12 @@ describe('BottomNav', () => {
       '/stats',
       '/settings',
     ])
-    expect(w.text()).toContain('Главная')
-    expect(w.text()).toContain('Подписки')
+    expect(links.map((l) => l.attributes('aria-label'))).toEqual([
+      'Главная',
+      'Подписки',
+      'Календарь',
+      'Статистика',
+      'Ещё',
+    ])
   })
 })
