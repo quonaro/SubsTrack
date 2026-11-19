@@ -24,6 +24,16 @@ const routes = [
   { path: '/:pathMatch(.*)*', redirect: '/' },
 ]
 
+// Display order for the page-slide direction in App.vue: the bottom-nav
+// tabs in order, with /history right after home since it's pushed from there.
+export const ROUTE_ORDER = ['/', '/history', '/subscriptions', '/calendar', '/stats', '/settings']
+
+export function slideDirection(toPath: string, fromPath: string): 'fwd' | 'back' {
+  const to = ROUTE_ORDER.indexOf(toPath)
+  const from = ROUTE_ORDER.indexOf(fromPath)
+  return to >= 0 && from >= 0 && to < from ? 'back' : 'fwd'
+}
+
 export const router = createRouter({
   history: createWebHistory(),
   routes,

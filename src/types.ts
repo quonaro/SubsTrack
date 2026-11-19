@@ -79,9 +79,11 @@ export type AccentKey = 'orange' | 'violet' | 'blue' | 'emerald' | 'pink' | 'amb
 
 export type PresetKey = 'default' | 'nord' | 'solarized' | 'contrast' | 'warm'
 
+export type ThemeMode = 'dark' | 'light' | 'system'
+
 export interface Settings {
   baseCurrency: string
-  theme: 'dark' | 'light'
+  theme: ThemeMode
   accent: AccentKey
   preset: PresetKey
 }

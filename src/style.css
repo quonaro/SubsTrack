@@ -93,6 +93,61 @@ body {
   display: none;
 }
 
+/* Page slide transitions (App.vue router-view): the leaving page is lifted
+   out of flow so the entering one slides over it. `top` matches main's
+   pt-safe padding so the absolute page aligns with the content box. */
+.slide-fwd-leave-active,
+.slide-back-leave-active {
+  position: absolute;
+  top: env(safe-area-inset-top);
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 0;
+  transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+  will-change: transform;
+}
+.slide-fwd-enter-active,
+.slide-back-enter-active {
+  position: relative;
+  z-index: 1;
+  /* Pages have no background of their own — without this the incoming page
+     is transparent and the outgoing one shows through mid-slide. min-height
+     keeps the cover opaque even when the page content is shorter than the
+     scrollport. */
+  min-height: 100%;
+  background: var(--color-app-bg);
+  transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+  will-change: transform;
+}
+.slide-fwd-enter-from {
+  transform: translateX(100%);
+}
+.slide-fwd-leave-to {
+  transform: translateX(-30%);
+}
+.slide-back-enter-from {
+  transform: translateX(-100%);
+}
+.slide-back-leave-to {
+  transform: translateX(30%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slide-fwd-leave-active,
+  .slide-fwd-enter-active,
+  .slide-back-leave-active,
+  .slide-back-enter-active {
+    transition: none;
+  }
+  .slide-fwd-enter-from,
+  .slide-fwd-leave-to,
+  .slide-back-enter-from,
+  .slide-back-leave-to {
+    transform: none;
+  }
+}
+
 :focus {
   outline: none;
 }

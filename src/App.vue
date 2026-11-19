@@ -1,31 +1,40 @@
 <script setup lang="ts">
-import { nextTick, ref, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import { slideDirection } from './router'
 import { store } from './store'
 import BottomNav from './components/BottomNav.vue'
 import PageSkeleton from './components/PageSkeleton.vue'
 
 const route = useRoute()
-const switching = ref(false)
+const mainEl = ref<HTMLElement | null>(null)
+const slideDir = ref<'fwd' | 'back'>('fwd')
+let prevPath = route.path
 
-// Routes have no async data of their own — everything is already in the
-// store. The flag flips for a single tick purely so PageSkeleton runs its
-// min-visible window on every navigation.
+// The direction comes from the display order in ROUTE_ORDER; the scroller is
+// reset so the incoming page always starts at the top.
 watch(
-  () => route.fullPath,
-  async () => {
-    switching.value = true
-    await nextTick()
-    switching.value = false
+  () => route.path,
+  () => {
+    slideDir.value = slideDirection(route.path, prevPath)
+    prevPath = route.path
+    if (mainEl.value) mainEl.value.scrollTop = 0
   },
 )
 </script>
 
 <template>
   <div class="px-safe flex h-full flex-col bg-app-bg text-app-text md:flex-row">
-    <main class="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto pt-safe">
-      <router-view v-if="store.ready" />
-      <PageSkeleton :active="!store.ready || switching" />
+    <main
+      ref="mainEl"
+      class="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden pt-safe"
+    >
+      <router-view v-if="store.ready" v-slot="{ Component }">
+        <Transition :name="slideDir === 'back' ? 'slide-back' : 'slide-fwd'">
+          <component :is="Component" :key="route.path" />
+        </Transition>
+      </router-view>
+      <PageSkeleton :active="!store.ready" />
     </main>
     <BottomNav v-if="store.ready" />
   </div>

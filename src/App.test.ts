@@ -1,6 +1,6 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { createMemoryHistory, createRouter } from 'vue-router'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import App from './App.vue'
 import PageSkeleton from './components/PageSkeleton.vue'
 import { store } from './store'
@@ -13,10 +13,6 @@ const router = () =>
 
 beforeEach(() => {
   store.ready = false
-})
-
-afterEach(() => {
-  vi.useRealTimers()
 })
 
 describe('App', () => {
@@ -37,8 +33,7 @@ describe('App', () => {
     expect(labels).toContain('Подписки')
   })
 
-  it('shows the skeleton again on every page switch', async () => {
-    vi.useFakeTimers()
+  it('does not show the skeleton on page switches once ready', async () => {
     const r = createRouter({
       history: createMemoryHistory(),
       routes: [
@@ -52,13 +47,12 @@ describe('App', () => {
     await r.push('/a')
     await r.isReady()
     await flushPromises()
-
-    vi.advanceTimersByTime(600)
+    await new Promise((res) => setTimeout(res, 600))
     await flushPromises()
     expect(w.find('[data-tile]').exists()).toBe(false)
 
     await r.push('/b')
     await flushPromises()
-    expect(w.find('[data-tile]').exists()).toBe(true)
+    expect(w.find('[data-tile]').exists()).toBe(false)
   })
 })

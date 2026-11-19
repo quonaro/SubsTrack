@@ -26,7 +26,7 @@ const activeText = computed(
     <header class="mb-6 flex items-center justify-between">
       <div>
         <h1 class="flex items-center gap-2 text-2xl font-bold">
-          <Icon name="home" :size="22" class="text-accent-hi" />SubsTrack
+          <Icon name="home" :size="22" class="text-accent-hi" />Главная
         </h1>
         <p class="text-sm text-app-text-muted">{{ activeText }}</p>
       </div>

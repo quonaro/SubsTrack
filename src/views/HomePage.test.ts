@@ -41,7 +41,7 @@ describe('HomePage', () => {
     store.subscriptions = [sub()]
     const w = mount(HomePage, { global: { plugins: [router()] } })
     await flushPromises()
-    expect(w.text()).toContain('SubsTrack')
+    expect(w.text()).toContain('Главная')
     expect(w.text()).toContain('В месяц')
     expect(w.text()).toContain('В год')
     expect(w.text()).toContain('Ближайшие платежи')

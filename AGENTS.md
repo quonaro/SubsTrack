@@ -123,9 +123,11 @@ null → create, id → edit; emits `saved`/`deleted`),
 `SubscriptionEditModal` (edit `Modal` wrapping `SubscriptionForm`;
 `subId` null → closed, emits `close`/`deleted`), `PageSkeleton`
 (animated
-mosaic overlay shown in `App.vue` until `store.ready` and on every
-route switch; guillotine-cut tiles reshuffle on a timer, stays up
-≥500ms then fades out).
+mosaic overlay shown in `App.vue` until `store.ready`; guillotine-cut
+tiles reshuffle on a timer, stays up ≥500ms then fades out). Route
+changes play a directional slide transition (`slide-fwd`/`slide-back`
+in `style.css`, direction from `slideDirection`/`ROUTE_ORDER` in
+`router.ts`) instead of the skeleton.
 
 `src/views/` — Home (totals + upcoming), Subscriptions (sort/archive,
 FAB opens `SubscriptionForm` in a `Modal` for create),

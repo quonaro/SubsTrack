@@ -63,3 +63,28 @@ describe('router guards', () => {
     expect(router.currentRoute.value.path).toBe('/')
   })
 })
+
+describe('slideDirection', () => {
+  it('slides forward along the display order', async () => {
+    const { slideDirection } = await import('./router')
+    expect(slideDirection('/history', '/')).toBe('fwd')
+    expect(slideDirection('/subscriptions', '/')).toBe('fwd')
+    expect(slideDirection('/calendar', '/subscriptions')).toBe('fwd')
+    expect(slideDirection('/stats', '/calendar')).toBe('fwd')
+    expect(slideDirection('/settings', '/stats')).toBe('fwd')
+  })
+
+  it('slides back against the display order', async () => {
+    const { slideDirection } = await import('./router')
+    expect(slideDirection('/', '/history')).toBe('back')
+    expect(slideDirection('/', '/calendar')).toBe('back')
+    expect(slideDirection('/subscriptions', '/stats')).toBe('back')
+  })
+
+  it('defaults to forward for unknown or equal paths', async () => {
+    const { slideDirection } = await import('./router')
+    expect(slideDirection('/nope', '/')).toBe('fwd')
+    expect(slideDirection('/', '/nope')).toBe('fwd')
+    expect(slideDirection('/', '/')).toBe('fwd')
+  })
+})
