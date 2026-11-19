@@ -6,11 +6,9 @@ import { formatMoney } from '../domain/currency'
 import { todayIso } from '../domain/dates'
 import { pluralRu } from '../domain/plural'
 import SubCard from '../components/SubCard.vue'
-import SubscriptionEditModal from '../components/SubscriptionEditModal.vue'
 import EmptyState from '../components/EmptyState.vue'
 import Icon from '../components/Icon.vue'
 
-const editId = ref<number | null>(null)
 const cur = computed(() => store.settings.baseCurrency)
 
 const upcoming = computed(() => upcomingPayments(store.subscriptions, todayIso(), 7))
@@ -63,18 +61,12 @@ const activeText = computed(
           v-for="s in upcoming.slice(0, 6)"
           :key="s.id"
           :sub="s"
-          @click="editId = s.id"
+          confirm-on-click
           @paid="markPaid"
         />
         </div>
       </div>
       <EmptyState v-else icon="calendar">В ближайшие 7 дней платежей нет</EmptyState>
     </section>
-
-    <SubscriptionEditModal
-      :sub-id="editId"
-      @close="editId = null"
-      @deleted="editId = null"
-    />
   </div>
 </template>

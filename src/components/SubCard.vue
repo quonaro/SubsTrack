@@ -6,7 +6,7 @@ import { formatMoney } from '../domain/currency'
 import { daysUntilText, diffDays, formatDateRu, periodLabel, todayIso } from '../domain/dates'
 import Modal from './Modal.vue'
 
-const props = defineProps<{ sub: Subscription; compact?: boolean }>()
+const props = defineProps<{ sub: Subscription; compact?: boolean; confirmOnClick?: boolean }>()
 const emit = defineEmits<{ paid: [number] }>()
 
 const cat = computed(() => categoryOf(props.sub))
@@ -14,6 +14,9 @@ const days = computed(() => diffDays(props.sub.nextPaymentDate, todayIso()))
 const overdue = computed(() => props.sub.isActive && days.value < 0)
 
 const confirmOpen = ref(false)
+function onCardClick() {
+  if (props.confirmOnClick && props.sub.isActive && !props.compact) confirmOpen.value = true
+}
 function confirmPaid() {
   confirmOpen.value = false
   emit('paid', props.sub.id)
@@ -23,7 +26,8 @@ function confirmPaid() {
 <template>
   <div
     class="flex items-center gap-3 rounded-2xl border border-app-border bg-app-card p-4"
-    :class="{ 'opacity-55': !sub.isActive }"
+    :class="{ 'opacity-55': !sub.isActive, 'cursor-pointer': confirmOnClick }"
+    @click="onCardClick"
   >
     <div
       class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-2xl"
