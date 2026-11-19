@@ -193,7 +193,7 @@ async function addCategory(): Promise<void> {
 </script>
 
 <template>
-  <div class="mx-auto max-w-xl px-4 pb-10 pt-6">
+  <div class="mx-auto w-full max-w-xl px-4 pb-10 pt-6">
     <header class="mb-6 flex items-center gap-3">
       <button
         type="button"

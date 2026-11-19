@@ -111,7 +111,7 @@ const updateLabel = computed(() => {
 </script>
 
 <template>
-  <div class="mx-auto max-w-xl px-4 pb-6 pt-6">
+  <div class="mx-auto w-full max-w-xl px-4 pb-6 pt-6">
     <h1 class="mb-6 text-2xl font-bold">Настройки</h1>
 
     <div class="mb-6 flex flex-col gap-2">
