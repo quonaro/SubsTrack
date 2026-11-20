@@ -6,12 +6,15 @@ import { formatMoney } from '../domain/currency'
 import { daysUntilText, diffDays, formatDateRu, periodLabel, todayIso } from '../domain/dates'
 import Modal from './Modal.vue'
 
-const props = defineProps<{
-  sub: Subscription
-  compact?: boolean
-  confirmOnClick?: boolean
-  skipPayConfirm?: boolean
-}>()
+const props = withDefaults(
+  defineProps<{
+    sub: Subscription
+    compact?: boolean
+    confirmOnClick?: boolean
+    payable?: boolean
+  }>(),
+  { payable: true },
+)
 const emit = defineEmits<{ paid: [number] }>()
 
 const cat = computed(() => categoryOf(props.sub))
@@ -27,8 +30,7 @@ function confirmPaid() {
   emit('paid', props.sub.id)
 }
 function onPayClick() {
-  if (props.skipPayConfirm) confirmPaid()
-  else confirmOpen.value = true
+  confirmOpen.value = true
 }
 </script>
 
@@ -67,13 +69,19 @@ function onPayClick() {
       </div>
     </div>
     <button
-      v-if="sub.isActive && !compact"
+      v-if="sub.isActive && !compact && payable"
       type="button"
       class="flex h-9 shrink-0 items-center rounded-full bg-accent/20 px-3 text-xs font-medium text-accent-hi transition-colors hover:bg-accent/40"
       @click.stop="onPayClick"
     >
       {{ formatMoney(sub.priceMinor, sub.currency) }}
     </button>
+    <span
+      v-else-if="sub.isActive && !compact"
+      class="flex h-9 shrink-0 items-center rounded-full px-3 text-xs font-medium text-app-text-muted"
+    >
+      {{ formatMoney(sub.priceMinor, sub.currency) }}
+    </span>
     <Modal :open="confirmOpen" title="Отметить платёж оплаченным?" @update:open="confirmOpen = $event">
       <p class="mb-5 text-sm text-app-text-muted">
         Отметить «{{ sub.name }}» оплаченным на {{ formatMoney(sub.priceMinor, sub.currency) }}?

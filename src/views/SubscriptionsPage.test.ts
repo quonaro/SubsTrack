@@ -5,6 +5,7 @@ import SubscriptionsPage from './SubscriptionsPage.vue'
 import SubCard from '../components/SubCard.vue'
 import { createSubscription, store } from '../store'
 import { getSubscription } from '../domain/subscriptions'
+import { listPayments } from '../domain/payments'
 import { makeTestDb } from '../db/testdb'
 import { setDbForTesting } from '../db'
 import { migrate } from '../db/schema'
@@ -15,6 +16,10 @@ const router = () =>
     history: createMemoryHistory(),
     routes: [{ path: '/:pathMatch(.*)*', component: { template: '<div/>' } }],
   })
+
+// Vue's <Transition> keeps a leaving node in the DOM until a frame plus a
+// timeout tick, which flushPromises doesn't wait for.
+const settleTransition = () => new Promise<void>((resolve) => setTimeout(resolve, 50))
 
 const sub = (over: Partial<Subscription> = {}): Subscription => ({
   id: 1,
@@ -100,11 +105,21 @@ describe('SubscriptionsPage', () => {
     w.unmount()
   })
 
-  it('pays without the confirm sheet', async () => {
+  it('does not record a payment from the amount pill', async () => {
     store.subscriptions = [sub()]
-    const w = mount(SubscriptionsPage, { global: { plugins: [router()] } })
+    const w = mount(SubscriptionsPage, {
+      global: { plugins: [router()] },
+      attachTo: document.body,
+    })
     await flushPromises()
-    expect(w.findComponent(SubCard).props('skipPayConfirm')).toBe(true)
+    expect(w.findComponent(SubCard).props('payable')).toBe(false)
+    const pill = [...w.element.querySelectorAll('span')].find((s) => s.textContent?.includes('999'))
+    expect(pill).toBeTruthy()
+    await new DOMWrapper(pill!).trigger('click')
+    await flushPromises()
+    expect(await listPayments()).toHaveLength(0)
+    expect(document.body.textContent).not.toContain('Отметить платёж оплаченным?')
+    w.unmount()
   })
 
   it('opens the edit sheet on card tap', async () => {
@@ -195,6 +210,58 @@ describe('SubscriptionsPage', () => {
     el.dispatchEvent(new MouseEvent('click', { bubbles: true }))
     await flushPromises()
     expect(document.body.textContent).not.toContain('Следующий платёж')
+    w.unmount()
+  })
+
+  it('replaces the open menu when another card is long-pressed', async () => {
+    store.subscriptions = [sub(), sub({ id: 2, name: 'Spotify', icon: '🎵' })]
+    const w = mount(SubscriptionsPage, {
+      global: { plugins: [router()] },
+      attachTo: document.body,
+    })
+    await flushPromises()
+    const cards = w.findAllComponents(SubCard)
+    expect(cards).toHaveLength(2)
+    await cards[0].trigger('contextmenu')
+    await flushPromises()
+    expect(document.body.textContent).toContain('Редактировать')
+
+    const down = new Event('touchstart', { bubbles: true })
+    Object.defineProperty(down, 'touches', { value: [{ clientX: 40, clientY: 140 }] })
+    ;(cards[1].element as HTMLElement).dispatchEvent(down)
+    // Real timers: a listener attached while the clock is faked gets a future
+    // `attached` stamp, and Vue then ignores the click as stale.
+    await new Promise((r) => setTimeout(r, 550))
+    await flushPromises()
+    await settleTransition()
+
+    // Still exactly one menu, and it now targets the second card.
+    expect(document.body.querySelectorAll('[data-card-menu]')).toHaveLength(1)
+    const del = [...document.body.querySelectorAll('[data-card-menu] button')].find(
+      (b) => b.textContent?.trim() === 'Удалить',
+    )!
+    await new DOMWrapper(del).trigger('click')
+    await flushPromises()
+    expect(document.body.textContent).toContain('«Spotify»')
+    w.unmount()
+  })
+
+  it('closes the menu on a tap outside it without opening the edit sheet', async () => {
+    store.subscriptions = [sub()]
+    const w = mount(SubscriptionsPage, {
+      global: { plugins: [router()] },
+      attachTo: document.body,
+    })
+    await flushPromises()
+    await w.findComponent(SubCard).trigger('contextmenu')
+    await flushPromises()
+    expect(document.body.textContent).toContain('Редактировать')
+
+    window.dispatchEvent(new Event('pointerdown'))
+    window.dispatchEvent(new Event('pointerup'))
+    await flushPromises()
+    await settleTransition()
+    expect(document.body.textContent).not.toContain('Редактировать')
     w.unmount()
   })
 

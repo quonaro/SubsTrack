@@ -45,11 +45,14 @@ describe('SubCard', () => {
     w.unmount()
   })
 
-  it('emits paid immediately without the sheet when skipPayConfirm is set', async () => {
-    const w = mount(SubCard, { props: { sub: sub({ id: 7 }), skipPayConfirm: true } })
-    await w.find('button').trigger('click')
+  it('renders the amount as a static label and stays inert when payable is false', async () => {
+    const w = mount(SubCard, { props: { sub: sub({ id: 7 }), payable: false } })
+    expect(w.find('button').exists()).toBe(false)
+    const amount = w.findAll('span').find((s) => s.text().includes('999'))
+    expect(amount).toBeTruthy()
+    await amount!.trigger('click')
     await flushPromises()
-    expect(w.emitted('paid')).toEqual([[7]])
+    expect(w.emitted('paid')).toBeUndefined()
     expect(document.body.textContent).not.toContain('Отметить платёж оплаченным?')
     w.unmount()
   })

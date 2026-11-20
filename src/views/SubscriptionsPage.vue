@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { deleteSubscription, markPaid, store, visibleSubscriptions } from '../store'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { deleteSubscription, store, visibleSubscriptions } from '../store'
 import type { SortMode, Subscription } from '../types'
 import SubCard from '../components/SubCard.vue'
 import EmptyState from '../components/EmptyState.vue'
@@ -45,6 +45,9 @@ let pressY = 0
 // the card's tap action (edit / pay confirm).
 const CLICK_SUPPRESS_MS = 500
 let menuOpenedAt = 0
+// Set when the menu is dismissed by a press outside it, so the same press's
+// trailing click doesn't also open the edit sheet.
+let clickGuardUntil = 0
 
 function clearPressTimer(): void {
   if (pressTimer) {
@@ -97,8 +100,46 @@ function onCardContextMenu(sub: Subscription, e: MouseEvent): void {
 }
 
 function clickJustSuppressed(): boolean {
-  return Date.now() - menuOpenedAt < CLICK_SUPPRESS_MS
+  return Date.now() - Math.max(menuOpenedAt, clickGuardUntil) < CLICK_SUPPRESS_MS
 }
+
+// The menu has no blocking backdrop: cards underneath stay interactive so a
+// long-press on another row can replace the open menu. Taps outside it close it.
+let outsidePressAt = 0
+
+function onDocumentPointerDown(e: PointerEvent): void {
+  if (!cardMenu.value) return
+  const target = e.target as Element | null
+  if (target?.closest?.('[data-card-menu]')) {
+    outsidePressAt = 0
+    return
+  }
+  outsidePressAt = Date.now()
+}
+
+function onDocumentPointerUp(): void {
+  if (!outsidePressAt) return
+  const pressed = outsidePressAt
+  outsidePressAt = 0
+  if (!cardMenu.value) return
+  // A long-press during this gesture already opened a fresh menu — keep it.
+  if (menuOpenedAt >= pressed) return
+  cardMenu.value = null
+  clickGuardUntil = Date.now()
+}
+
+onMounted(() => {
+  window.addEventListener('pointerdown', onDocumentPointerDown)
+  window.addEventListener('pointerup', onDocumentPointerUp)
+  window.addEventListener('pointercancel', onDocumentPointerUp)
+})
+
+onUnmounted(() => {
+  clearPressTimer()
+  window.removeEventListener('pointerdown', onDocumentPointerDown)
+  window.removeEventListener('pointerup', onDocumentPointerUp)
+  window.removeEventListener('pointercancel', onDocumentPointerUp)
+})
 
 // Capture phase: also shields inner controls (the pay pill) from the
 // trailing click, which would otherwise open the paid-confirm sheet.
@@ -176,7 +217,7 @@ const subsWord = computed(() =>
           v-for="s in visibleSubscriptions"
           :key="s.id"
           :sub="s"
-          skip-pay-confirm
+          :payable="false"
           @click.capture="onCardClickCapture"
           @click="onCardTap(s)"
           @touchstart.passive="onCardTouchStart(s, $event)"
@@ -184,7 +225,6 @@ const subsWord = computed(() =>
           @touchend="onCardTouchEnd"
           @touchcancel="onCardTouchEnd"
           @contextmenu="onCardContextMenu(s, $event)"
-          @paid="markPaid"
         />
       </div>
     </div>
@@ -208,14 +248,12 @@ const subsWord = computed(() =>
     <SubscriptionEditModal :sub-id="editId" @close="editId = null" />
 
     <Teleport to="body">
-      <div
-        v-if="cardMenu"
-        class="fixed inset-0 z-40"
-        @click="cardMenu = null"
-        @contextmenu.prevent
-      >
+      <Transition name="card-menu" mode="out-in">
         <div
-          class="absolute w-44 overflow-hidden rounded-xl border border-app-border bg-app-card py-1 shadow-xl"
+          v-if="cardMenu"
+          :key="cardMenu.sub.id"
+          data-card-menu
+          class="fixed z-40 w-44 origin-top-left overflow-hidden rounded-xl border border-app-border bg-app-card py-1 shadow-xl"
           :style="{ top: `${cardMenu.y}px`, left: `${cardMenu.x}px` }"
         >
           <button
@@ -233,7 +271,7 @@ const subsWord = computed(() =>
             <Icon name="trash" :size="16" /> Удалить
           </button>
         </div>
-      </div>
+      </Transition>
     </Teleport>
 
     <Modal
