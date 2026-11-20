@@ -59,6 +59,14 @@ const periodDays = computed(() => {
   return periodPreset.value === 'custom' ? Math.max(1, customDays.value || 1) : periodPreset.value
 })
 
+// Presets that mean a calendar period (monthly / quarterly / yearly) are
+// scheduled by months so the payment keeps its day of the month instead of
+// drifting by 30 days.
+const periodMonths = computed(() => {
+  if (periodPreset.value === 'once' || periodPreset.value === 'custom') return 0
+  return PERIOD_PRESETS.find((p) => p.days === periodPreset.value)?.months ?? 0
+})
+
 const dateLabel = computed(() =>
   isOneTime.value ? 'Дата платежа' : isEdit.value ? 'Следующий платёж' : 'Дата первого платежа',
 )
@@ -67,7 +75,7 @@ const periodOptions = [
   ...PERIOD_PRESETS.map((p) => ({
     value: p.days as number | 'custom' | 'once',
     label: p.label,
-    hint: `${p.days} дней`,
+    hint: p.months ? `${p.months} мес.` : `${p.days} дней`,
   })),
   { value: 'custom' as const, label: 'Свой период', hint: 'указать дни вручную' },
   { value: 'once' as const, label: 'Разово', hint: 'единоразовый платёж' },
@@ -123,7 +131,11 @@ onMounted(async () => {
   iconColor.value = sub.iconColor
   priceText.value = (sub.priceMinor / 100).toString()
   currency.value = sub.currency
-  const preset = PERIOD_PRESETS.find((p) => p.days === sub.periodDays)
+  // A month-based row is only a preset when both its day count and its month
+  // period match; a custom "every 30 days" must not show up as «Ежемесячно».
+  const preset = PERIOD_PRESETS.find(
+    (p) => p.days === sub.periodDays && p.months === sub.periodMonths,
+  )
   if (sub.isOneTime) periodPreset.value = 'once'
   else if (preset) periodPreset.value = preset.days
   else {
@@ -175,6 +187,7 @@ async function persist(): Promise<boolean> {
       priceMinor: price,
       currency: currency.value,
       periodDays: periodDays.value,
+      periodMonths: periodMonths.value,
       isOneTime: isOneTime.value,
       startDate: nextDate.value,
       nextPaymentDate: nextDate.value,

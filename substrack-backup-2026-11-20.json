@@ -1,0 +1,347 @@
+{
+  "app": "substrack",
+  "format": 1,
+  "createdAt": "2026-11-20T11:36:18.436Z",
+  "appVersion": "v0.0.3",
+  "schemaVersion": 4,
+  "tables": {
+    "categories": [
+      {
+        "id": 1,
+        "name": "Игры",
+        "color": "#7c3aed",
+        "icon": "gamepad-2",
+        "created_at": "2026-11-20T11:36:18.436Z"
+      },
+      {
+        "id": 2,
+        "name": "ИИ и ПО",
+        "color": "#06b6d4",
+        "icon": "brain",
+        "created_at": "2026-11-20T11:36:18.436Z"
+      },
+      {
+        "id": 3,
+        "name": "Связь",
+        "color": "#3b82f6",
+        "icon": "smartphone",
+        "created_at": "2026-11-20T11:36:18.436Z"
+      },
+      {
+        "id": 4,
+        "name": "Жильё",
+        "color": "#f59e0b",
+        "icon": "house",
+        "created_at": "2026-11-20T11:36:18.436Z"
+      }
+    ],
+    "subscriptions": [
+      {
+        "id": 1,
+        "name": "ChatGPT Plus",
+        "price_minor": 168228,
+        "currency": "RUB",
+        "period_days": 30,
+        "is_one_time": 0,
+        "start_date": "2026-11-19",
+        "next_payment_date": "2026-12-19",
+        "icon": "brain",
+        "icon_color": null,
+        "is_active": 1,
+        "reminder_enabled": 1,
+        "category_id": 2,
+        "notes": "FUNPAY",
+        "created_at": "2026-11-20T11:36:18.436Z",
+        "updated_at": "2026-11-20T11:36:18.436Z"
+      },
+      {
+        "id": 2,
+        "name": "Opencode",
+        "price_minor": 131565,
+        "currency": "RUB",
+        "period_days": 30,
+        "is_one_time": 0,
+        "start_date": "2026-11-19",
+        "next_payment_date": "2026-12-19",
+        "icon": "terminal",
+        "icon_color": null,
+        "is_active": 1,
+        "reminder_enabled": 1,
+        "category_id": 2,
+        "notes": "GdVel",
+        "created_at": "2026-11-20T11:36:18.436Z",
+        "updated_at": "2026-11-20T11:36:18.436Z"
+      },
+      {
+        "id": 3,
+        "name": "БП Геншин",
+        "price_minor": 65351,
+        "currency": "RUB",
+        "period_days": 30,
+        "is_one_time": 0,
+        "start_date": "2026-11-19",
+        "next_payment_date": "2026-12-19",
+        "icon": "gamepad-2",
+        "icon_color": null,
+        "is_active": 1,
+        "reminder_enabled": 1,
+        "category_id": 1,
+        "notes": "FUNPAY",
+        "created_at": "2026-11-20T11:36:18.436Z",
+        "updated_at": "2026-11-20T11:36:18.436Z"
+      },
+      {
+        "id": 4,
+        "name": "Луна Геншин",
+        "price_minor": 32303,
+        "currency": "RUB",
+        "period_days": 30,
+        "is_one_time": 0,
+        "start_date": "2026-11-19",
+        "next_payment_date": "2026-12-19",
+        "icon": "moon",
+        "icon_color": null,
+        "is_active": 1,
+        "reminder_enabled": 1,
+        "category_id": 1,
+        "notes": "FUNPAY",
+        "created_at": "2026-11-20T11:36:18.436Z",
+        "updated_at": "2026-11-20T11:36:18.436Z"
+      },
+      {
+        "id": 5,
+        "name": "Clip Studio Paint",
+        "price_minor": 37758,
+        "currency": "RUB",
+        "period_days": 30,
+        "is_one_time": 0,
+        "start_date": "2026-11-19",
+        "next_payment_date": "2026-12-19",
+        "icon": "palette",
+        "icon_color": null,
+        "is_active": 1,
+        "reminder_enabled": 1,
+        "category_id": 2,
+        "notes": "plati.market",
+        "created_at": "2026-11-20T11:36:18.436Z",
+        "updated_at": "2026-11-20T11:36:18.436Z"
+      },
+      {
+        "id": 6,
+        "name": "VPN",
+        "price_minor": 51850,
+        "currency": "RUB",
+        "period_days": 30,
+        "is_one_time": 0,
+        "start_date": "2026-11-19",
+        "next_payment_date": "2026-12-19",
+        "icon": "shield",
+        "icon_color": null,
+        "is_active": 1,
+        "reminder_enabled": 1,
+        "category_id": 2,
+        "notes": "GamerPay (KZ)",
+        "created_at": "2026-11-20T11:36:18.436Z",
+        "updated_at": "2026-11-20T11:36:18.436Z"
+      },
+      {
+        "id": 7,
+        "name": "Симка Вике",
+        "price_minor": 60000,
+        "currency": "RUB",
+        "period_days": 30,
+        "is_one_time": 0,
+        "start_date": "2026-11-19",
+        "next_payment_date": "2026-12-19",
+        "icon": "smartphone",
+        "icon_color": null,
+        "is_active": 1,
+        "reminder_enabled": 1,
+        "category_id": 3,
+        "notes": "Yota · 9963324887",
+        "created_at": "2026-11-20T11:36:18.436Z",
+        "updated_at": "2026-11-20T11:36:18.436Z"
+      },
+      {
+        "id": 8,
+        "name": "МегаФон",
+        "price_minor": 40000,
+        "currency": "RUB",
+        "period_days": 30,
+        "is_one_time": 0,
+        "start_date": "2026-11-19",
+        "next_payment_date": "2026-12-19",
+        "icon": "smartphone",
+        "icon_color": null,
+        "is_active": 1,
+        "reminder_enabled": 1,
+        "category_id": 3,
+        "notes": "79236133254",
+        "created_at": "2026-11-20T11:36:18.436Z",
+        "updated_at": "2026-11-20T11:36:18.436Z"
+      },
+      {
+        "id": 9,
+        "name": "Квартплата",
+        "price_minor": 3150000,
+        "currency": "RUB",
+        "period_days": 30,
+        "is_one_time": 0,
+        "start_date": "2026-11-05",
+        "next_payment_date": "2026-12-05",
+        "icon": "house",
+        "icon_color": null,
+        "is_active": 1,
+        "reminder_enabled": 1,
+        "category_id": 4,
+        "notes": "каждое 5-е число",
+        "created_at": "2026-11-20T11:36:18.436Z",
+        "updated_at": "2026-11-20T11:36:18.436Z"
+      },
+      {
+        "id": 10,
+        "name": "Коммуналка",
+        "price_minor": 200000,
+        "currency": "RUB",
+        "period_days": 30,
+        "is_one_time": 0,
+        "start_date": "2026-11-05",
+        "next_payment_date": "2026-12-05",
+        "icon": "house-plug",
+        "icon_color": null,
+        "is_active": 1,
+        "reminder_enabled": 1,
+        "category_id": 4,
+        "notes": "каждое 5-е число",
+        "created_at": "2026-11-20T11:36:18.436Z",
+        "updated_at": "2026-11-20T11:36:18.436Z"
+      }
+    ],
+    "payments": [],
+    "notify_rules": [
+      {
+        "id": 1,
+        "subscription_id": 1,
+        "kind": "advance",
+        "days_before": 1,
+        "at_time": "10:00",
+        "interval_hours": null,
+        "enabled": 1,
+        "created_at": "2026-11-20T11:36:18.436Z"
+      },
+      {
+        "id": 2,
+        "subscription_id": 2,
+        "kind": "advance",
+        "days_before": 1,
+        "at_time": "10:00",
+        "interval_hours": null,
+        "enabled": 1,
+        "created_at": "2026-11-20T11:36:18.436Z"
+      },
+      {
+        "id": 3,
+        "subscription_id": 3,
+        "kind": "advance",
+        "days_before": 1,
+        "at_time": "10:00",
+        "interval_hours": null,
+        "enabled": 1,
+        "created_at": "2026-11-20T11:36:18.436Z"
+      },
+      {
+        "id": 4,
+        "subscription_id": 4,
+        "kind": "advance",
+        "days_before": 1,
+        "at_time": "10:00",
+        "interval_hours": null,
+        "enabled": 1,
+        "created_at": "2026-11-20T11:36:18.436Z"
+      },
+      {
+        "id": 5,
+        "subscription_id": 5,
+        "kind": "advance",
+        "days_before": 1,
+        "at_time": "10:00",
+        "interval_hours": null,
+        "enabled": 1,
+        "created_at": "2026-11-20T11:36:18.436Z"
+      },
+      {
+        "id": 6,
+        "subscription_id": 6,
+        "kind": "advance",
+        "days_before": 1,
+        "at_time": "10:00",
+        "interval_hours": null,
+        "enabled": 1,
+        "created_at": "2026-11-20T11:36:18.436Z"
+      },
+      {
+        "id": 7,
+        "subscription_id": 7,
+        "kind": "advance",
+        "days_before": 1,
+        "at_time": "10:00",
+        "interval_hours": null,
+        "enabled": 1,
+        "created_at": "2026-11-20T11:36:18.436Z"
+      },
+      {
+        "id": 8,
+        "subscription_id": 8,
+        "kind": "advance",
+        "days_before": 1,
+        "at_time": "10:00",
+        "interval_hours": null,
+        "enabled": 1,
+        "created_at": "2026-11-20T11:36:18.436Z"
+      },
+      {
+        "id": 9,
+        "subscription_id": 9,
+        "kind": "advance",
+        "days_before": 2,
+        "at_time": "10:00",
+        "interval_hours": null,
+        "enabled": 1,
+        "created_at": "2026-11-20T11:36:18.436Z"
+      },
+      {
+        "id": 10,
+        "subscription_id": 10,
+        "kind": "advance",
+        "days_before": 2,
+        "at_time": "10:00",
+        "interval_hours": null,
+        "enabled": 1,
+        "created_at": "2026-11-20T11:36:18.436Z"
+      }
+    ],
+    "events": [],
+    "settings": [
+      {
+        "key": "baseCurrency",
+        "value": "RUB"
+      },
+      {
+        "key": "theme",
+        "value": "dark"
+      },
+      {
+        "key": "themeMode",
+        "value": "dark"
+      },
+      {
+        "key": "accent",
+        "value": "orange"
+      },
+      {
+        "key": "preset",
+        "value": "warm"
+      }
+    ]
+  }
+}

@@ -1,6 +1,6 @@
 import { getDb, rows, lastId } from '../db'
 import type { Subscription } from '../types'
-import { nextPaymentAfter, todayIso } from './dates'
+import { dayOfMonth, nextPaymentAfter, todayIso } from './dates'
 import { recordEvent } from './events'
 import { logger } from '../log'
 
@@ -12,6 +12,8 @@ interface SubRow {
   price_minor: number
   currency: string
   period_days: number
+  period_months: number
+  period_day: number
   is_one_time: number
   start_date: string
   next_payment_date: string
@@ -25,9 +27,9 @@ interface SubRow {
   updated_at: string
 }
 
-const SELECT = `SELECT id, name, price_minor, currency, period_days, is_one_time, start_date,
-  next_payment_date, icon, icon_color, is_active, reminder_enabled, category_id, notes,
-  created_at, updated_at FROM subscriptions`
+const SELECT = `SELECT id, name, price_minor, currency, period_days, period_months, period_day,
+  is_one_time, start_date, next_payment_date, icon, icon_color, is_active, reminder_enabled,
+  category_id, notes, created_at, updated_at FROM subscriptions`
 
 function toSub(r: SubRow): Subscription {
   return {
@@ -36,6 +38,8 @@ function toSub(r: SubRow): Subscription {
     priceMinor: r.price_minor,
     currency: r.currency,
     periodDays: r.period_days,
+    periodMonths: r.period_months,
+    periodDay: r.period_day,
     isOneTime: !!r.is_one_time,
     startDate: r.start_date,
     nextPaymentDate: r.next_payment_date,
@@ -55,6 +59,10 @@ export interface SubscriptionInput {
   priceMinor: number
   currency: string
   periodDays: number
+  /** Calendar-month period; 0 or omitted → day-based. */
+  periodMonths?: number
+  /** Day-of-month kept by a month-based period; defaults to the next payment's day. */
+  periodDay?: number
   isOneTime?: boolean
   startDate: string
   nextPaymentDate: string
@@ -64,6 +72,12 @@ export interface SubscriptionInput {
   reminderEnabled?: boolean
   categoryId?: number | null
   notes?: string | null
+}
+
+/** Day-of-month a month-based period follows; 0 for day-based / one-off rows. */
+function anchorDay(months: number | undefined, nextPaymentDate: string, day?: number): number {
+  if (!months) return 0
+  return day && day > 0 ? day : dayOfMonth(nextPaymentDate)
 }
 
 export async function listSubscriptions(includeArchived = false): Promise<Subscription[]> {
@@ -83,16 +97,23 @@ export async function getSubscription(id: number): Promise<Subscription | null> 
 export async function createSubscription(input: SubscriptionInput): Promise<Subscription> {
   const db = await getDb()
   const now = new Date().toISOString()
+  const periodMonths = input.isOneTime ? 0 : (input.periodMonths ?? 0)
+  const periodDay = input.isOneTime
+    ? 0
+    : anchorDay(periodMonths, input.nextPaymentDate, input.periodDay)
   const res = await db.run(
     `INSERT INTO subscriptions
-      (name, price_minor, currency, period_days, is_one_time, start_date, next_payment_date,
-       icon, icon_color, is_active, reminder_enabled, category_id, notes, created_at, updated_at)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      (name, price_minor, currency, period_days, period_months, period_day, is_one_time,
+       start_date, next_payment_date, icon, icon_color, is_active, reminder_enabled,
+       category_id, notes, created_at, updated_at)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
     [
       input.name,
       input.priceMinor,
       input.currency,
       input.periodDays,
+      periodMonths,
+      periodDay,
       input.isOneTime ? 1 : 0,
       input.startDate,
       input.nextPaymentDate,
@@ -122,15 +143,30 @@ export async function updateSubscription(
   const before = await getSubscription(id)
   if (!before) return null
   const merged = { ...before, ...patch }
+  const periodMonths = merged.isOneTime ? 0 : (merged.periodMonths ?? 0)
+  // The anchor day follows an explicit period / next-date edit. A date that a
+  // previous markPaid clamped into a short month must not move it, otherwise
+  // the schedule drifts by a couple of days on every edit.
+  const scheduleEdited =
+    (patch.periodMonths !== undefined && patch.periodMonths !== before.periodMonths) ||
+    (patch.periodDays !== undefined && patch.periodDays !== before.periodDays) ||
+    (patch.nextPaymentDate !== undefined && patch.nextPaymentDate !== before.nextPaymentDate)
+  const periodDay = anchorDay(
+    periodMonths,
+    merged.nextPaymentDate,
+    scheduleEdited ? 0 : merged.periodDay,
+  )
   await db.run(
-    `UPDATE subscriptions SET name=?, price_minor=?, currency=?, period_days=?, is_one_time=?,
-       start_date=?, next_payment_date=?, icon=?, icon_color=?, is_active=?, reminder_enabled=?,
-       category_id=?, notes=?, updated_at=? WHERE id=?`,
+    `UPDATE subscriptions SET name=?, price_minor=?, currency=?, period_days=?, period_months=?,
+       period_day=?, is_one_time=?, start_date=?, next_payment_date=?, icon=?, icon_color=?,
+       is_active=?, reminder_enabled=?, category_id=?, notes=?, updated_at=? WHERE id=?`,
     [
       merged.name,
       merged.priceMinor,
       merged.currency,
       merged.periodDays,
+      periodMonths,
+      periodDay,
       merged.isOneTime ? 1 : 0,
       merged.startDate,
       merged.nextPaymentDate,
@@ -201,7 +237,13 @@ export async function markPaid(id: number, paidIso?: string): Promise<Subscripti
     ])
     details.archived = true
   } else {
-    const next = nextPaymentAfter(sub.nextPaymentDate, sub.periodDays, paid)
+    const next = nextPaymentAfter(
+      sub.nextPaymentDate,
+      sub.periodDays,
+      paid,
+      sub.periodMonths,
+      sub.periodDay,
+    )
     await db.run('UPDATE subscriptions SET next_payment_date=?, updated_at=? WHERE id=?', [
       next,
       new Date().toISOString(),

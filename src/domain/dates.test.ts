@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   addDays,
+  addMonthsOnDay,
   daysUntilText,
   diffDays,
   firstPaymentOnOrAfter,
@@ -10,6 +11,7 @@ import {
   parseIsoDate,
   paymentDatesInRange,
   periodLabel,
+  presetPeriodMonths,
   toIsoDate,
 } from './dates'
 
@@ -56,6 +58,42 @@ describe('dates', () => {
     expect(d2).toEqual(['2026-01-19', '2026-02-18'])
     // empty when nothing falls inside
     expect(paymentDatesInRange('2026-01-01', 365, '2026-02-01', '2026-02-28')).toEqual([])
+  })
+
+  it('keeps the day of the month for month-based periods', () => {
+    expect(addMonthsOnDay('2026-01-04', 1, 4)).toBe('2026-02-04')
+    // short months clamp to their last day…
+    expect(addMonthsOnDay('2026-01-31', 1, 31)).toBe('2026-02-28')
+    expect(addMonthsOnDay('2028-01-31', 1, 31)).toBe('2028-02-29')
+    // …and the next step returns to the anchored day instead of drifting
+    expect(addMonthsOnDay('2026-02-28', 1, 31)).toBe('2026-03-31')
+
+    // «ежемесячно» = the same day of every month, not every 30 days
+    expect(nextPaymentAfter('2027-01-04', 30, '2027-01-04', 1, 4)).toBe('2027-02-04')
+    expect(nextPaymentAfter('2027-01-31', 30, '2027-01-31', 1, 31)).toBe('2027-02-28')
+    expect(nextPaymentAfter('2027-02-28', 30, '2027-02-28', 1, 31)).toBe('2027-03-31')
+    // paid late → missed months are skipped, the day stays put
+    expect(nextPaymentAfter('2027-01-04', 30, '2027-04-10', 1, 4)).toBe('2027-05-04')
+  })
+
+  it('lists month-based payment dates on the anchored day', () => {
+    expect(paymentDatesInRange('2027-01-04', 30, '2027-01-01', '2027-03-31', false, 1, 4)).toEqual([
+      '2027-01-04',
+      '2027-02-04',
+      '2027-03-04',
+    ])
+    // quarterly: 31st clamps in April, then back to the 31st
+    expect(paymentDatesInRange('2027-01-31', 90, '2027-01-01', '2027-12-31', false, 3, 31)).toEqual(
+      ['2027-01-31', '2027-04-30', '2027-07-31', '2027-10-31'],
+    )
+    expect(firstPaymentOnOrAfter('2026-01-04', 30, '2026-03-05', 1, 4)).toBe('2026-04-04')
+  })
+
+  it('maps the presets to calendar months', () => {
+    expect(presetPeriodMonths(30)).toBe(1)
+    expect(presetPeriodMonths(90)).toBe(3)
+    expect(presetPeriodMonths(365)).toBe(12)
+    expect(presetPeriodMonths(45)).toBe(0)
   })
 
   it('labels presets, custom periods and one-time purchases', () => {

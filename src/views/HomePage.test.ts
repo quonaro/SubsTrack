@@ -18,6 +18,8 @@ const sub = (over: Partial<Subscription> = {}): Subscription => ({
   priceMinor: 99900,
   currency: 'RUB',
   periodDays: 30,
+  periodMonths: 0,
+  periodDay: 0,
   isOneTime: false,
   startDate: '2026-01-01',
   nextPaymentDate: todayIso(),

@@ -148,6 +148,8 @@ export function computeReminders(
       nowIso,
       horizonIso,
       sub.isOneTime,
+      sub.periodMonths,
+      sub.periodDay,
     )
     for (const rule of bySub.get(sub.id) ?? []) {
       if (!rule.enabled) continue
