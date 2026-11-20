@@ -33,6 +33,8 @@ beforeEach(() => {
   update.dl = 'idle'
   update.progress = 0
   update.apkPath = ''
+  update.checkedAt = null
+  localStorage.clear()
 })
 
 afterEach(() => {
@@ -100,6 +102,19 @@ describe('checkForUpdate', () => {
     expect(await checkForUpdate()).toBe('error')
     stubFetch(async () => Promise.reject(new Error('offline')))
     expect(await checkForUpdate()).toBe('error')
+  })
+
+  it('stamps and persists the check time on success only', async () => {
+    const before = Date.now()
+    stubFetch(async () => releaseResponse({ tag_name: 'v0.0.1', assets: [] }))
+    expect(await checkForUpdate()).toBe('uptodate')
+    expect(update.checkedAt).toBeGreaterThanOrEqual(before)
+    expect(Number(localStorage.getItem('substrack:updateCheckedAt'))).toBe(update.checkedAt)
+
+    const stamped = update.checkedAt
+    stubFetch(async () => releaseResponse({}, 500))
+    expect(await checkForUpdate()).toBe('error')
+    expect(update.checkedAt).toBe(stamped)
   })
 
   it('does not re-enter while busy', async () => {

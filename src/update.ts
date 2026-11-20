@@ -13,6 +13,29 @@ export const appVersion = (import.meta.env.VITE_APP_VERSION || pkg.version).repl
 const REPO = 'quonaro/SubsTrack'
 export const releasesUrl = `https://github.com/${REPO}/releases`
 
+// Timestamp of the last successful release check, persisted in localStorage
+// so Settings can show when the app was last updated before this launch's
+// check finishes (or when it failed / ran offline).
+const CHECKED_AT_KEY = 'substrack:updateCheckedAt'
+
+function loadCheckedAt(): number | null {
+  try {
+    const ts = Number(localStorage.getItem(CHECKED_AT_KEY))
+    return Number.isFinite(ts) && ts > 0 ? ts : null
+  } catch {
+    return null
+  }
+}
+
+function markChecked(): void {
+  update.checkedAt = Date.now()
+  try {
+    localStorage.setItem(CHECKED_AT_KEY, String(update.checkedAt))
+  } catch {
+    /* non-fatal: private mode or a full quota */
+  }
+}
+
 // Native plugin (android/app/.../ApkInstallerPlugin.java) that fires the
 // system package-installer intent on a downloaded APK via FileProvider and
 // mirrors the download into the notification shade.
@@ -115,6 +138,9 @@ export const update = reactive({
   dl: 'idle' as DownloadState,
   progress: 0,
   apkPath: '',
+  // When the installed version was last confirmed current (mtime of the last
+  // successful GitHub check), shown as "Обновлено <дата>" in Settings.
+  checkedAt: loadCheckedAt(),
 })
 
 function parseVer(v: string): number[] | null {
@@ -141,6 +167,7 @@ export async function checkForUpdate(): Promise<UpdateStatus> {
     // No published releases (or draft-only) reads as "nothing newer".
     if (res.status === 404) {
       update.status = 'uptodate'
+      markChecked()
       log.debug('no published releases')
       return update.status
     }
@@ -156,6 +183,7 @@ export async function checkForUpdate(): Promise<UpdateStatus> {
     const apk = (data.assets ?? []).find((a) => a.name?.endsWith('.apk'))
     update.apkUrl = apk?.browser_download_url ?? ''
     update.status = isNewerVersion(tag) ? 'available' : 'uptodate'
+    markChecked()
     update.dl = 'idle'
     update.progress = 0
     update.apkPath = ''

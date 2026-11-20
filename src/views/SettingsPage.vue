@@ -193,12 +193,25 @@ async function seed(): Promise<void> {
   }
 }
 
+const checkedAtLabel = computed(() => {
+  const ts = update.checkedAt
+  if (!ts) return ''
+  return new Intl.DateTimeFormat('ru-RU', {
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(ts))
+})
+
 const updateLabel = computed(() => {
   if (update.status === 'checking') return 'Проверка…'
   if (update.status === 'available') return `Доступна ${update.latest}`
-  if (update.status === 'uptodate') return 'Последняя версия'
+  if (update.status === 'uptodate') {
+    return checkedAtLabel.value ? `Обновлено ${checkedAtLabel.value}` : 'Обновлений нет'
+  }
   if (update.status === 'error') return 'Ошибка проверки'
-  return 'Проверить обновления'
+  return checkedAtLabel.value ? `Обновлено ${checkedAtLabel.value}` : 'Проверить обновления'
 })
 </script>
 
