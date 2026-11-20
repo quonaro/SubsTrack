@@ -107,9 +107,14 @@ the category color), `payments`, `notify_rules`
   normalization, category breakdown, monthly buckets)
 - `reminders.ts` — `computeReminders` (pure) + `rescheduleAll`, which
   fully cancels and reschedules `LocalNotifications` on every mutation
-  instead of bookkeeping deltas; notification ids are a deterministic
-  hash of sub+rule+fireAt. `recurring` rules only get their next
-  occurrence scheduled — the plugin has no per-hour repeat.
+  and app resume instead of bookkeeping deltas; notification ids are a
+  deterministic hash of sub+rule+fireAt. It schedules a whole window
+  (a year ahead, up to 12 occurrences per rule, 200 pending total) so
+  reminders keep firing for months without opening the app, and posts to
+  the high-importance `payments` channel created by `AlarmsPlugin`
+  (sound, vibration, `ic_stat_reminder` icon). `recurring` rules repeat
+  only inside that window — the plugin has no per-hour repeat.
+  `reminderState` (reactive) exposes the last pass's count for Settings.
 
 `src/store.ts` — reactive store holding all entities; every mutation
 reloads affected slices and triggers `rescheduleAll`.
@@ -134,7 +139,9 @@ a photo data URL, or an emoji picked by older builds), `ColorSwatches`
 manager — `subId` prop: null → create, id → edit; emits
 `saved`/`deleted`),
 `SubscriptionEditModal` (edit `Modal` wrapping `SubscriptionForm`;
-`subId` null → closed, emits `close`/`deleted`), `PageSkeleton`
+`subId` null → closed, emits `close`/`deleted`),
+`NotificationHealth` (Settings block: notification permission,
+exact-alarm/battery status, scheduled count), `PageSkeleton`
 (animated
 mosaic overlay shown in `App.vue` until `store.ready`; guillotine-cut
 tiles reshuffle on a timer, stays up ≥500ms then fades out). Route
@@ -190,7 +197,14 @@ newer schema. Every schema/data change must preserve that:
 - `AndroidManifest`: `allowBackup=false` + `hasFragileUserData="true"`
   (backup datasets break the "keep app data" reinstall path on some
   OEMs, verified on Honor/MagicOS); permissions: INTERNET,
-  REQUEST_INSTALL_PACKAGES, POST_NOTIFICATIONS, SCHEDULE_EXACT_ALARM
+  REQUEST_INSTALL_PACKAGES, POST_NOTIFICATIONS, SCHEDULE_EXACT_ALARM,
+  REQUEST_IGNORE_BATTERY_OPTIMIZATIONS
+- `AlarmsPlugin.java` (registered in `MainActivity`) owns notification
+  reliability: it creates the `payments` channel and reports/requests
+  the exact-alarm permission (Android 12+) and the battery-optimisation
+  exemption (Android 6+) — both are surfaced in Settings through
+  `src/alarms.ts`. `src/App.vue` re-runs `rescheduleReminders()` on
+  resume.
 - Frontend work is mobile-first: design for touch + small screens first
 
 ## UI

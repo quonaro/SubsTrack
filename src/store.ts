@@ -59,6 +59,12 @@ async function refreshReminders(): Promise<void> {
   await rescheduleAll(store.subscriptions, rules)
 }
 
+/** App start and resume: re-seed the scheduling window from current data. */
+export async function rescheduleReminders(): Promise<void> {
+  if (!store.ready) return
+  await refreshReminders()
+}
+
 export async function initStore(): Promise<void> {
   const [subscriptions, categories, events, payments, settings] = await Promise.all([
     subs.listSubscriptions(true),

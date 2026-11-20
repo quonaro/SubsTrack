@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { Capacitor } from '@capacitor/core'
+import { App as CapApp } from '@capacitor/app'
 import { onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { slideDirection } from './router'
-import { store } from './store'
+import { rescheduleReminders, store } from './store'
 import BottomNav from './components/BottomNav.vue'
 import PageSkeleton from './components/PageSkeleton.vue'
 
@@ -17,6 +18,14 @@ const edgeToEdge = ref(false)
 let prevPath = route.path
 
 onMounted(() => {
+  if (Capacitor.isNativePlatform()) {
+    // Between launches the pending window can be consumed by payments marked on
+    // another day or simply by time passing — topping it up on every resume
+    // keeps reminders coming for months without opening the app.
+    void CapApp.addListener('appStateChange', ({ isActive }) => {
+      if (isActive) void rescheduleReminders()
+    })
+  }
   if (!android) return
   const probe = document.createElement('div')
   probe.style.cssText =

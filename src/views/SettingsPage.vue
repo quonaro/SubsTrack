@@ -2,11 +2,7 @@
 import { computed, onMounted } from 'vue'
 import { seedDemoData, store, updateSetting } from '../store'
 import { CURRENCIES, CURRENCY_FLAGS, CURRENCY_NAMES, CURRENCY_SYMBOLS } from '../domain/currency'
-import {
-  notificationPermission,
-  requestNotificationPermission,
-  sendTestNotification,
-} from '../domain/reminders'
+import { sendTestNotification } from '../domain/reminders'
 import {
   appVersion,
   checkForUpdate,
@@ -32,6 +28,7 @@ import type { AccentKey, PresetKey, ThemeMode } from '../types'
 import { runThemeWipe } from '../themeWipe'
 import Icon from '../components/Icon.vue'
 import Modal from '../components/Modal.vue'
+import NotificationHealth from '../components/NotificationHealth.vue'
 import { ref } from 'vue'
 
 const isDev = import.meta.env.DEV
@@ -80,11 +77,9 @@ const pendingThemeMode = ref<ThemeMode | null>(null)
 const shownPreset = computed(() => pendingPreset.value ?? store.settings.preset)
 const shownAccent = computed(() => pendingAccent.value ?? store.settings.accent)
 const shownThemeMode = computed(() => pendingThemeMode.value ?? store.settings.themeMode)
-const notifPerm = ref('unknown')
 const currencyOpen = ref(false)
 
 onMounted(async () => {
-  notifPerm.value = await notificationPermission()
   await refreshPermissions()
 })
 
@@ -157,12 +152,6 @@ async function setAccent(v: AccentKey, e: MouseEvent): Promise<void> {
 async function pickCurrency(c: string): Promise<void> {
   await updateSetting('baseCurrency', c)
   currencyOpen.value = false
-}
-
-async function askNotif(): Promise<void> {
-  await requestNotificationPermission()
-  notifPerm.value = await notificationPermission()
-  await grantNotificationPermission()
 }
 
 const seeding = ref(false)
@@ -339,23 +328,7 @@ const updateLabel = computed(() => {
       <h2 class="mb-1 text-sm font-semibold uppercase tracking-wide text-app-text-muted">
         Уведомления
       </h2>
-      <div class="flex items-center justify-between rounded-xl border border-app-border bg-app-card px-4 py-3">
-        <div>
-          <div class="text-sm">Разрешение на уведомления</div>
-          <div class="text-xs text-app-text-muted">
-            {{ notifPerm === 'granted' ? 'выдано' : notifPerm === 'denied' ? 'запрещено' : 'не запрошено' }}
-          </div>
-        </div>
-        <button
-          v-if="notifPerm !== 'granted'"
-          type="button"
-          class="inline-flex h-9 items-center rounded-full bg-accent/20 px-4 text-xs font-medium text-accent-hi"
-          @click="askNotif"
-        >
-          Разрешить
-        </button>
-        <Icon v-else name="check" :size="18" class="text-green-400" />
-      </div>
+      <NotificationHealth />
       <div
         v-if="permsRelevant() && perms.install === 'denied'"
         class="flex items-center justify-between rounded-xl border border-app-border bg-app-card px-4 py-3"
