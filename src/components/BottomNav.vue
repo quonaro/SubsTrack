@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { update } from '../update'
 import Icon from './Icon.vue'
 
 const items = [
@@ -8,6 +9,13 @@ const items = [
   { to: '/stats', icon: 'chart', label: 'Статистика' },
   { to: '/settings', icon: 'cog', label: 'Параметры' },
 ]
+
+// A newer release only shows up inside Settings, so the rail carries a dot
+// on the Settings entry (same as Vihko) to make it discoverable.
+const updateAvailable = () => update.status === 'available'
+
+const labelFor = (to: string, label: string): string =>
+  to === '/settings' && updateAvailable() ? `${label} — доступно обновление` : label
 </script>
 
 <template>
@@ -25,12 +33,20 @@ const items = [
         v-for="(item, i) in items"
         :key="item.to"
         :to="item.to"
-        :aria-label="item.label"
+        :aria-label="labelFor(item.to, item.label)"
         class="group flex flex-1 flex-col items-center py-4 text-app-text-muted transition-colors md:flex-none md:rounded-xl md:py-3 lg:flex-row lg:gap-3 lg:px-3"
         :class="{ 'md:mt-auto': i === items.length - 1 }"
         active-class="!text-accent-hi md:bg-app-card"
       >
-        <Icon :name="item.icon" :size="22" class="shrink-0" />
+        <span class="relative flex shrink-0 items-center justify-center">
+          <Icon :name="item.icon" :size="22" />
+          <span
+            v-if="item.to === '/settings' && updateAvailable()"
+            data-testid="update-dot"
+            class="absolute -right-1.5 -top-0.5 h-2 w-2 rounded-full bg-accent ring-2 ring-app-bg2"
+            aria-hidden="true"
+          />
+        </span>
         <span class="hidden text-sm font-medium lg:block">{{ item.label }}</span>
       </router-link>
     </div>
