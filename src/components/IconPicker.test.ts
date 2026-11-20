@@ -14,7 +14,7 @@ describe('IconPicker', () => {
   }
 
   const iconButtons = () =>
-    [...document.body.querySelectorAll('button')].filter(
+    [...document.body.querySelectorAll('button[aria-label]')].filter(
       (b) => b.getAttribute('aria-label') !== 'Выбрать иконку',
     )
 
@@ -57,17 +57,17 @@ describe('IconPicker', () => {
   it('tints the trigger with the chosen icon color', () => {
     const w = mount(IconPicker, { props: { modelValue: 'film', color: '#ef4444' } })
     const style = w.find('button').element.style
-    expect(style.backgroundColor).toBe('rgba(239, 68, 68, 0.15)')
+    expect(style.backgroundColor).toBe('rgba(239, 68, 68, 0.3)')
     w.unmount()
   })
 
   it('falls back to the category color, then to gray', () => {
     const cat = mount(IconPicker, { props: { modelValue: 'film', categoryColor: '#3b82f6' } })
-    expect(cat.find('button').element.style.backgroundColor).toBe('rgba(59, 130, 246, 0.15)')
+    expect(cat.find('button').element.style.backgroundColor).toBe('rgba(59, 130, 246, 0.3)')
     cat.unmount()
 
     const bare = mount(IconPicker, { props: { modelValue: 'film' } })
-    expect(bare.find('button').element.style.backgroundColor).toBe('rgba(107, 114, 128, 0.15)')
+    expect(bare.find('button').element.style.backgroundColor).toBe('rgba(107, 114, 128, 0.3)')
     bare.unmount()
   })
 
@@ -98,6 +98,28 @@ describe('IconPicker', () => {
     expect(btn).toBeTruthy()
     await new DOMWrapper(btn!).trigger('click')
     expect(w.emitted('update:modelValue')).toEqual([['pizza']])
+    w.unmount()
+  })
+
+  it('offers a custom icon cropped from a photo', async () => {
+    const w = picker('film')
+    await open(w)
+    const upload = [...document.body.querySelectorAll('button')].find((b) =>
+      b.textContent?.includes('Своя из фото'),
+    )
+    expect(upload).toBeTruthy()
+
+    const input = document.body.querySelector('input[type="file"]') as HTMLInputElement
+    expect(input.accept).toBe('image/*')
+    expect(input.classList.contains('sr-only')).toBe(true)
+    w.unmount()
+  })
+
+  it('renders a stored photo icon inside the trigger', () => {
+    const w = picker('data:image/avif;base64,AAAA')
+    const img = w.find('button img')
+    expect(img.exists()).toBe(true)
+    expect(img.attributes('src')).toBe('data:image/avif;base64,AAAA')
     w.unmount()
   })
 })

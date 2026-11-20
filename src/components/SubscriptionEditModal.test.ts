@@ -1,7 +1,7 @@
 // The modal is a thin edit wrapper around SubscriptionForm: it feeds subId
 // in as the edit target and translates saved into a close event.
 import { flushPromises, mount } from '@vue/test-utils'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import SubscriptionEditModal from './SubscriptionEditModal.vue'
 import { createSubscription, store } from '../store'
 import { getSubscription } from '../domain/subscriptions'
@@ -33,6 +33,23 @@ const mountModal = (subId: number | null) =>
   mount(SubscriptionEditModal, { props: { subId }, attachTo: document.body })
 
 describe('SubscriptionEditModal', () => {
+  // jsdom reports no animations, so Reka's Presence unmounts a closing dialog
+  // on the same tick. Report a running animation to inspect the mid-exit DOM.
+  function holdExitAnimations() {
+    const original = window.getComputedStyle.bind(window)
+    vi.spyOn(window, 'getComputedStyle').mockImplementation(((el: Element) => {
+      const style = original(el)
+      return new Proxy(style, {
+        get: (target, key) =>
+          key === 'animationName' ? 'test-out' : Reflect.get(target, key, target),
+      })
+    }) as typeof window.getComputedStyle)
+  }
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
   it('stays closed while subId is null', async () => {
     const w = mountModal(null)
     await flushPromises()
@@ -78,6 +95,22 @@ describe('SubscriptionEditModal', () => {
     const dialog = document.body.querySelector('[role="dialog"]')!
     dialog.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
   }
+
+  it('keeps the form in the sheet until the exit animation ends', async () => {
+    const s = await seed()
+    holdExitAnimations()
+    const w = mountModal(s.id)
+    await flushPromises()
+    expect(nameInput().value).toBe('Old Name')
+
+    // Clearing subId starts the close: the sheet slides out with its content
+    // still inside, instead of collapsing to an empty stub.
+    await w.setProps({ subId: null })
+    await flushPromises()
+    expect(document.body.textContent).toContain('Редактировать')
+    expect(nameInput().value).toBe('Old Name')
+    w.unmount()
+  })
 
   it('saves a debounced edit when the sheet is closed instead of waiting for the timer', async () => {
     const s = await seed()

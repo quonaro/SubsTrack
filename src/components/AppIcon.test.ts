@@ -25,4 +25,26 @@ describe('AppIcon', () => {
     expect(w.find('svg').exists()).toBe(true)
     w.unmount()
   })
+
+  it('renders a photo icon as an image', () => {
+    const w = mount(AppIcon, {
+      props: { name: 'data:image/avif;base64,AAAA', size: 24 },
+    })
+    const img = w.find('img')
+    expect(img.exists()).toBe(true)
+    expect(img.attributes('width')).toBe('24')
+    expect(img.classes()).toContain('object-cover')
+    expect(w.find('svg').exists()).toBe(false)
+    w.unmount()
+  })
+
+  it('lets a photo icon fill its tile in cover mode', () => {
+    const w = mount(AppIcon, {
+      props: { name: 'data:image/avif;base64,AAAA', cover: true },
+    })
+    const img = w.find('img')
+    expect(img.classes()).toContain('h-full')
+    expect(img.attributes('width')).toBeUndefined()
+    w.unmount()
+  })
 })

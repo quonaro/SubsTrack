@@ -50,6 +50,20 @@ describe('Modal', () => {
 
   const handle = () => document.body.querySelector('.touch-none') as Element
 
+  // jsdom reports no animations, so Reka's Presence unmounts a closing dialog
+  // on the same tick. Report a running animation to observe what the DOM looks
+  // like mid-exit — the frames the user actually sees.
+  function holdExitAnimations() {
+    const original = window.getComputedStyle.bind(window)
+    vi.spyOn(window, 'getComputedStyle').mockImplementation(((el: Element) => {
+      const style = original(el)
+      return new Proxy(style, {
+        get: (target, key) =>
+          key === 'animationName' ? 'test-out' : Reflect.get(target, key, target),
+      })
+    }) as typeof window.getComputedStyle)
+  }
+
   it('renders title and slot content into the body when open', async () => {
     const w = mount(Modal, {
       props: { open: true, title: 'Мой шит' },
@@ -82,6 +96,25 @@ describe('Modal', () => {
     await nextTick()
     expect(document.body.textContent).not.toContain('Скрыто')
     expect(document.body.textContent).not.toContain('невидимое')
+    w.unmount()
+  })
+
+  it('keeps the dim backdrop fading out while the sheet leaves', async () => {
+    stubMobile()
+    holdExitAnimations()
+    const w = mount(Modal, {
+      props: { open: true, title: 'Шит' },
+      attachTo: document.body,
+    })
+    await nextTick()
+    await w.setProps({ open: false })
+    await nextTick()
+    // The stack entry is gone by now, but the overlay must not snap to a
+    // transparent class: that would drop the fade-out animation with it.
+    const overlay = document.body.querySelector('.z-40')
+    expect(overlay).not.toBeNull()
+    expect(overlay?.className).toContain('bg-black/60')
+    expect(overlay?.getAttribute('data-state')).toBe('closed')
     w.unmount()
   })
 

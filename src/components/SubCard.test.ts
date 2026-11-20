@@ -119,4 +119,78 @@ describe('SubCard', () => {
     expect(w.text()).toContain('Видео')
     store.categories = []
   })
+
+  it('enriches the confirm sheet with converted amount and monthly cost', async () => {
+    const w = mount(SubCard, {
+      props: {
+        sub: sub({ currency: 'USD', priceMinor: 1000, periodDays: 365, name: 'JetBrains' }),
+      },
+    })
+    await w.find('button').trigger('click')
+    await flushPromises()
+    const sheet = document.body.textContent ?? ''
+    expect(sheet).toContain('JetBrains')
+    expect(sheet).toContain('Ежегодно')
+    expect(sheet).toContain('Сумма')
+    expect(sheet).toContain('≈ 950') // 10 USD → 950 RUB at the static rate
+    expect(sheet).toContain('В месяц')
+    expect(sheet).toContain('После оплаты')
+    w.unmount()
+  })
+
+  it('previews the rolled date, the archive for one-time buys and notes', async () => {
+    const w = mount(SubCard, {
+      props: { sub: sub({ nextPaymentDate: '2099-01-01', notes: 'Семейная подписка' }) },
+    })
+    await w.find('button').trigger('click')
+    await flushPromises()
+    let sheet = document.body.textContent ?? ''
+    expect(sheet).toContain('1 января 2099')
+    expect(sheet).toContain('31 января 2099') // +30 days from the payment-date anchor
+    expect(sheet).toContain('Семейная подписка')
+    expect(sheet).toContain('Заметка')
+    const note = [...document.body.querySelectorAll('div')].find(
+      (el) =>
+        el.textContent?.trim() === 'Семейная подписка' && el.classList.contains('break-words'),
+    )
+    expect(note).toBeTruthy()
+    w.unmount()
+
+    const oneTime = mount(SubCard, {
+      props: { sub: sub({ isOneTime: true, periodDays: ONE_TIME_PERIOD_DAYS }) },
+    })
+    await oneTime.find('button').trigger('click')
+    await flushPromises()
+    sheet = document.body.textContent ?? ''
+    expect(sheet).toContain('разовый — уйдёт в архив')
+    oneTime.unmount()
+  })
+
+  it('shows how many payments were already recorded', async () => {
+    store.payments = [
+      {
+        id: 1,
+        subscriptionId: 1,
+        amountMinor: 99900,
+        currency: 'RUB',
+        paidDate: '2026-01-01',
+        createdAt: '',
+      },
+      {
+        id: 2,
+        subscriptionId: 1,
+        amountMinor: 99900,
+        currency: 'RUB',
+        paidDate: '2026-02-01',
+        createdAt: '',
+      },
+    ]
+    const w = mount(SubCard, { props: { sub: sub({ id: 1 }) } })
+    await w.find('button').trigger('click')
+    await flushPromises()
+    expect(document.body.textContent).toContain('Оплат было')
+    expect(document.body.textContent).toContain('2')
+    w.unmount()
+    store.payments = []
+  })
 })

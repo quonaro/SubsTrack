@@ -1,11 +1,20 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import type { Subscription } from '../types'
-import { categoryOf } from '../store'
-import { formatMoney } from '../domain/currency'
+import { categoryOf, store } from '../store'
+import { convertMinor, formatMoney } from '../domain/currency'
+import { perPeriodMinor } from '../domain/stats'
 import { iconTileBackground } from '../domain/colors'
 import AppIcon from './AppIcon.vue'
-import { daysUntilText, diffDays, formatDateRu, periodLabel, todayIso } from '../domain/dates'
+import {
+  daysUntilText,
+  diffDays,
+  formatDateRu,
+  formatDateRuFull,
+  nextPaymentAfter,
+  periodLabel,
+  todayIso,
+} from '../domain/dates'
 import Modal from './Modal.vue'
 
 const props = withDefaults(
@@ -22,6 +31,28 @@ const emit = defineEmits<{ paid: [number] }>()
 const cat = computed(() => categoryOf(props.sub))
 const days = computed(() => diffDays(props.sub.nextPaymentDate, todayIso()))
 const overdue = computed(() => props.sub.isActive && days.value < 0)
+
+// Extra context for the confirm sheet: prices in the base currency, the cost
+// per month and what the schedule turns into after marking this one paid.
+const baseCur = computed(() => store.settings.baseCurrency)
+const amountBase = computed(() =>
+  props.sub.currency === baseCur.value
+    ? null
+    : formatMoney(
+        convertMinor(props.sub.priceMinor, props.sub.currency, baseCur.value),
+        baseCur.value,
+      ),
+)
+const monthlyCost = computed(() => {
+  if (props.sub.isOneTime || props.sub.periodDays === 30) return null
+  return formatMoney(perPeriodMinor(props.sub, 30, baseCur.value), baseCur.value)
+})
+const paidCount = computed(
+  () => store.payments.filter((p) => p.subscriptionId === props.sub.id).length,
+)
+const nextAfterPaid = computed(() =>
+  nextPaymentAfter(props.sub.nextPaymentDate, props.sub.periodDays, todayIso()),
+)
 
 const confirmOpen = ref(false)
 function onCardClick() {
@@ -43,10 +74,10 @@ function onPayClick() {
     @click="onCardClick"
   >
     <div
-      class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-app-text"
+      class="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl text-app-text"
       :style="{ backgroundColor: iconTileBackground(sub.iconColor, cat?.color) }"
     >
-      <AppIcon :name="sub.icon" :size="22" />
+      <AppIcon :name="sub.icon" :size="22" cover />
     </div>
     <div class="min-w-0 flex-1">
       <div class="flex items-baseline justify-between gap-2">
@@ -87,9 +118,67 @@ function onPayClick() {
       {{ formatMoney(sub.priceMinor, sub.currency) }}
     </span>
     <Modal :open="confirmOpen" title="Отметить платёж оплаченным?" @update:open="confirmOpen = $event">
-      <p class="mb-5 text-sm text-app-text-muted">
-        Отметить «{{ sub.name }}» оплаченным на {{ formatMoney(sub.priceMinor, sub.currency) }}?
-      </p>
+      <div class="mb-3 flex items-center gap-3">
+        <div
+          class="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl text-app-text"
+          :style="{ backgroundColor: iconTileBackground(sub.iconColor, cat?.color) }"
+        >
+          <AppIcon :name="sub.icon" :size="22" cover />
+        </div>
+        <div class="min-w-0">
+          <div class="truncate font-semibold">{{ sub.name }}</div>
+          <div class="truncate text-xs text-app-text-muted">
+            {{ periodLabel(sub.periodDays, sub.isOneTime) }}
+            <template v-if="cat"> · {{ cat.name }}</template>
+          </div>
+        </div>
+      </div>
+
+      <div class="mb-4 rounded-xl border border-app-border bg-app-bg px-3">
+        <div class="flex items-baseline justify-between gap-3 border-b border-app-border py-2.5">
+          <span class="text-xs text-app-text-muted">Сумма</span>
+          <span class="text-right text-sm font-semibold">
+            {{ formatMoney(sub.priceMinor, sub.currency) }}
+            <span v-if="amountBase" class="block text-xs font-normal text-app-text-muted">
+              ≈ {{ amountBase }}
+            </span>
+          </span>
+        </div>
+        <div
+          v-if="monthlyCost"
+          class="flex items-baseline justify-between gap-3 border-b border-app-border py-2.5"
+        >
+          <span class="text-xs text-app-text-muted">В месяц</span>
+          <span class="text-sm">≈ {{ monthlyCost }}</span>
+        </div>
+        <div class="flex items-baseline justify-between gap-3 border-b border-app-border py-2.5">
+          <span class="text-xs text-app-text-muted">Дата платежа</span>
+          <span class="text-right text-sm">
+            {{ formatDateRuFull(sub.nextPaymentDate) }}
+            <span class="block text-xs" :class="overdue ? 'text-red-400' : 'text-app-text-muted'">
+              {{ daysUntilText(days) }}
+            </span>
+          </span>
+        </div>
+        <div class="flex items-baseline justify-between gap-3 py-2.5">
+          <span class="text-xs text-app-text-muted">После оплаты</span>
+          <span class="text-right text-sm">
+            {{ sub.isOneTime ? 'разовый — уйдёт в архив' : formatDateRuFull(nextAfterPaid) }}
+          </span>
+        </div>
+        <div
+          v-if="paidCount"
+          class="flex items-baseline justify-between gap-3 border-t border-app-border py-2.5"
+        >
+          <span class="text-xs text-app-text-muted">Оплат было</span>
+          <span class="text-sm">{{ paidCount }}</span>
+        </div>
+        <div v-if="sub.notes" class="border-t border-app-border py-2.5">
+          <div class="mb-1 text-xs text-app-text-muted">Заметка</div>
+          <div class="whitespace-pre-line break-words text-sm">{{ sub.notes }}</div>
+        </div>
+      </div>
+
       <div class="flex gap-3">
         <button
           type="button"

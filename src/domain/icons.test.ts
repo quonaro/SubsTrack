@@ -16,7 +16,7 @@ describe('icon pack', () => {
   it('ships a large pack of unique, renderable icons', () => {
     const all = ICON_GROUPS.flatMap((group) => group.icons)
     expect(ICON_GROUPS.length).toBeGreaterThan(5)
-    expect(all.length).toBeGreaterThan(200)
+    expect(all.length).toBeGreaterThan(400)
     expect(new Set(all.map((icon) => icon.name)).size).toBe(all.length)
     expect(all.every((icon) => icon.keywords.length > 0)).toBe(true)
     expect(all.every((icon) => ICON_PATHS[icon.name])).toBe(true)
@@ -64,6 +64,10 @@ describe('iconText', () => {
   it('drops line-icon names from plain-text notifications', () => {
     expect(iconText('tv')).toBe('')
     expect(iconText('gamepad-2')).toBe('')
+  })
+
+  it('never leaks a photo icon into a notification', () => {
+    expect(iconText('data:image/avif;base64,AAAA')).toBe('')
   })
 
   it('keeps emoji picked before the line-icon pack', () => {

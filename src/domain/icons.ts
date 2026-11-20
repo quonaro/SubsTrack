@@ -61,8 +61,10 @@ export function searchIcons(query: string): IconGroup[] {
 
 /**
  * Notification text is plain text, so line icons contribute nothing there.
- * Emoji chosen before the line-icon pack keep their glyph.
+ * Emoji chosen before the line-icon pack keep their glyph. Custom photo icons
+ * are data URLs and must never end up in a notification body.
  */
 export function iconText(icon: string): string {
+  if (icon.startsWith('data:')) return ''
   return /^[\w-]+$/.test(icon) ? '' : icon
 }

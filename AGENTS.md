@@ -122,10 +122,14 @@ to the list — create/edit live in sheets, not routes.
 `src/components/` — Reka UI primitives (Dialog → `Modal.vue` bottom
 sheets, Switch → `ToggleSwitch.vue`) plus `OptionField` (field → option
 modal), `IconPicker` (searchable minimalist pack, data in
-`src/domain/iconPack.ts`, `searchIcons` in `src/domain/icons.ts`),
+`src/domain/iconPack.ts`, `searchIcons` in `src/domain/icons.ts`; the
+«Своя из фото» button crops a picture in `ImageCropModal.vue`
+(`vue-advanced-cropper`) and stores it inline in `icon` as an AVIF data URL
+produced by `src/domain/imageIcon.ts` — `@jsquash/avif` wasm, WebP
+fallback),
 `AppIcon` (renders a pack name from the generated `src/icons/paths.ts`,
-or an emoji picked by older builds), `ColorSwatches` (icon tile color),
-`SubCard`, `Icon`,
+a photo data URL, or an emoji picked by older builds), `ColorSwatches`
+(icon tile color), `SubCard`, `Icon`,
 `SubscriptionForm` (shared create/edit form + rules editor + category
 manager — `subId` prop: null → create, id → edit; emits
 `saved`/`deleted`),

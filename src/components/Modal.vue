@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { DialogRoot, DialogPortal, DialogOverlay, DialogContent, DialogTitle } from 'reka-ui'
 import { useMediaQuery } from '../composables/useMediaQuery'
 import { useModalStack } from '../composables/useModalStack'
@@ -38,8 +38,22 @@ const { isRoot, isTop } = useModalStack(() => props.open)
 
 const pushedDown = computed(() => props.open && !isTop.value)
 
+// The stack entry is dropped the moment the modal starts closing, before the
+// exit animation finishes. Remember whether this modal painted the backdrop
+// while it was open, so the overlay keeps its fade-out class instead of
+// snapping to a transparent one (which removes the animation and unmounts it
+// on the same tick).
+const paintsBackdrop = ref(true)
+watch(
+  () => props.open,
+  (open) => {
+    if (open) paintsBackdrop.value = isRoot.value
+  },
+  { immediate: true },
+)
+
 const overlayClass = computed(() =>
-  isRoot.value
+  paintsBackdrop.value
     ? 'bg-black/60 data-[state=open]:animate-fade-in data-[state=closed]:animate-fade-out'
     : 'bg-transparent',
 )

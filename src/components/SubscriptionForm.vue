@@ -9,6 +9,7 @@ import {
   store,
   updateSubscription,
 } from '../store'
+import { ICON_TILE_ALPHA } from '../domain/colors'
 import { CURRENCIES, parseMoney } from '../domain/currency'
 import { ONE_TIME_PERIOD_DAYS, PERIOD_PRESETS, todayIso } from '../domain/dates'
 import type { RuleKind } from '../types'
@@ -350,7 +351,7 @@ async function confirmDeleteCategory(): Promise<void> {
     </div>
 
     <div>
-      <span class="mb-1.5 block text-xs font-medium text-app-text-muted">Цвет иконки</span>
+      <span class="mb-1.5 block text-xs font-medium text-app-text-muted">Цвет фона</span>
       <ColorSwatches v-model="iconColor" />
     </div>
 
@@ -410,7 +411,7 @@ async function confirmDeleteCategory(): Promise<void> {
         ref="notesEl"
         v-model="notes"
         rows="1"
-        placeholder="необязательно"
+        placeholder="Необязательно"
         class="block min-h-9 w-full resize-none overflow-hidden rounded-xl border border-app-border bg-app-card px-4 py-2 leading-5 focus:border-accent"
       />
     </div>
@@ -527,10 +528,10 @@ async function confirmDeleteCategory(): Promise<void> {
           class="flex items-center gap-3 rounded-xl py-2.5"
         >
           <span
-            class="flex h-9 w-9 items-center justify-center rounded-lg"
-            :style="{ backgroundColor: c.color + '26' }"
+            class="flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg"
+            :style="{ backgroundColor: c.color + ICON_TILE_ALPHA }"
           >
-            <AppIcon :name="c.icon" :size="18" />
+            <AppIcon :name="c.icon" :size="18" cover />
           </span>
           <span class="flex-1">{{ c.name }}</span>
           <button

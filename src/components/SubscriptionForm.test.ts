@@ -75,10 +75,10 @@ describe('SubscriptionForm', () => {
   it('tints the icon preview as soon as a color is picked', async () => {
     const w = mountForm()
     const tile = () => w.find('button[aria-label="Выбрать иконку"]').element as HTMLElement
-    expect(tile().style.backgroundColor).toBe('rgba(107, 114, 128, 0.15)')
+    expect(tile().style.backgroundColor).toBe('rgba(107, 114, 128, 0.3)')
     const red = document.body.querySelector('button[aria-label="Красный"]')
     await new DOMWrapper(red!).trigger('click')
-    expect(tile().style.backgroundColor).toBe('rgba(239, 68, 68, 0.15)')
+    expect(tile().style.backgroundColor).toBe('rgba(239, 68, 68, 0.3)')
     w.unmount()
   })
 
