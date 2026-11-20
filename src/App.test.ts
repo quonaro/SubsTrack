@@ -30,7 +30,7 @@ describe('App', () => {
     expect(w.findComponent(PageSkeleton).props('active')).toBe(false)
     const labels = w.findAll('nav a').map((l) => l.attributes('aria-label'))
     expect(labels).toContain('Главная')
-    expect(labels).toContain('Подписки')
+    expect(labels).toContain('Платежи')
   })
 
   it('does not show the skeleton on page switches once ready', async () => {

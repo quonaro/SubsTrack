@@ -16,10 +16,10 @@ describe('BottomNav', () => {
     ])
     expect(links.map((l) => l.attributes('aria-label'))).toEqual([
       'Главная',
-      'Подписки',
+      'Платежи',
       'Календарь',
       'Статистика',
-      'Ещё',
+      'Параметры',
     ])
   })
 })

@@ -51,7 +51,7 @@ describe('SettingsPage', () => {
   it('renders sections, version and the update check button', async () => {
     const w = mount(SettingsPage, { global: { plugins: [router()] } })
     await flushPromises()
-    expect(w.text()).toContain('Настройки')
+    expect(w.text()).toContain('Параметры')
     expect(w.text()).toContain('Версия')
     expect(w.text()).toContain('Проверить')
     expect(w.text()).toContain('Уведомления')

@@ -219,7 +219,7 @@ const updateLabel = computed(() => {
   <div class="mx-auto w-full max-w-xl px-4 pb-6 pt-6 sm:px-6 md:max-w-none lg:px-8">
     <header class="mb-6">
       <h1 class="flex items-center gap-2 text-2xl font-bold">
-        <Icon name="cog" :size="22" class="text-accent-hi" />Настройки
+        <Icon name="cog" :size="22" class="text-accent-hi" />Параметры
       </h1>
       <p class="text-sm text-app-text-muted">Версия {{ appVersion }}</p>
     </header>
@@ -422,7 +422,7 @@ const updateLabel = computed(() => {
           <div>
             <div class="text-sm">Тестовые данные</div>
             <div class="text-xs text-app-text-muted">
-              Подписки, платежи и напоминания для проверки багов
+              Платежи и напоминания для проверки багов
             </div>
           </div>
           <button

@@ -87,7 +87,7 @@ export function computeReminders(
         subscriptionId: sub.id,
         ruleId: rule.id,
         fireAt,
-        title: 'Подписка',
+        title: 'Платёж',
         body: reminderBody(sub, todayIso),
       })
     }

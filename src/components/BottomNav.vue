@@ -3,10 +3,10 @@ import Icon from './Icon.vue'
 
 const items = [
   { to: '/', icon: 'home', label: 'Главная' },
-  { to: '/subscriptions', icon: 'list', label: 'Подписки' },
+  { to: '/subscriptions', icon: 'list', label: 'Платежи' },
   { to: '/calendar', icon: 'calendar', label: 'Календарь' },
   { to: '/stats', icon: 'chart', label: 'Статистика' },
-  { to: '/settings', icon: 'cog', label: 'Ещё' },
+  { to: '/settings', icon: 'cog', label: 'Параметры' },
 ]
 </script>
 
