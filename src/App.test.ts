@@ -1,6 +1,8 @@
 import { flushPromises, mount } from '@vue/test-utils'
+import { Capacitor } from '@capacitor/core'
 import { createMemoryHistory, createRouter } from 'vue-router'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { nextTick } from 'vue'
 import App from './App.vue'
 import PageSkeleton from './components/PageSkeleton.vue'
 import { store } from './store'
@@ -54,5 +56,29 @@ describe('App', () => {
     await r.push('/b')
     await flushPromises()
     expect(w.find('[data-tile]').exists()).toBe(false)
+  })
+
+  it('adds the status-bar scrim when Android draws edge-to-edge', async () => {
+    const platform = vi.spyOn(Capacitor, 'getPlatform').mockReturnValue('android')
+    const computed = vi
+      .spyOn(window, 'getComputedStyle')
+      .mockReturnValue({ paddingTop: '28px' } as CSSStyleDeclaration)
+    const w = mount(App, { global: { plugins: [router()] } })
+    await nextTick()
+    expect(w.find('.status-scrim').exists()).toBe(true)
+    platform.mockRestore()
+    computed.mockRestore()
+  })
+
+  it('skips the scrim when there is no status-bar inset', async () => {
+    const platform = vi.spyOn(Capacitor, 'getPlatform').mockReturnValue('android')
+    const computed = vi
+      .spyOn(window, 'getComputedStyle')
+      .mockReturnValue({ paddingTop: '0px' } as CSSStyleDeclaration)
+    const w = mount(App, { global: { plugins: [router()] } })
+    await nextTick()
+    expect(w.find('.status-scrim').exists()).toBe(false)
+    platform.mockRestore()
+    computed.mockRestore()
   })
 })

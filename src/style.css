@@ -229,6 +229,29 @@ body {
 .pt-safe {
   padding-top: env(safe-area-inset-top);
 }
+/* Android draws the page edge-to-edge, so scrolling content runs under the
+   status bar and collides with the clock. This fixed scrim is solid across
+   the status-bar inset and fades to transparent just below it, letting the
+   content melt into the app background instead of being hard-clipped. */
+.status-scrim {
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 30;
+  height: calc(env(safe-area-inset-top) + 20px);
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    var(--color-app-bg) 0,
+    var(--color-app-bg) env(safe-area-inset-top),
+    transparent 100%
+  );
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  -webkit-mask-image: linear-gradient(to bottom, #000 env(safe-area-inset-top), transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 env(safe-area-inset-top), transparent 100%);
+}
 /* side insets — keeps content and the nav clear of the notch in landscape */
 .px-safe {
   padding-left: env(safe-area-inset-left);
