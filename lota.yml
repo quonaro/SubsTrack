@@ -82,11 +82,13 @@ cap:
 
 push:
   desc: Push main; `lota push v*.*.*` also pushes the tag → release workflow
+  color: cyan
+  args:
+    - "tag:str?"
   script: |
     set -e
     git push origin main
-    TAG="${1:-}"
-    if [ -n "$TAG" ]; then
-      git tag -f "$TAG" 2>/dev/null || git tag "$TAG"
-      git push -f origin "$TAG"
+    if [ -n "${tag:-}" ]; then
+      git tag -f "$tag" 2>/dev/null || git tag "$tag"
+      git push -f origin "$tag"
     fi

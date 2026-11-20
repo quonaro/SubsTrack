@@ -42,10 +42,12 @@ parallel jobs: `lint` (`biome ci`), `typecheck` (`pnpm typecheck`),
 `test-web` (`pnpm test`).
 
 `.github/workflows/release.yml` runs on tag pushes matching `v*.*.*` (and
-manually), but only when the tagged commit is an ancestor of `main`:
-installs Node/pnpm/JDK 21/Android SDK, runs tests, builds the web bundle,
-`cap sync android`, `gradlew assembleRelease`, then publishes a GitHub
-Release with `substrack-<tag>.apk` attached.
+manually), but only when the tagged commit is an ancestor of `main`. It is
+split into four chained jobs: `test` (tag-on-main guard + `pnpm test`),
+`build` (web bundle, uploaded as the `web-dist` artifact), `apk` (Java 21 +
+Android SDK + `cap sync android` over the downloaded `dist`, signing
+secrets, `gradlew assembleRelease`) and `release` (tags only — publishes
+`substrack-<tag>.apk` via `gh release create`).
 
 App version resolution: the release workflow sets `VITE_APP_VERSION` (web)
 and `VERSION_NAME`/`VERSION_CODE` (gradle) from the tag/run number. Local
