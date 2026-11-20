@@ -41,7 +41,7 @@ const presetEntries = Object.entries(THEME_PRESETS) as [PresetKey, ThemePreset][
 
 const THEME_OPTIONS: { value: ThemeMode; label: string; icon: string }[] = [
   { value: 'dark', label: 'Темная', icon: 'moon' },
-  { value: 'system', label: 'Системная', icon: 'monitor' },
+  { value: 'system', label: 'Система', icon: 'monitor' },
   { value: 'light', label: 'Светлая', icon: 'sun' },
 ]
 
@@ -70,6 +70,16 @@ function presetVar(key: PresetKey, name: PresetVar): string {
   const mode = appliedThemeMode.value
   return THEME_PRESETS[key][mode][name] ?? PRESET_FALLBACK[mode][name]
 }
+
+// Pending choice: the wipe commits the settings only once the fill fully
+// covers the screen, so the accent border on the tiles doesn't jump to the
+// new selection while the old theme is still on screen.
+const pendingPreset = ref<PresetKey | null>(null)
+const pendingAccent = ref<AccentKey | null>(null)
+const pendingThemeMode = ref<ThemeMode | null>(null)
+const shownPreset = computed(() => pendingPreset.value ?? store.settings.preset)
+const shownAccent = computed(() => pendingAccent.value ?? store.settings.accent)
+const shownThemeMode = computed(() => pendingThemeMode.value ?? store.settings.themeMode)
 const notifPerm = ref('unknown')
 const currencyOpen = ref(false)
 
@@ -79,26 +89,69 @@ onMounted(async () => {
 })
 
 function applyAppearance(): void {
-  applyThemeToDom(effectiveTheme(store.settings), store.settings.accent, store.settings.preset)
+  applyThemeToDom(
+    effectiveTheme(store.settings),
+    store.settings.accent,
+    store.settings.preset,
+    store.settings.themeMode,
+  )
 }
 
 async function setPreset(v: PresetKey, e: MouseEvent): Promise<void> {
-  await updateSetting('preset', v)
-  await updateSetting('accent', THEME_PRESETS[v].accent)
-  await runThemeWipe(e, applyAppearance)
+  const accent = THEME_PRESETS[v].accent
+  pendingPreset.value = v
+  try {
+    await runThemeWipe(
+      e,
+      async () => {
+        await updateSetting('preset', v)
+        await updateSetting('accent', accent)
+        pendingPreset.value = null
+        applyAppearance()
+      },
+      ACCENTS[accent].value,
+    )
+  } finally {
+    pendingPreset.value = null
+  }
 }
 
 async function setTheme(v: ThemeMode, e: MouseEvent): Promise<void> {
-  await updateSetting('themeMode', v)
-  if (v !== 'system') await updateSetting('theme', v)
+  pendingThemeMode.value = v
   // Theme mode switches wipe with plain black/white; presets & accent keep the accent color.
-  const fill = effectiveTheme(store.settings) === 'light' ? '#ffffff' : '#000000'
-  await runThemeWipe(e, applyAppearance, fill)
+  const fill =
+    effectiveTheme({ ...store.settings, themeMode: v }) === 'light' ? '#ffffff' : '#000000'
+  try {
+    await runThemeWipe(
+      e,
+      async () => {
+        await updateSetting('themeMode', v)
+        if (v !== 'system') await updateSetting('theme', v)
+        pendingThemeMode.value = null
+        applyAppearance()
+      },
+      fill,
+    )
+  } finally {
+    pendingThemeMode.value = null
+  }
 }
 
 async function setAccent(v: AccentKey, e: MouseEvent): Promise<void> {
-  await updateSetting('accent', v)
-  await runThemeWipe(e, applyAppearance)
+  pendingAccent.value = v
+  try {
+    await runThemeWipe(
+      e,
+      async () => {
+        await updateSetting('accent', v)
+        pendingAccent.value = null
+        applyAppearance()
+      },
+      ACCENTS[v].value,
+    )
+  } finally {
+    pendingAccent.value = null
+  }
 }
 
 async function pickCurrency(c: string): Promise<void> {
@@ -169,12 +222,12 @@ const updateLabel = computed(() => {
             :key="t.value"
             type="button"
             role="radio"
-            :aria-checked="store.settings.themeMode === t.value"
+            :aria-checked="shownThemeMode === t.value"
             class="flex h-9 flex-1 items-center justify-center gap-1 rounded-lg border text-sm font-medium transition"
             :class="
-              store.settings.themeMode === t.value
-                ? 'border-accent bg-accent/20 text-accent-hi'
-                : 'border-app-border text-app-text-muted hover:bg-app-bg'
+              shownThemeMode === t.value
+                ? 'border-accent bg-accent text-accent-fg shadow-sm'
+                : 'border-app-border bg-app-bg text-app-text hover:border-app-text-muted hover:bg-app-bg2'
             "
             @click="setTheme(t.value, $event)"
           >
@@ -191,10 +244,10 @@ const updateLabel = computed(() => {
             :key="key"
             type="button"
             :aria-label="p.label"
-            :aria-pressed="store.settings.preset === key"
+            :aria-pressed="shownPreset === key"
             class="flex flex-col gap-2 rounded-lg border bg-app-bg p-2.5 text-left transition"
             :class="
-              store.settings.preset === key
+              shownPreset === key
                 ? 'border-accent ring-1 ring-accent'
                 : 'border-app-border hover:bg-app-bg2'
             "
@@ -228,18 +281,17 @@ const updateLabel = computed(() => {
             :key="key"
             type="button"
             :aria-label="meta.label"
-            :aria-pressed="store.settings.accent === key"
+            :aria-pressed="shownAccent === key"
             :title="meta.label"
             class="flex h-9 w-9 items-center justify-center rounded-full transition-transform hover:scale-110"
             :class="{
-              'ring-2 ring-app-text ring-offset-2 ring-offset-app-card':
-                store.settings.accent === key,
+              'ring-2 ring-app-text': shownAccent === key,
             }"
             :style="{ backgroundColor: meta.value }"
             @click="setAccent(key, $event)"
           >
             <Icon
-              v-if="store.settings.accent === key"
+              v-if="shownAccent === key"
               name="check"
               :size="16"
               :style="{ color: meta.fg ?? '#ffffff' }"

@@ -69,18 +69,20 @@ function animateRadius(el: HTMLElement, from: number, to: number, duration: numb
  * Circular theme wipe. Plays an expanding colored disc from the tap point;
  * once it fully covers the screen `apply()` swaps the theme instantly
  * (CSS transitions are frozen meanwhile), then a transparent hole expands
- * along the same circle to reveal the new theme.
+ * along the same circle to reveal the new theme. An async `apply()` keeps
+ * the screen fully covered until it resolves, so settings written there
+ * (and the reactive selection that follows) stay invisible during the grow.
  *
  * `color` overrides the fill — defaults to the accent color.
  * Falls back to a plain apply() when the animation can't run.
  */
 export async function runThemeWipe(
   e: { clientX: number; clientY: number },
-  apply: () => void,
+  apply: () => void | Promise<void>,
   color?: string,
 ): Promise<void> {
   if (reducedMotion() || !canAnimate() || typeof document === 'undefined') {
-    apply()
+    await apply()
     return
   }
 
@@ -111,7 +113,7 @@ export async function runThemeWipe(
 
     // Screen is fully covered — swap the theme invisibly, hold a beat,
     // then phase 2: a transparent hole expands along the same circle.
-    apply()
+    await apply()
     setMask(root, x, y, false)
     root.style.setProperty(WIPE_VAR, '0px')
     await delay(160)
