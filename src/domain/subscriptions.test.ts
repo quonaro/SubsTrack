@@ -5,6 +5,7 @@ import { makeTestDb } from '../db/testdb'
 import { setDbForTesting } from '../db'
 import { migrate } from '../db/schema'
 import {
+  cancelPayment,
   createSubscription,
   deleteSubscription,
   getSubscription,
@@ -114,6 +115,49 @@ describe('subscriptions (sqlite)', () => {
     // next candidate strictly after 2026-03-10 stepping 30d from 2026-01-01:
     // 2026-03-02 is before, 2026-04-01 is after.
     expect(next?.nextPaymentDate).toBe('2026-04-01')
+  })
+
+  it('cancels the latest payment mark and restores the previous next date', async () => {
+    const s = await createSubscription(input()) // next: 2026-03-01
+    await markPaid(s.id, '2026-03-10')
+    const [pay] = await listPayments(s.id)
+    const ev = (await listEvents()).find((e) => e.type === 'payment')
+    const payload = JSON.parse(ev!.payload!) as Record<string, unknown>
+    expect(payload.paymentId).toBe(pay.id)
+    expect(payload.prevNextPaymentDate).toBe('2026-03-01')
+
+    const restored = await cancelPayment(pay.id, String(payload.prevNextPaymentDate))
+    expect(restored?.nextPaymentDate).toBe('2026-03-01')
+    expect(await listPayments(s.id)).toHaveLength(0)
+    const types = (await listEvents()).map((e) => e.type)
+    expect(types).toContain('payment_cancelled')
+  })
+
+  it('refuses to cancel an older mark of the same subscription', async () => {
+    const s = await createSubscription(input())
+    await markPaid(s.id, '2026-03-01')
+    await markPaid(s.id, '2026-03-31')
+    const pays = await listPayments(s.id)
+    const older = pays.find((p) => p.paidDate === '2026-03-01')!
+    expect(await cancelPayment(older.id)).toBeNull()
+    expect(await listPayments(s.id)).toHaveLength(2)
+  })
+
+  it('cancelling a one-time mark brings the purchase back into the list', async () => {
+    const s = await createSubscription({
+      ...input(),
+      periodDays: ONE_TIME_PERIOD_DAYS,
+      isOneTime: true,
+      nextPaymentDate: '2026-03-15',
+    })
+    await markPaid(s.id, '2026-03-15')
+    expect(await listSubscriptions()).toHaveLength(0)
+    const [pay] = await listPayments(s.id)
+    const restored = await cancelPayment(pay.id)
+    expect(restored?.isActive).toBe(true)
+    expect(restored?.nextPaymentDate).toBe('2026-03-15')
+    expect(await listSubscriptions()).toHaveLength(1)
+    expect(await listPayments(s.id)).toHaveLength(0)
   })
 
   it('archives a one-time purchase after payment instead of rolling it', async () => {

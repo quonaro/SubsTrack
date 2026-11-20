@@ -28,7 +28,7 @@ const { target: sheetRef, style: swipeStyle } = closeGesture
 const contentClass = computed(() =>
   isMobile.value
     ? 'flex flex-col justify-end data-[state=open]:animate-sheet-in data-[state=closed]:animate-sheet-out'
-    : 'items-center justify-center p-4 data-[state=open]:animate-dialog-in data-[state=closed]:animate-dialog-out',
+    : 'flex items-center justify-center p-4 data-[state=open]:animate-dialog-in data-[state=closed]:animate-dialog-out',
 )
 
 // Stacking: a modal opened on top of another one takes the screen, so the one

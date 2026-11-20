@@ -122,6 +122,16 @@ export async function markPaid(id: number, paidIso?: string): Promise<void> {
   await refreshReminders()
 }
 
+/** Undo the newest payment mark of a subscription (see domain cancelPayment). */
+export async function cancelPayment(
+  paymentId: number,
+  prevNextPaymentDate?: string | null,
+): Promise<void> {
+  await subs.cancelPayment(paymentId, prevNextPaymentDate)
+  await reload()
+  await refreshReminders()
+}
+
 export async function createCategory(input: {
   name: string
   icon?: string

@@ -63,6 +63,7 @@ export type EventType =
   | 'created'
   | 'updated'
   | 'payment'
+  | 'payment_cancelled'
   | 'archived'
   | 'restored'
   | 'deleted'

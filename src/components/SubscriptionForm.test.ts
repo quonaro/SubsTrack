@@ -148,6 +148,47 @@ describe('SubscriptionForm', () => {
     w.unmount()
   })
 
+  it('flushes a pending draft through flush() instead of waiting for the timer', async () => {
+    const s = await createSubscription({
+      name: 'Old Name',
+      priceMinor: 12300,
+      currency: 'RUB',
+      periodDays: 30,
+      startDate: '2026-01-10',
+      nextPaymentDate: '2026-02-10',
+    })
+    const w = mountForm(s.id)
+    await flushPromises()
+    await w.find('input[placeholder="Netflix, Spotify…"]').setValue('Flushed Name')
+    // no timer tick — the close-time flush must persist it right away
+    expect(await w.vm.flush()).toBe(true)
+    expect((await getSubscription(s.id))?.name).toBe('Flushed Name')
+    // flushing again is a no-op, not a second write
+    expect(await w.vm.flush()).toBe(true)
+    expect(store.events.filter((e) => e.type === 'updated')).toHaveLength(1)
+    expect(w.emitted('saved')).toBeUndefined()
+    w.unmount()
+  })
+
+  it('flushes a pending draft when unmounted without the modal close', async () => {
+    const s = await createSubscription({
+      name: 'Old Name',
+      priceMinor: 12300,
+      currency: 'RUB',
+      periodDays: 30,
+      startDate: '2026-01-10',
+      nextPaymentDate: '2026-02-10',
+    })
+    vi.useFakeTimers()
+    const w = mountForm(s.id)
+    await flushPromises()
+    await w.find('input[placeholder="Netflix, Spotify…"]').setValue('Unmounted Name')
+    w.unmount()
+    await vi.advanceTimersByTimeAsync(0)
+    await flushPromises()
+    expect((await getSubscription(s.id))?.name).toBe('Unmounted Name')
+  })
+
   it('saves a one-time purchase with the non-recurring period', async () => {
     const w = mountForm()
     await w.find('input[placeholder="Netflix, Spotify…"]').setValue('Домен')

@@ -182,14 +182,17 @@ export async function markPaid(id: number, paidIso?: string): Promise<Subscripti
   const sub = await getSubscription(id)
   if (!sub) return null
   const paid = paidIso ?? todayIso()
-  await db.run(
+  const inserted = await db.run(
     'INSERT INTO payments (subscription_id, amount_minor, currency, paid_date, created_at) VALUES (?,?,?,?,?)',
     [sub.id, sub.priceMinor, sub.currency, paid, new Date().toISOString()],
   )
   const details: Record<string, unknown> = {
+    paymentId: lastId(inserted),
     amountMinor: sub.priceMinor,
     currency: sub.currency,
     paidDate: paid,
+    // Recorded so cancelPayment can put the schedule back exactly where it was.
+    prevNextPaymentDate: sub.nextPaymentDate,
   }
   if (sub.isOneTime) {
     await db.run('UPDATE subscriptions SET is_active=0, updated_at=? WHERE id=?', [
@@ -209,4 +212,67 @@ export async function markPaid(id: number, paidIso?: string): Promise<Subscripti
   await recordEvent(id, 'payment', details)
   log.info('payment recorded', id, paid, sub.isOneTime ? 'one-time → archived' : '')
   return getSubscription(id)
+}
+
+interface PaymentRow {
+  id: number
+  subscription_id: number
+  amount_minor: number
+  currency: string
+  paid_date: string
+}
+
+/**
+ * Undo a payment mark. Only the newest mark of a subscription can be undone:
+ * next_payment_date only describes the state after the latest one, so rolling
+ * back an older mark would silently skip a cycle.
+ *
+ * `prevNextPaymentDate` comes from the payment event (markPaid stores it);
+ * older marks without it fall back to the payment's own date.
+ */
+export async function cancelPayment(
+  paymentId: number,
+  prevNextPaymentDate?: string | null,
+): Promise<Subscription | null> {
+  const db = await getDb()
+  const payRes = await db.query(
+    'SELECT id, subscription_id, amount_minor, currency, paid_date FROM payments WHERE id = ?',
+    [paymentId],
+  )
+  const pay = rows<PaymentRow>(payRes)[0]
+  if (!pay) return null
+
+  const latestRes = await db.query(
+    'SELECT id FROM payments WHERE subscription_id = ? ORDER BY id DESC LIMIT 1',
+    [pay.subscription_id],
+  )
+  const latest = rows<{ id: number }>(latestRes)[0]
+  if (latest?.id !== paymentId) return null
+
+  const sub = await getSubscription(pay.subscription_id)
+  if (!sub) return null
+
+  await db.run('DELETE FROM payments WHERE id=?', [paymentId])
+  const now = new Date().toISOString()
+  if (sub.isOneTime) {
+    // Undoing the mark of a one-off purchase brings it back into the list.
+    await db.run('UPDATE subscriptions SET is_active=1, updated_at=? WHERE id=?', [now, sub.id])
+  } else {
+    const next =
+      typeof prevNextPaymentDate === 'string' && prevNextPaymentDate
+        ? prevNextPaymentDate
+        : pay.paid_date
+    await db.run('UPDATE subscriptions SET next_payment_date=?, updated_at=? WHERE id=?', [
+      next,
+      now,
+      sub.id,
+    ])
+  }
+  await recordEvent(sub.id, 'payment_cancelled', {
+    amountMinor: pay.amount_minor,
+    currency: pay.currency,
+    paidDate: pay.paid_date,
+  })
+  log.info('payment cancelled', sub.id, pay.paid_date)
+  return getSubscription(sub.id)
 }

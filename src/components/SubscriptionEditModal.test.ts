@@ -62,4 +62,47 @@ describe('SubscriptionEditModal', () => {
     expect(w.emitted('close')).toBeTruthy()
     w.unmount()
   })
+
+  const nameInput = () =>
+    document.body.querySelector<HTMLInputElement>('input[placeholder="Netflix, Spotify…"]')!
+
+  async function typeName(value: string): Promise<void> {
+    const input = nameInput()
+    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!
+    setter.call(input, value)
+    input.dispatchEvent(new Event('input'))
+    await flushPromises()
+  }
+
+  function pressEscape(): void {
+    const dialog = document.body.querySelector('[role="dialog"]')!
+    dialog.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+  }
+
+  it('saves a debounced edit when the sheet is closed instead of waiting for the timer', async () => {
+    const s = await seed()
+    const w = mountModal(s.id)
+    await flushPromises()
+    await typeName('Closed Early')
+    // closed before the 800ms autosave tick fires
+    pressEscape()
+    await flushPromises()
+    expect((await getSubscription(s.id))?.name).toBe('Closed Early')
+    expect(w.emitted('close')).toBeTruthy()
+    w.unmount()
+  })
+
+  it('keeps the sheet open and shows the error when the draft is invalid', async () => {
+    const s = await seed()
+    const w = mountModal(s.id)
+    await flushPromises()
+    await typeName('')
+    pressEscape()
+    await flushPromises()
+    expect((await getSubscription(s.id))?.name).toBe('Old Name')
+    expect(w.emitted('close')).toBeUndefined()
+    expect(document.body.textContent).toContain('Введите название')
+    expect(document.body.textContent).toContain('Редактировать')
+    w.unmount()
+  })
 })

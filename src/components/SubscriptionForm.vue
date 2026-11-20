@@ -211,6 +211,11 @@ async function persist(): Promise<boolean> {
 }
 
 async function save(): Promise<void> {
+  if (isEdit.value && hydrated) {
+    // The queued write also covers a debounce tick that is already pending.
+    if (await flushAutosave()) emit('saved')
+    return
+  }
   if (await persist()) {
     lastSavedSnapshot = snapshot()
     emit('saved')
@@ -226,6 +231,9 @@ const AUTOSAVE_DELAY_MS = 800
 let hydrated = false
 let lastSavedSnapshot = ''
 let autosaveTimer: ReturnType<typeof setTimeout> | null = null
+// Writes are chained so a debounce tick and a close-time flush never persist
+// the same draft twice or overwrite each other.
+let saveQueue: Promise<boolean> = Promise.resolve(true)
 
 function snapshot(): string {
   return JSON.stringify([
@@ -250,21 +258,30 @@ function scheduleAutosave(): void {
   if (snapshot() === lastSavedSnapshot) return
   justSaved.value = false
   if (autosaveTimer) clearTimeout(autosaveTimer)
-  autosaveTimer = setTimeout(() => void runAutosave(), AUTOSAVE_DELAY_MS)
+  autosaveTimer = setTimeout(() => void flushAutosave(), AUTOSAVE_DELAY_MS)
 }
 
-async function runAutosave(): Promise<void> {
-  autosaveTimer = null
-  if (snapshot() === lastSavedSnapshot) return
-  if (saving.value) {
-    autosaveTimer = setTimeout(() => void runAutosave(), AUTOSAVE_DELAY_MS)
-    return
+/** Persist the draft right now instead of waiting for the autosave timer. */
+async function flushAutosave(): Promise<boolean> {
+  if (autosaveTimer) {
+    clearTimeout(autosaveTimer)
+    autosaveTimer = null
   }
-  if (await persist()) {
-    lastSavedSnapshot = snapshot()
+  if (!isEdit.value || !hydrated) return true
+  const queued = saveQueue.then(async () => {
+    const draft = snapshot()
+    if (draft === lastSavedSnapshot) return true
+    if (!(await persist())) return false
+    lastSavedSnapshot = draft
     justSaved.value = true
-  }
+    return true
+  })
+  saveQueue = queued.catch(() => false)
+  return queued
 }
+
+// The edit modal awaits this before closing, so a debounced edit is never lost.
+defineExpose({ flush: flushAutosave })
 
 watch(
   [
@@ -287,7 +304,9 @@ watch(
 )
 
 onBeforeUnmount(() => {
-  if (autosaveTimer) clearTimeout(autosaveTimer)
+  // Unmount paths that bypass the modal close (route change, list refresh)
+  // still persist their draft.
+  void flushAutosave()
 })
 
 async function addCategory(): Promise<void> {
