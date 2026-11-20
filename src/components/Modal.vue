@@ -72,10 +72,10 @@ const overlayClass = computed(() =>
           "
         >
           <div
-            class="shrink-0 touch-none px-5 py-5 select-none"
+            class="shrink-0 touch-none px-5 py-2 select-none"
             v-on="closeGesture.handlers"
           >
-            <div class="flex h-9 items-center justify-center">
+            <div class="flex h-5 items-center justify-center">
               <div class="h-1 w-10 rounded-full bg-app-border" />
             </div>
           </div>
