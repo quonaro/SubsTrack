@@ -13,6 +13,28 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
     <title>SubsTrack</title>
+    <!-- Paints the last theme before the first frame. Mirrors theme.ts#applyCachedTheme —
+         without it a light theme flashes the dark CSS defaults while the DB reads. -->
+    <script>
+      ;(() => {
+        try {
+          const cache = JSON.parse(localStorage.getItem('substrack:theme') ?? 'null')
+          if (!cache?.css) return
+          let mode = cache.themeMode
+          if (mode !== 'light' && mode !== 'dark') {
+            mode = window.matchMedia?.('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
+          }
+          const root = document.documentElement
+          root.classList.toggle('light', mode === 'light')
+          root.style.cssText = cache.css[mode] ?? ''
+          const bg = cache.bg?.[mode] ?? (mode === 'light' ? '#f5f6f8' : '#0f1115')
+          root.style.backgroundColor = bg
+          document.querySelector('meta[name="theme-color"]')?.setAttribute('content', bg)
+        } catch {
+          // Storage blocked — keep the CSS defaults.
+        }
+      })()
+    </script>
   </head>
   <body>
     <div id="app"></div>

@@ -1,5 +1,7 @@
+import { Capacitor } from '@capacitor/core'
+import { StatusBar, Style } from '@capacitor/status-bar'
 import { ref } from 'vue'
-import type { AccentKey, PresetKey, Settings } from './types'
+import type { AccentKey, PresetKey, Settings, ThemeMode } from './types'
 
 export interface AccentMeta {
   label: string
@@ -124,6 +126,24 @@ export const THEME_PRESETS: Record<PresetKey, ThemePreset> = {
 /** Theme mode actually applied to the DOM — lags store.settings during a theme wipe. */
 export const appliedThemeMode = ref<'dark' | 'light'>('dark')
 
+/**
+ * Last applied theme, mirrored into localStorage so the inline boot script in
+ * index.html can paint it before the bundle (and the async DB read) runs —
+ * otherwise the dark CSS defaults flash for a frame on a light theme.
+ */
+export const THEME_CACHE_KEY = 'substrack:theme'
+
+export interface ThemeCache {
+  themeMode: ThemeMode
+  /** Ready-made inline declarations per mode, applied verbatim by the boot script. */
+  css: Record<'dark' | 'light', string>
+  /** `theme-color` / page background per mode. */
+  bg: Record<'dark' | 'light', string>
+}
+
+const DARK_BG = '#0f1115'
+const LIGHT_BG = '#f5f6f8'
+
 export function systemThemeMode(): 'dark' | 'light' {
   if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return 'dark'
   return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
@@ -134,10 +154,97 @@ export function effectiveTheme(settings: Settings): 'dark' | 'light' {
   return settings.themeMode === 'light' ? 'light' : 'dark'
 }
 
+export function resolveThemeMode(themeMode: ThemeMode | undefined): 'dark' | 'light' {
+  if (themeMode === 'system' || !themeMode) return systemThemeMode()
+  return themeMode === 'light' ? 'light' : 'dark'
+}
+
+function presetOverrides(preset: PresetKey, theme: 'dark' | 'light') {
+  return (THEME_PRESETS[preset] ?? THEME_PRESETS.default)[theme] ?? {}
+}
+
+function presetBg(preset: PresetKey, theme: 'dark' | 'light'): string {
+  return (
+    presetOverrides(preset, theme)['--color-app-bg'] ?? (theme === 'light' ? LIGHT_BG : DARK_BG)
+  )
+}
+
+function themeDeclarations(theme: 'dark' | 'light', accent: AccentKey, preset: PresetKey): string {
+  const meta = ACCENTS[accent] ?? ACCENTS.orange
+  const entries: [string, string][] = [
+    ['--color-accent', meta.value],
+    ['--color-accent-fg', meta.fg ?? '#ffffff'],
+  ]
+  const overrides = presetOverrides(preset, theme)
+  for (const name of PRESET_VARS) {
+    const value = overrides[name]
+    if (value) entries.push([name, value])
+  }
+  return entries.map(([name, value]) => `${name}:${value}`).join(';')
+}
+
+function setThemeColorMeta(value: string): void {
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', value)
+}
+
+/**
+ * The status bar is transparent (content draws under it), so the system icons
+ * must invert with the app theme — otherwise white icons disappear on the
+ * light palette. Web build has no status bar, hence the early exit.
+ */
+function syncStatusBarIcons(theme: 'dark' | 'light'): void {
+  if (!Capacitor.isNativePlatform()) return
+  void StatusBar.setOverlaysWebView({ overlay: true })
+    .then(() => StatusBar.setStyle({ style: theme === 'light' ? Style.Light : Style.Dark }))
+    .catch(() => undefined)
+}
+
+function writeThemeCache(themeMode: ThemeMode, accent: AccentKey, preset: PresetKey): void {
+  const cache: ThemeCache = {
+    themeMode,
+    css: {
+      dark: themeDeclarations('dark', accent, preset),
+      light: themeDeclarations('light', accent, preset),
+    },
+    bg: { dark: presetBg(preset, 'dark'), light: presetBg(preset, 'light') },
+  }
+  try {
+    localStorage.setItem(THEME_CACHE_KEY, JSON.stringify(cache))
+  } catch {
+    // Private mode / quota — the boot script just falls back to the CSS defaults.
+  }
+}
+
+/**
+ * Synchronously paints the cached theme (also done inline in index.html before
+ * the first paint). Returns false when nothing was cached yet.
+ */
+export function applyCachedTheme(): boolean {
+  let cache: ThemeCache | null = null
+  try {
+    cache = JSON.parse(localStorage.getItem(THEME_CACHE_KEY) ?? 'null') as ThemeCache | null
+  } catch {
+    cache = null
+  }
+  if (!cache?.css) return false
+  const mode = resolveThemeMode(cache.themeMode)
+  const root = document.documentElement
+  root.classList.toggle('light', mode === 'light')
+  root.style.cssText = cache.css[mode] ?? ''
+  const bg = cache.bg?.[mode] ?? (mode === 'light' ? LIGHT_BG : DARK_BG)
+  // Literal background covers the gap before style.css loads; the runtime
+  // applyThemeToDom() drops it so the CSS variables own the color again.
+  root.style.backgroundColor = bg
+  setThemeColorMeta(bg)
+  appliedThemeMode.value = mode
+  return true
+}
+
 export function applyThemeToDom(
   theme: 'dark' | 'light',
   accent: AccentKey,
   preset: PresetKey,
+  themeMode: ThemeMode = theme,
 ): void {
   const root = document.documentElement
   root.classList.toggle('light', theme === 'light')
@@ -145,16 +252,14 @@ export function applyThemeToDom(
   const meta = ACCENTS[accent] ?? ACCENTS.orange
   root.style.setProperty('--color-accent', meta.value)
   root.style.setProperty('--color-accent-fg', meta.fg ?? '#ffffff')
-  const overrides = (THEME_PRESETS[preset] ?? THEME_PRESETS.default)[theme]
+  const overrides = presetOverrides(preset, theme)
   for (const name of PRESET_VARS) {
     const value = overrides[name]
     if (value) root.style.setProperty(name, value)
     else root.style.removeProperty(name)
   }
-  document
-    .querySelector('meta[name="theme-color"]')
-    ?.setAttribute(
-      'content',
-      overrides['--color-app-bg'] ?? (theme === 'light' ? '#f5f6f8' : '#0f1115'),
-    )
+  root.style.removeProperty('background-color')
+  setThemeColorMeta(presetBg(preset, theme))
+  syncStatusBarIcons(theme)
+  writeThemeCache(themeMode, accent, preset)
 }
