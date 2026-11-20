@@ -11,6 +11,20 @@ interface SwipeGestureOptions {
   follow?: boolean
   /** Only engage while this is `true`; resets the gesture when it turns `true`. */
   active?: Ref<boolean>
+  /** Checked on touch start — `false` ignores the gesture without resetting it. */
+  canStart?: () => boolean
+  /**
+   * Added to the follow offset, letting the target rest away from its natural
+   * position and be dragged back towards it (e.g. a sheet parked below the
+   * viewport bottom).
+   */
+  base?: Ref<number>
+  /** Overrides the element-size clamp applied to the follow offset. */
+  limit?: () => number
+  /** Called when the gesture locks onto its axis. */
+  onStart?: () => void
+  /** Called once an uncommitted gesture finished snapping back. */
+  onCancel?: () => void
   /** Distance in px the finger must travel before committing. */
   threshold?: number
   /** Velocity in px/ms that also commits the gesture. */
@@ -41,6 +55,11 @@ export function useSwipeGesture(options: SwipeGestureOptions) {
     onCommit,
     follow = false,
     active,
+    canStart,
+    base,
+    limit,
+    onStart,
+    onCancel,
     threshold = 80,
     velocity = 0.5,
     axisLock = 8,
@@ -80,13 +99,15 @@ export function useSwipeGesture(options: SwipeGestureOptions) {
 
   const style = computed<CSSProperties | undefined>(() => {
     if (!follow || (!dragging.value && !settling.value)) return undefined
+    const shift = (base?.value ?? 0) + offset.value
     return {
-      transform: horizontal ? `translateX(${offset.value}px)` : `translateY(${offset.value}px)`,
+      transform: horizontal ? `translateX(${shift}px)` : `translateY(${shift}px)`,
       transition: dragging.value ? 'none' : 'transform 0.2s ease-out',
     }
   })
 
   function axisLimit() {
+    if (limit) return limit()
     if (horizontal) return el()?.offsetWidth ?? window.innerWidth
     return el()?.offsetHeight ?? window.innerHeight
   }
@@ -117,12 +138,25 @@ export function useSwipeGesture(options: SwipeGestureOptions) {
 
   function begin(x: number, y: number) {
     if (active && !active.value) return
-    clearSettleTimer()
+    // A decision already taken by the previous gesture must not be lost when
+    // the next touch interrupts its exit animation.
+    if (commitTimer !== null) {
+      clearCommitTimer()
+      onCommit()
+    }
+    if (settleTimer !== null) {
+      clearSettleTimer()
+      settling.value = false
+      offset.value = 0
+      onCancel?.()
+    }
+    if (canStart && !canStart()) return
     gestureActive = true
     gestureLocked = false
     startPrimary = horizontal ? x : y
     startCross = horizontal ? y : x
-    lastPrimary = startPrimary
+    // `move` measures the primary axis relative to the start point.
+    lastPrimary = 0
     lastTime = performance.now()
     speed = 0
     travel = 0
@@ -144,6 +178,7 @@ export function useSwipeGesture(options: SwipeGestureOptions) {
         settling.value = false
         dragging.value = true
       }
+      onStart?.()
     }
 
     const now = performance.now()
@@ -194,6 +229,7 @@ export function useSwipeGesture(options: SwipeGestureOptions) {
     settleTimer = setTimeout(() => {
       settleTimer = null
       settling.value = false
+      onCancel?.()
     }, settleMs)
   }
 
