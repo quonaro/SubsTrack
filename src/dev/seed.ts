@@ -7,7 +7,14 @@ import { getDb } from '../db'
 import { createCategory, listCategories } from '../domain/categories'
 import { createSubscription } from '../domain/subscriptions'
 import { replaceRules } from '../domain/rules'
-import { addDays, firstPaymentOnOrAfter, ONE_TIME_PERIOD_DAYS, todayIso } from '../domain/dates'
+import {
+  addDays,
+  dayOfMonth,
+  firstPaymentOnOrAfter,
+  ONE_TIME_PERIOD_DAYS,
+  presetPeriodMonths,
+  todayIso,
+} from '../domain/dates'
 import { EXTRA_CATEGORIES, SUBS, type SeedSub } from './seed-data'
 import { logger } from '../log'
 
@@ -68,17 +75,20 @@ export async function seedDemoData(): Promise<{ subs: number }> {
   let created = 0
   for (const spec of SUBS) {
     const start = spec.startDate ?? addDays(today, -(spec.startedAgo ?? 365))
+    const periodMonths = spec.isOneTime ? 0 : presetPeriodMonths(spec.periodDays)
     const next =
       spec.nextIn != null
         ? addDays(today, spec.nextIn)
         : spec.isOneTime
           ? start
-          : firstPaymentOnOrAfter(start, spec.periodDays, today)
+          : firstPaymentOnOrAfter(start, spec.periodDays, today, periodMonths, dayOfMonth(start))
     const sub = await createSubscription({
       name: spec.name,
       priceMinor: spec.priceMinor,
       currency: spec.currency,
       periodDays: spec.isOneTime ? ONE_TIME_PERIOD_DAYS : spec.periodDays,
+      periodMonths,
+      periodDay: periodMonths > 0 ? dayOfMonth(start) : 0,
       isOneTime: spec.isOneTime,
       startDate: start,
       nextPaymentDate: next,

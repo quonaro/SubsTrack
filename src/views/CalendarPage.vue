@@ -72,6 +72,8 @@ function buildCells(year: number, month: number): DayCell[] {
       iso(1),
       iso(daysInMonth),
       s.isOneTime,
+      s.periodMonths,
+      s.periodDay,
     )) {
       const list = byDay.get(d) ?? []
       list.push(s.id)

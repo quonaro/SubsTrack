@@ -117,6 +117,55 @@ describe('subscriptions (sqlite)', () => {
     expect(next?.nextPaymentDate).toBe('2026-04-01')
   })
 
+  it('rolls a monthly period to the same day of the month', async () => {
+    const s = await createSubscription({
+      ...input(),
+      periodMonths: 1,
+      startDate: '2027-01-04',
+      nextPaymentDate: '2027-01-04',
+    })
+    expect(s.periodDay).toBe(4)
+    const feb = await markPaid(s.id, '2027-01-04')
+    expect(feb?.nextPaymentDate).toBe('2027-02-04')
+    const mar = await markPaid(s.id, '2027-02-04')
+    expect(mar?.nextPaymentDate).toBe('2027-03-04')
+  })
+
+  it('keeps the day of the month across short months', async () => {
+    const s = await createSubscription({
+      ...input(),
+      periodMonths: 1,
+      startDate: '2027-01-31',
+      nextPaymentDate: '2027-01-31',
+    })
+    const feb = await markPaid(s.id, '2027-01-31')
+    expect(feb?.nextPaymentDate).toBe('2027-02-28')
+    // the clamped date must not drag the schedule: back to the 31st
+    const mar = await markPaid(s.id, '2027-02-28')
+    expect(mar?.nextPaymentDate).toBe('2027-03-31')
+  })
+
+  it('keeps the month anchor when unrelated fields change', async () => {
+    const s = await createSubscription({
+      ...input(),
+      periodMonths: 1,
+      startDate: '2026-01-31',
+      nextPaymentDate: '2026-01-31',
+    })
+    const clamped = await markPaid(s.id, '2026-01-31')
+    expect(clamped?.nextPaymentDate).toBe('2026-02-28')
+    const renamed = await updateSubscription(s.id, { name: 'Renamed' })
+    expect(renamed?.periodDay).toBe(31)
+    const next = await markPaid(s.id, '2026-02-28')
+    expect(next?.nextPaymentDate).toBe('2026-03-31')
+  })
+
+  it('re-anchors the month day when the next date is edited', async () => {
+    const s = await createSubscription({ ...input(), periodMonths: 1 })
+    const upd = await updateSubscription(s.id, { nextPaymentDate: '2026-05-15' })
+    expect(upd?.periodDay).toBe(15)
+  })
+
   it('cancels the latest payment mark and restores the previous next date', async () => {
     const s = await createSubscription(input()) // next: 2026-03-01
     await markPaid(s.id, '2026-03-10')

@@ -78,6 +78,24 @@ const SCHEMA: string[][] = [
   // v3 -> v4: optional tile background for the subscription icon. NULL means
   // «use the category color»; old builds ignore the extra column.
   [`ALTER TABLE subscriptions ADD COLUMN icon_color TEXT`],
+  // v4 -> v5: calendar-month periods. «Ежемесячно» used to be a 30-day step,
+  // so every short month dragged the payment date earlier (4 Jan → 3 Feb →
+  // 5 Mar…). A month-based period now keeps the day of the month; `period_day`
+  // stores that day so a date clamped into a short month (31 → 28/29) doesn't
+  // shift the months after it. Older builds ignore both columns and keep
+  // stepping by `period_days`, which this build still fills with the day
+  // approximation (30 / 90 / 365).
+  [
+    `ALTER TABLE subscriptions ADD COLUMN period_months INTEGER NOT NULL DEFAULT 0`,
+    `ALTER TABLE subscriptions ADD COLUMN period_day INTEGER NOT NULL DEFAULT 0`,
+    // Rows that came from the presets mean calendar periods; the anchor day is
+    // the untouched start_date, so an already drifted schedule snaps back.
+    `UPDATE subscriptions SET period_months = CASE period_days
+       WHEN 30 THEN 1 WHEN 90 THEN 3 WHEN 365 THEN 12 ELSE 0 END
+     WHERE is_one_time = 0`,
+    `UPDATE subscriptions SET period_day = CAST(substr(start_date, 9, 2) AS INTEGER)
+     WHERE period_months > 0`,
+  ],
 ]
 
 /** Schema version this build creates/expects (see backup.ts). */

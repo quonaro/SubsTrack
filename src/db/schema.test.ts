@@ -59,6 +59,30 @@ describe('schema migrations', () => {
     expect(row.icon_color).toBeNull()
   })
 
+  it('backfills calendar periods for preset rows from the start date', async () => {
+    await migrate(db)
+    // simulate a database written by the previous build (schema v4)
+    await db.execute('PRAGMA user_version = 4')
+    await db.run(
+      `INSERT INTO subscriptions (name, price_minor, currency, period_days, start_date,
+        next_payment_date, created_at, updated_at)
+       VALUES ('M',100,'RUB',30,'2026-01-04','2026-02-03','t','t')`,
+    )
+    await db.run(
+      `INSERT INTO subscriptions (name, price_minor, currency, period_days, start_date,
+        next_payment_date, created_at, updated_at)
+       VALUES ('W',100,'RUB',7,'2026-01-04','2026-02-03','t','t')`,
+    )
+    await migrate(db)
+    const [monthly, weekly] = (await db.query('SELECT * FROM subscriptions ORDER BY id')).values!
+    // 30 days meant «ежемесячно»: it becomes a calendar month on the 4th
+    expect(Number(monthly.period_months)).toBe(1)
+    expect(Number(monthly.period_day)).toBe(4)
+    // a weekly period stays day-based
+    expect(Number(weekly.period_months)).toBe(0)
+    expect(Number(weekly.period_day)).toBe(0)
+  })
+
   it('retries a migration whose ALTER TABLE already ran', async () => {
     await migrate(db)
     const version = await userVersion()

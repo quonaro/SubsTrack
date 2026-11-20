@@ -51,7 +51,13 @@ const paidCount = computed(
   () => store.payments.filter((p) => p.subscriptionId === props.sub.id).length,
 )
 const nextAfterPaid = computed(() =>
-  nextPaymentAfter(props.sub.nextPaymentDate, props.sub.periodDays, todayIso()),
+  nextPaymentAfter(
+    props.sub.nextPaymentDate,
+    props.sub.periodDays,
+    todayIso(),
+    props.sub.periodMonths,
+    props.sub.periodDay,
+  ),
 )
 
 const confirmOpen = ref(false)

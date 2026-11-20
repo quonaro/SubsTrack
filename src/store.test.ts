@@ -44,6 +44,8 @@ const fakeSub = (over: Partial<Subscription>): Subscription => ({
   priceMinor: 0,
   currency: 'RUB',
   periodDays: 30,
+  periodMonths: 0,
+  periodDay: 0,
   isOneTime: false,
   startDate: '2026-01-01',
   nextPaymentDate: '2026-01-01',

@@ -91,6 +91,11 @@ idempotent instead. See **Database** for the compatibility rules.
 
 Schema (see `schema.ts`): `categories`, `subscriptions` (money as
 `price_minor` integer minor units, `period_days` flexible cycle,
+`period_months` calendar period for the presets — monthly 1, quarterly 3,
+yearly 12 — with `period_day` the day of the month it keeps, so
+«ежемесячно» is the same date instead of every 30 days; `period_days`
+stays filled with the 30/90/365 approximation for older builds and the
+cost-per-period stats,
 `is_one_time` for one-off purchases — `period_days` then holds
 `ONE_TIME_PERIOD_DAYS` (~100 years) so older builds don't repeat them,
 ISO date strings, `icon_color` optional tile background — NULL inherits

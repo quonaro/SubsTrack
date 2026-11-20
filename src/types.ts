@@ -16,6 +16,14 @@ export interface Subscription {
   currency: string
   /** Billing period in days (7 / 30 / 90 / 365 / custom). */
   periodDays: number
+  /**
+   * Calendar-month period (monthly = 1, quarterly = 3, yearly = 12). Beats
+   * `periodDays` when > 0, so "ежемесячно" lands on the same day of each month
+   * instead of drifting by 30 days. 0 → day-based period.
+   */
+  periodMonths: number
+  /** Day-of-month a month-based period keeps, clamped to short months. */
+  periodDay: number
   /** One-off purchase: charged once and archived after payment. */
   isOneTime: boolean
   /** ISO date — initial payment anchor. */
