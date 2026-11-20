@@ -49,14 +49,6 @@ describe('Modal', () => {
   }
 
   const handle = () => document.body.querySelector('.touch-none') as Element
-  const pill = () => document.body.querySelector('.h-1.w-10.rounded-full.bg-app-border')
-  const backButton = () =>
-    Array.from(document.body.querySelectorAll('button')).find((b) =>
-      b.textContent?.includes('Назад'),
-    )
-
-  // Committing a sheet gesture finishes its exit animation first (commitDelay).
-  const settle = () => new Promise((r) => setTimeout(r, 250))
 
   it('renders title and slot content into the body when open', async () => {
     const w = mount(Modal, {
@@ -142,60 +134,7 @@ describe('Modal', () => {
       w.unmount()
     })
 
-    it('expands to fullscreen on an upward swipe: handle hides, back button appears', async () => {
-      stubMobile()
-      mockNow()
-      const w = mount(Modal, {
-        props: { open: true, title: 'Шит' },
-        attachTo: document.body,
-      })
-      await nextTick()
-      expect(pill()).not.toBeNull()
-      expect(backButton()).toBeUndefined()
-
-      swipe(handle(), 300, 100)
-      await settle()
-
-      expect(pill()).toBeNull()
-      expect(backButton()).toBeDefined()
-      w.unmount()
-    })
-
-    it('follows the finger while swiping up instead of animating height', async () => {
-      stubMobile()
-      mockNow()
-      const w = mount(Modal, {
-        props: { open: true, title: 'Шит' },
-        attachTo: document.body,
-      })
-      await nextTick()
-      const wrap = document.body.querySelector('.touch-none')?.parentElement
-        ?.parentElement as HTMLElement
-      swipe(handle(), 300, 200)
-      await nextTick()
-      // the sheet is stretched to the viewport and moved by a transform
-      expect(wrap.className).toContain('h-full')
-      expect(wrap.style.transform).toContain('translateY')
-      expect(backButton()).toBeUndefined()
-      w.unmount()
-    })
-
-    it('returns to the bottom-sheet layout when the swipe up is too short', async () => {
-      stubMobile()
-      mockNow()
-      const w = mount(Modal, {
-        props: { open: true, title: 'Шит' },
-        attachTo: document.body,
-      })
-      await nextTick()
-      swipe(handle(), 300, 270)
-      await settle()
-      expect(backButton()).toBeUndefined()
-      expect(pill()).not.toBeNull()
-      w.unmount()
-    })
-
-    it('collapses back on a downward swipe while expanded', async () => {
+    it('does not expand on an upward swipe', async () => {
       stubMobile()
       mockNow()
       const w = mount(Modal, {
@@ -204,35 +143,14 @@ describe('Modal', () => {
       })
       await nextTick()
       swipe(handle(), 300, 100)
-      await settle()
-      expect(backButton()).toBeDefined()
-
-      swipe(handle(), 100, 300)
-      await settle()
-
-      expect(backButton()).toBeUndefined()
-      expect(pill()).not.toBeNull()
-      // collapsing must not close the modal
+      await nextTick()
+      const sheet = document.body.querySelector('[role="dialog"]') as HTMLElement
+      expect(sheet.style.transform).toBe('')
+      // the sheet stays content-sized instead of taking the viewport
+      const body = sheet.querySelector('.max-h-\\[85dvh\\]') as HTMLElement
+      expect(body).not.toBeNull()
+      expect(body.className).not.toContain('h-full')
       expect(w.emitted('update:open')).toBeUndefined()
-      w.unmount()
-    })
-
-    it('collapses when the back button is tapped', async () => {
-      stubMobile()
-      mockNow()
-      const w = mount(Modal, {
-        props: { open: true, title: 'Шит' },
-        attachTo: document.body,
-      })
-      await nextTick()
-      swipe(handle(), 300, 100)
-      await settle()
-
-      backButton()?.dispatchEvent(new Event('click', { bubbles: true }))
-      await nextTick()
-
-      expect(backButton()).toBeUndefined()
-      expect(pill()).not.toBeNull()
       w.unmount()
     })
   })
@@ -290,29 +208,6 @@ describe('Modal', () => {
       expect(pushedSheets()).toHaveLength(1)
 
       await child.setProps({ open: false })
-      await nextTick()
-      expect(pushedSheets()).toHaveLength(0)
-
-      child.unmount()
-      parent.unmount()
-    })
-
-    it('leaves a fullscreen parent in place', async () => {
-      stubMobile()
-      mockNow()
-      const parent = mount(Modal, {
-        props: { open: true, title: 'Родитель' },
-        attachTo: document.body,
-      })
-      await nextTick()
-      swipe(handle(), 300, 100)
-      await settle()
-      expect(backButton()).toBeDefined()
-
-      const child = mount(Modal, {
-        props: { open: true, title: 'Ребёнок' },
-        attachTo: document.body,
-      })
       await nextTick()
       expect(pushedSheets()).toHaveLength(0)
 
