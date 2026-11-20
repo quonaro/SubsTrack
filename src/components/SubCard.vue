@@ -6,7 +6,12 @@ import { formatMoney } from '../domain/currency'
 import { daysUntilText, diffDays, formatDateRu, periodLabel, todayIso } from '../domain/dates'
 import Modal from './Modal.vue'
 
-const props = defineProps<{ sub: Subscription; compact?: boolean; confirmOnClick?: boolean }>()
+const props = defineProps<{
+  sub: Subscription
+  compact?: boolean
+  confirmOnClick?: boolean
+  skipPayConfirm?: boolean
+}>()
 const emit = defineEmits<{ paid: [number] }>()
 
 const cat = computed(() => categoryOf(props.sub))
@@ -21,11 +26,15 @@ function confirmPaid() {
   confirmOpen.value = false
   emit('paid', props.sub.id)
 }
+function onPayClick() {
+  if (props.skipPayConfirm) confirmPaid()
+  else confirmOpen.value = true
+}
 </script>
 
 <template>
   <div
-    class="flex items-center gap-3 rounded-2xl border border-app-border bg-app-card p-4"
+    class="flex select-none items-center gap-3 rounded-2xl border border-app-border bg-app-card p-4"
     :class="{ 'opacity-55': !sub.isActive, 'cursor-pointer': confirmOnClick }"
     @click="onCardClick"
   >
@@ -61,13 +70,13 @@ function confirmPaid() {
       v-if="sub.isActive && !compact"
       type="button"
       class="flex h-9 shrink-0 items-center rounded-full bg-accent/20 px-3 text-xs font-medium text-accent-hi transition-colors hover:bg-accent/40"
-      @click.stop="confirmOpen = true"
+      @click.stop="onPayClick"
     >
       {{ formatMoney(sub.priceMinor, sub.currency) }}
     </button>
-    <Modal :open="confirmOpen" title="Отметить подписку оплаченной?" @update:open="confirmOpen = $event">
+    <Modal :open="confirmOpen" title="Отметить платёж оплаченным?" @update:open="confirmOpen = $event">
       <p class="mb-5 text-sm text-app-text-muted">
-        Отметить «{{ sub.name }}» оплаченной на {{ formatMoney(sub.priceMinor, sub.currency) }}?
+        Отметить «{{ sub.name }}» оплаченным на {{ formatMoney(sub.priceMinor, sub.currency) }}?
       </p>
       <div class="flex gap-3">
         <button

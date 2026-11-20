@@ -1,6 +1,6 @@
 // The modal is a thin edit wrapper around SubscriptionForm: it feeds subId
-// in as the edit target and translates saved/deleted into close events.
-import { DOMWrapper, flushPromises, mount } from '@vue/test-utils'
+// in as the edit target and translates saved into a close event.
+import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it } from 'vitest'
 import SubscriptionEditModal from './SubscriptionEditModal.vue'
 import { createSubscription, store } from '../store'
@@ -60,26 +60,6 @@ describe('SubscriptionEditModal', () => {
     await flushPromises()
     expect((await getSubscription(s.id))?.name).toBe('New Name')
     expect(w.emitted('close')).toBeTruthy()
-    w.unmount()
-  })
-
-  it('emits deleted after the subscription is removed', async () => {
-    const s = await seed()
-    const w = mountModal(s.id)
-    await flushPromises()
-    const del = [...document.body.querySelectorAll('button')].find((b) =>
-      b.textContent?.includes('Удалить подписку'),
-    )!
-    del.dispatchEvent(new MouseEvent('click', { bubbles: true }))
-    await flushPromises()
-    const confirm = [...document.body.querySelectorAll('button')].find(
-      (b) => b.textContent?.trim() === 'Удалить',
-    )
-    expect(confirm).toBeTruthy()
-    await new DOMWrapper(confirm!).trigger('click')
-    await flushPromises()
-    expect(await getSubscription(s.id)).toBeNull()
-    expect(w.emitted('deleted')).toBeTruthy()
     w.unmount()
   })
 })

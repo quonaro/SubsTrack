@@ -1,8 +1,13 @@
 import { DOMWrapper, flushPromises, mount } from '@vue/test-utils'
 import { createMemoryHistory, createRouter } from 'vue-router'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import SubscriptionsPage from './SubscriptionsPage.vue'
-import { store } from '../store'
+import SubCard from '../components/SubCard.vue'
+import { createSubscription, store } from '../store'
+import { getSubscription } from '../domain/subscriptions'
+import { makeTestDb } from '../db/testdb'
+import { setDbForTesting } from '../db'
+import { migrate } from '../db/schema'
 import type { Subscription } from '../types'
 
 const router = () =>
@@ -29,11 +34,18 @@ const sub = (over: Partial<Subscription> = {}): Subscription => ({
   ...over,
 })
 
-beforeEach(() => {
+beforeEach(async () => {
+  const db = await makeTestDb()
+  setDbForTesting(db)
+  await migrate(db)
   store.subscriptions = []
   store.categories = []
   store.showArchived = false
   store.sortMode = 'next_date'
+})
+
+afterEach(() => {
+  vi.useRealTimers()
 })
 
 describe('SubscriptionsPage', () => {
@@ -48,7 +60,7 @@ describe('SubscriptionsPage', () => {
   it('shows the empty state', async () => {
     const w = mount(SubscriptionsPage, { global: { plugins: [router()] } })
     await flushPromises()
-    expect(w.text()).toContain('Подписок пока нет')
+    expect(w.text()).toContain('Платежей пока нет')
   })
 
   it('reserves bottom padding for the FAB only when the list is non-empty', async () => {
@@ -83,8 +95,106 @@ describe('SubscriptionsPage', () => {
     expect(document.body.textContent).not.toContain('Дата первого платежа')
     await w.find('button.fixed').trigger('click')
     await flushPromises()
-    expect(document.body.textContent).toContain('Новая подписка')
+    expect(document.body.textContent).toContain('Новый платёж')
     expect(document.body.querySelector('input[placeholder="Netflix, Spotify…"]')).toBeTruthy()
+    w.unmount()
+  })
+
+  it('pays without the confirm sheet', async () => {
+    store.subscriptions = [sub()]
+    const w = mount(SubscriptionsPage, { global: { plugins: [router()] } })
+    await flushPromises()
+    expect(w.findComponent(SubCard).props('skipPayConfirm')).toBe(true)
+  })
+
+  it('opens the edit sheet on card tap', async () => {
+    store.subscriptions = [sub()]
+    const w = mount(SubscriptionsPage, {
+      global: { plugins: [router()] },
+      attachTo: document.body,
+    })
+    await flushPromises()
+    await w.findComponent(SubCard).trigger('click')
+    await flushPromises()
+    expect(document.body.textContent).toContain('Следующий платёж')
+    w.unmount()
+  })
+
+  it('opens the context menu on right-click and edits from it', async () => {
+    store.subscriptions = [sub()]
+    const w = mount(SubscriptionsPage, {
+      global: { plugins: [router()] },
+      attachTo: document.body,
+    })
+    await flushPromises()
+    await w.findComponent(SubCard).trigger('contextmenu')
+    await flushPromises()
+    const edit = [...document.body.querySelectorAll('button')].find(
+      (b) => b.textContent?.trim() === 'Редактировать',
+    )
+    const del = [...document.body.querySelectorAll('button')].find(
+      (b) => b.textContent?.trim() === 'Удалить',
+    )
+    expect(edit).toBeTruthy()
+    expect(del).toBeTruthy()
+    await new DOMWrapper(edit!).trigger('click')
+    await flushPromises()
+    expect(document.body.textContent).toContain('Следующий платёж')
+    w.unmount()
+  })
+
+  it('deletes a subscription via the context menu and confirm sheet', async () => {
+    const s = await createSubscription({
+      name: 'Doomed',
+      priceMinor: 100,
+      currency: 'RUB',
+      periodDays: 30,
+      startDate: '2026-01-10',
+      nextPaymentDate: '2026-02-10',
+    })
+    const w = mount(SubscriptionsPage, {
+      global: { plugins: [router()] },
+      attachTo: document.body,
+    })
+    await flushPromises()
+    await w.findComponent(SubCard).trigger('contextmenu')
+    await flushPromises()
+    const del = [...document.body.querySelectorAll('button')].find(
+      (b) => b.textContent?.trim() === 'Удалить',
+    )!
+    await new DOMWrapper(del).trigger('click')
+    await flushPromises()
+    expect(document.body.textContent).toContain('Удалить платёж?')
+    const confirm = [...document.body.querySelectorAll('button')].find(
+      (b) => b.textContent?.trim() === 'Удалить',
+    )!
+    await new DOMWrapper(confirm).trigger('click')
+    await flushPromises()
+    expect(await getSubscription(s.id)).toBeNull()
+    expect(document.body.textContent).not.toContain('Doomed')
+    w.unmount()
+  })
+
+  it('opens the menu on long-press and swallows the trailing click', async () => {
+    store.subscriptions = [sub()]
+    const w = mount(SubscriptionsPage, {
+      global: { plugins: [router()] },
+      attachTo: document.body,
+    })
+    await flushPromises()
+    const el = w.findComponent(SubCard).element as HTMLElement
+    vi.useFakeTimers()
+    const down = new Event('touchstart', { bubbles: true })
+    Object.defineProperty(down, 'touches', { value: [{ clientX: 40, clientY: 40 }] })
+    el.dispatchEvent(down)
+    await vi.advanceTimersByTimeAsync(500)
+    vi.useRealTimers()
+    await flushPromises()
+    expect(document.body.textContent).toContain('Редактировать')
+    el.dispatchEvent(new Event('touchend', { bubbles: true }))
+    el.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    await flushPromises()
+    expect(document.body.textContent).not.toContain('Следующий платёж')
     w.unmount()
   })
 

@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import {
   createCategory,
   createSubscription,
   deleteCategory,
-  deleteSubscription,
   listRulesFor,
   replaceRules,
   store,
@@ -23,7 +22,7 @@ import Icon from './Icon.vue'
 // The same form serves both surfaces: `subId` set → edit mode (modal),
 // null/undefined → create mode (modal on the subscriptions list).
 const props = defineProps<{ subId?: number | null }>()
-const emit = defineEmits<{ saved: []; deleted: [] }>()
+const emit = defineEmits<{ saved: [] }>()
 
 const isEdit = computed(() => props.subId != null)
 
@@ -80,7 +79,7 @@ const ruleKindOptions = [
 
 const error = ref('')
 const saving = ref(false)
-const confirmDelete = ref(false)
+const justSaved = ref(false)
 const catsOpen = ref(false)
 const newCatName = ref('')
 const newCatIcon = ref('📁')
@@ -111,6 +110,8 @@ onMounted(async () => {
     atTime: r.atTime,
     intervalHours: r.intervalHours,
   }))
+  hydrated = true
+  lastSavedSnapshot = snapshot()
 })
 
 function addRule(): void {
@@ -122,21 +123,19 @@ function addRule(): void {
   })
 }
 
-async function save(): Promise<void> {
-  error.value = ''
+function validate(): string | null {
+  if (!name.value.trim()) return 'Введите название'
   const price = parseMoney(priceText.value)
-  if (!name.value.trim()) {
-    error.value = 'Введите название'
-    return
-  }
-  if (price == null || price <= 0) {
-    error.value = 'Введите корректную цену'
-    return
-  }
-  if (!nextDate.value) {
-    error.value = 'Укажите дату платежа'
-    return
-  }
+  if (price == null || price <= 0) return 'Введите корректную цену'
+  if (!nextDate.value) return 'Укажите дату платежа'
+  return null
+}
+
+async function persist(): Promise<boolean> {
+  const err = validate()
+  error.value = err ?? ''
+  if (err) return false
+  const price = parseMoney(priceText.value) as number
   saving.value = true
   try {
     const input = {
@@ -169,20 +168,92 @@ async function save(): Promise<void> {
       const sub = await createSubscription(input)
       await replaceRules(sub.id, ruleDrafts)
     }
-    emit('saved')
+    return true
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Ошибка сохранения'
+    return false
   } finally {
     saving.value = false
   }
 }
 
-async function remove(): Promise<void> {
-  if (props.subId == null) return
-  await deleteSubscription(props.subId)
-  confirmDelete.value = false
-  emit('deleted')
+async function save(): Promise<void> {
+  if (await persist()) {
+    lastSavedSnapshot = snapshot()
+    emit('saved')
+  }
 }
+
+// --- autosave (edit mode only) -------------------------------------------------
+// Debounced whole-form persist, same idea as the task page in yourtask-next:
+// every field change schedules a save; a snapshot guard skips no-op writes and
+// post-hydration flushes. Invalid drafts show the usual validation error and
+// are retried on the next change.
+const AUTOSAVE_DELAY_MS = 800
+let hydrated = false
+let lastSavedSnapshot = ''
+let autosaveTimer: ReturnType<typeof setTimeout> | null = null
+
+function snapshot(): string {
+  return JSON.stringify([
+    name.value,
+    icon.value,
+    priceText.value,
+    currency.value,
+    periodPreset.value,
+    customDays.value,
+    nextDate.value,
+    categoryId.value,
+    notes.value,
+    reminderEnabled.value,
+    isActive.value,
+    rules.value,
+  ])
+}
+
+function scheduleAutosave(): void {
+  if (!isEdit.value || !hydrated) return
+  if (snapshot() === lastSavedSnapshot) return
+  justSaved.value = false
+  if (autosaveTimer) clearTimeout(autosaveTimer)
+  autosaveTimer = setTimeout(() => void runAutosave(), AUTOSAVE_DELAY_MS)
+}
+
+async function runAutosave(): Promise<void> {
+  autosaveTimer = null
+  if (snapshot() === lastSavedSnapshot) return
+  if (saving.value) {
+    autosaveTimer = setTimeout(() => void runAutosave(), AUTOSAVE_DELAY_MS)
+    return
+  }
+  if (await persist()) {
+    lastSavedSnapshot = snapshot()
+    justSaved.value = true
+  }
+}
+
+watch(
+  [
+    name,
+    icon,
+    priceText,
+    currency,
+    periodPreset,
+    customDays,
+    nextDate,
+    categoryId,
+    notes,
+    reminderEnabled,
+    isActive,
+    rules,
+  ],
+  scheduleAutosave,
+  { deep: true },
+)
+
+onBeforeUnmount(() => {
+  if (autosaveTimer) clearTimeout(autosaveTimer)
+})
 
 async function addCategory(): Promise<void> {
   const n = newCatName.value.trim()
@@ -343,41 +414,16 @@ async function addCategory(): Promise<void> {
 
     <p v-if="error" class="text-sm text-red-400">{{ error }}</p>
 
+    <p v-if="isEdit && justSaved && !saving" class="text-xs text-app-text-muted">Изменения сохранены</p>
+
     <button
       type="button"
       :disabled="saving"
       class="flex h-9 items-center justify-center rounded-xl bg-accent font-semibold text-accent-fg transition-colors hover:bg-accent-hover disabled:opacity-50"
       @click="save"
     >
-      {{ saving ? 'Сохранение…' : isEdit ? 'Сохранить' : 'Добавить подписку' }}
+      {{ saving ? 'Сохранение…' : isEdit ? 'Сохранить' : 'Добавить платёж' }}
     </button>
-
-    <button
-      v-if="isEdit"
-      type="button"
-      class="flex h-9 items-center justify-center gap-2 rounded-xl border border-red-900/50 text-sm text-red-400"
-      @click="confirmDelete = true"
-    >
-      <Icon name="trash" :size="16" /> Удалить подписку
-    </button>
-
-    <Modal :open="confirmDelete" title="Удалить подписку?" @update:open="confirmDelete = $event">
-      <p class="mb-5 text-sm text-app-text-muted">
-        «{{ name }}» и история её платежей будут удалены безвозвратно.
-      </p>
-      <div class="flex gap-3">
-        <button
-          type="button"
-          class="flex h-9 flex-1 items-center justify-center rounded-xl border border-app-border"
-          @click="confirmDelete = false"
-        >
-          Отмена
-        </button>
-        <button type="button" class="flex h-9 flex-1 items-center justify-center rounded-xl bg-red-600 font-medium" @click="remove">
-          Удалить
-        </button>
-      </div>
-    </Modal>
 
     <Modal :open="catsOpen" title="Категории" @update:open="catsOpen = $event">
       <div class="mb-4 flex items-center gap-2">

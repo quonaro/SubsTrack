@@ -45,6 +45,15 @@ describe('SubCard', () => {
     w.unmount()
   })
 
+  it('emits paid immediately without the sheet when skipPayConfirm is set', async () => {
+    const w = mount(SubCard, { props: { sub: sub({ id: 7 }), skipPayConfirm: true } })
+    await w.find('button').trigger('click')
+    await flushPromises()
+    expect(w.emitted('paid')).toEqual([[7]])
+    expect(document.body.textContent).not.toContain('Отметить платёж оплаченным?')
+    w.unmount()
+  })
+
   it('does not emit paid when the sheet is cancelled', async () => {
     const w = mount(SubCard, { props: { sub: sub() } })
     await w.find('button').trigger('click')

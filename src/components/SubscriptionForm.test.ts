@@ -1,7 +1,7 @@
 // Form component: mount in create/edit mode, fill fields, save — the write
 // path goes through the store into a real in-memory SQLite db.
-import { DOMWrapper, flushPromises, mount } from '@vue/test-utils'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { flushPromises, mount } from '@vue/test-utils'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import SubscriptionForm from './SubscriptionForm.vue'
 import { createSubscription, store } from '../store'
 import { getSubscription, listSubscriptions } from '../domain/subscriptions'
@@ -22,10 +22,14 @@ beforeEach(async () => {
   store.payments = []
 })
 
+afterEach(() => {
+  vi.useRealTimers()
+})
+
 describe('SubscriptionForm', () => {
   it('validates required fields before writing', async () => {
     const w = mountForm()
-    const save = w.findAll('button').find((b) => b.text() === 'Добавить подписку')!
+    const save = w.findAll('button').find((b) => b.text() === 'Добавить платёж')!
     await save.trigger('click')
     expect(w.text()).toContain('Введите название')
     await w.find('input[placeholder="Netflix, Spotify…"]').setValue('X')
@@ -40,7 +44,7 @@ describe('SubscriptionForm', () => {
     const w = mountForm()
     await w.find('input[placeholder="Netflix, Spotify…"]').setValue('Netflix')
     await w.find('input[inputmode="decimal"]').setValue('499.50')
-    const save = w.findAll('button').find((b) => b.text() === 'Добавить подписку')!
+    const save = w.findAll('button').find((b) => b.text() === 'Добавить платёж')!
     await save.trigger('click')
     await flushPromises()
     const subs = await listSubscriptions()
@@ -75,28 +79,34 @@ describe('SubscriptionForm', () => {
     w.unmount()
   })
 
-  it('deletes via the confirm sheet and emits deleted', async () => {
+  it('autosaves edits in edit mode without emitting saved', async () => {
     const s = await createSubscription({
-      name: 'Doomed',
-      priceMinor: 100,
+      name: 'Old Name',
+      priceMinor: 12300,
       currency: 'RUB',
       periodDays: 30,
       startDate: '2026-01-10',
       nextPaymentDate: '2026-02-10',
     })
+    vi.useFakeTimers()
     const w = mountForm(s.id)
     await flushPromises()
-    const del = w.findAll('button').find((b) => b.text().includes('Удалить подписку'))!
-    await del.trigger('click')
+    await w.find('input[placeholder="Netflix, Spotify…"]').setValue('Auto Name')
+    await vi.advanceTimersByTimeAsync(900)
     await flushPromises()
-    const confirm = [...document.body.querySelectorAll('button')].find(
-      (b) => b.textContent?.trim() === 'Удалить',
-    )
-    expect(confirm).toBeTruthy()
-    await new DOMWrapper(confirm!).trigger('click')
+    expect((await getSubscription(s.id))?.name).toBe('Auto Name')
+    expect(w.emitted('saved')).toBeUndefined()
+    w.unmount()
+  })
+
+  it('does not autosave in create mode', async () => {
+    vi.useFakeTimers()
+    const w = mountForm()
     await flushPromises()
-    expect(await getSubscription(s.id)).toBeNull()
-    expect(w.emitted('deleted')).toHaveLength(1)
+    await w.find('input[placeholder="Netflix, Spotify…"]').setValue('Typed')
+    await vi.advanceTimersByTimeAsync(900)
+    await flushPromises()
+    expect(await listSubscriptions()).toHaveLength(0)
     w.unmount()
   })
 })
