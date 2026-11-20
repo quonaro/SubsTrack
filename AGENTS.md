@@ -183,6 +183,12 @@ newer schema. Every schema/data change must preserve that:
 ## UI
 
 - All buttons must be the same height: 36px.
+- Strive for contrast: interactive controls (buttons, inputs, option
+  fields, segments) must stand out from the card they sit in — don't
+  reuse `bg-app-card` inside a card, give them `bg-app-bg` with a visible
+  border. Selected/active state is a solid accent fill (`bg-accent` +
+  `text-accent-fg`), not a faint `bg-accent/20` tint; labels use
+  `text-app-text`, not muted colours.
 
 ## Testing
 
