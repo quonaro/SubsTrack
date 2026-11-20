@@ -2,6 +2,7 @@ import { DOMWrapper, flushPromises, mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import SubCard from './SubCard.vue'
 import { store } from '../store'
+import { ONE_TIME_PERIOD_DAYS } from '../domain/dates'
 import type { Subscription } from '../types'
 
 const sub = (over: Partial<Subscription> = {}): Subscription => ({
@@ -10,9 +11,11 @@ const sub = (over: Partial<Subscription> = {}): Subscription => ({
   priceMinor: 99900,
   currency: 'RUB',
   periodDays: 30,
+  isOneTime: false,
   startDate: '2026-01-01',
   nextPaymentDate: '2099-01-01',
   icon: '🎬',
+  iconColor: null,
   isActive: true,
   reminderEnabled: true,
   categoryId: null,
@@ -29,6 +32,28 @@ describe('SubCard', () => {
     expect(w.text()).toContain('999')
     expect(w.text()).toContain('Ежемесячно')
     expect(w.find('button').text()).toContain('999')
+  })
+
+  it('tints the icon tile with the subscription color, else the category color', () => {
+    store.categories = [{ id: 3, name: 'Видео', color: '#22c55e', icon: 'film', createdAt: '' }]
+    const own = mount(SubCard, {
+      props: { sub: sub({ iconColor: '#a855f7', categoryId: 3 }) },
+    })
+    expect(own.find('.h-11').attributes('style')).toContain('168, 85, 247')
+    own.unmount()
+
+    const inherited = mount(SubCard, { props: { sub: sub({ categoryId: 3 }) } })
+    expect(inherited.find('.h-11').attributes('style')).toContain('34, 197, 94')
+    inherited.unmount()
+  })
+
+  it('labels a one-time purchase in place of the period', () => {
+    const w = mount(SubCard, {
+      props: { sub: sub({ isOneTime: true, periodDays: ONE_TIME_PERIOD_DAYS }) },
+    })
+    expect(w.text()).toContain('Разово')
+    expect(w.text()).not.toContain('Ежемесячно')
+    w.unmount()
   })
 
   it('emits paid with the subscription id after confirming in the sheet', async () => {

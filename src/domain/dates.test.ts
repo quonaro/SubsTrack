@@ -6,8 +6,10 @@ import {
   firstPaymentOnOrAfter,
   formatDateRu,
   nextPaymentAfter,
+  ONE_TIME_PERIOD_DAYS,
   parseIsoDate,
   paymentDatesInRange,
+  periodLabel,
   toIsoDate,
 } from './dates'
 
@@ -54,6 +56,22 @@ describe('dates', () => {
     expect(d2).toEqual(['2026-01-19', '2026-02-18'])
     // empty when nothing falls inside
     expect(paymentDatesInRange('2026-01-01', 365, '2026-02-01', '2026-02-28')).toEqual([])
+  })
+
+  it('labels presets, custom periods and one-time purchases', () => {
+    expect(periodLabel(30)).toBe('Ежемесячно')
+    expect(periodLabel(45)).toBe('Каждые 45 дн.')
+    expect(periodLabel(ONE_TIME_PERIOD_DAYS, true)).toBe('Разово')
+  })
+
+  it('keeps a one-time purchase on its single date', () => {
+    expect(
+      paymentDatesInRange('2026-01-05', ONE_TIME_PERIOD_DAYS, '2026-01-01', '2026-01-31', true),
+    ).toEqual(['2026-01-05'])
+    // outside the range the one-time payment is not repeated
+    expect(
+      paymentDatesInRange('2025-12-05', ONE_TIME_PERIOD_DAYS, '2026-01-01', '2026-01-31', true),
+    ).toEqual([])
   })
 
   it('formats russian dates and relative days', () => {

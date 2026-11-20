@@ -88,9 +88,13 @@ transaction (jeep-sqlite rejects nested ones), statements are
 idempotent instead. See **Database** for the compatibility rules.
 
 Schema (see `schema.ts`): `categories`, `subscriptions` (money as
-`price_minor` integer minor units, `period_days` flexible cycle, ISO
-date strings), `payments`, `notify_rules` (advance/payment_day/recurring
-per subscription), `events` (audit log), `settings` (key/value).
+`price_minor` integer minor units, `period_days` flexible cycle,
+`is_one_time` for one-off purchases — `period_days` then holds
+`ONE_TIME_PERIOD_DAYS` (~100 years) so older builds don't repeat them,
+ISO date strings, `icon_color` optional tile background — NULL inherits
+the category color), `payments`, `notify_rules`
+(advance/payment_day/recurring per subscription), `events` (audit log),
+`settings` (key/value).
 
 `src/domain/` — pure logic is split from DB access so it's testable:
 - `dates.ts` — ISO-date math, `nextPaymentAfter`/`firstPaymentOnOrAfter`
@@ -117,9 +121,14 @@ to the list — create/edit live in sheets, not routes.
 
 `src/components/` — Reka UI primitives (Dialog → `Modal.vue` bottom
 sheets, Switch → `ToggleSwitch.vue`) plus `OptionField` (field → option
-modal), `EmojiPicker`, `SubCard`, `Icon`, `SubscriptionForm` (shared
-create/edit form + rules editor + category manager — `subId` prop:
-null → create, id → edit; emits `saved`/`deleted`),
+modal), `IconPicker` (searchable minimalist pack, data in
+`src/domain/iconPack.ts`, `searchIcons` in `src/domain/icons.ts`),
+`AppIcon` (renders a pack name from the generated `src/icons/paths.ts`,
+or an emoji picked by older builds), `ColorSwatches` (icon tile color),
+`SubCard`, `Icon`,
+`SubscriptionForm` (shared create/edit form + rules editor + category
+manager — `subId` prop: null → create, id → edit; emits
+`saved`/`deleted`),
 `SubscriptionEditModal` (edit `Modal` wrapping `SubscriptionForm`;
 `subId` null → closed, emits `close`/`deleted`), `PageSkeleton`
 (animated
@@ -183,6 +192,11 @@ newer schema. Every schema/data change must preserve that:
 ## UI
 
 - All buttons must be the same height: 36px.
+- Destructive actions (delete subscription, delete category, wipe/reset
+  data, …) must never fire straight from the tap: open a confirmation
+  sheet first, using `ConfirmModal.vue` (title + message naming what is
+  lost + «Отмена» / red confirm button). Add new destructive paths
+  through that component, not an inline copy of it.
 - Strive for contrast: interactive controls (buttons, inputs, option
   fields, segments) must stand out from the card they sit in — don't
   reuse `bg-app-card` inside a card, give them `bg-app-bg` with a visible

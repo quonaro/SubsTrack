@@ -9,6 +9,7 @@ import ToggleSwitch from '../components/ToggleSwitch.vue'
 import Modal from '../components/Modal.vue'
 import SubscriptionForm from '../components/SubscriptionForm.vue'
 import SubscriptionEditModal from '../components/SubscriptionEditModal.vue'
+import ConfirmModal from '../components/ConfirmModal.vue'
 import Icon from '../components/Icon.vue'
 import { pluralRu } from '../domain/plural'
 
@@ -274,30 +275,16 @@ const subsWord = computed(() =>
       </Transition>
     </Teleport>
 
-    <Modal
+    <ConfirmModal
       :open="pendingDelete != null"
       title="Удалить платёж?"
+      :message="
+        pendingDelete
+          ? `«${pendingDelete.name}» и история его платежей будут удалены безвозвратно.`
+          : undefined
+      "
       @update:open="!$event && (pendingDelete = null)"
-    >
-      <p class="mb-5 text-sm text-app-text-muted">
-        «{{ pendingDelete?.name }}» и история его платежей будут удалены безвозвратно.
-      </p>
-      <div class="flex gap-3">
-        <button
-          type="button"
-          class="flex h-9 flex-1 items-center justify-center rounded-xl border border-app-border"
-          @click="pendingDelete = null"
-        >
-          Отмена
-        </button>
-        <button
-          type="button"
-          class="flex h-9 flex-1 items-center justify-center rounded-xl bg-red-600 font-medium"
-          @click="confirmDeleteSub"
-        >
-          Удалить
-        </button>
-      </div>
-    </Modal>
+      @confirm="confirmDeleteSub"
+    />
   </div>
 </template>

@@ -5,8 +5,10 @@ import {
   paymentHistoryByMonth,
   perPeriodMinor,
   upcomingPayments,
+  yearlyTotalMinor,
 } from './stats'
 import type { Category, Payment, Subscription } from '../types'
+import { ONE_TIME_PERIOD_DAYS } from './dates'
 
 const sub = (over: Partial<Subscription> = {}): Subscription => ({
   id: 1,
@@ -14,9 +16,11 @@ const sub = (over: Partial<Subscription> = {}): Subscription => ({
   priceMinor: 30000,
   currency: 'RUB',
   periodDays: 30,
+  isOneTime: false,
   startDate: '2026-01-01',
   nextPaymentDate: '2026-03-01',
   icon: '📦',
+  iconColor: null,
   isActive: true,
   reminderEnabled: true,
   categoryId: null,
@@ -44,6 +48,19 @@ describe('stats', () => {
     expect(monthlyTotalMinor(subs, 'RUB')).toBe(30000)
   })
 
+  it('leaves one-time purchases out of the recurring run rate', () => {
+    const oneTime = sub({
+      id: 2,
+      priceMinor: 500000,
+      isOneTime: true,
+      periodDays: ONE_TIME_PERIOD_DAYS,
+    })
+    expect(perPeriodMinor(oneTime, 30, 'RUB')).toBe(0)
+    const subs = [sub({ id: 1, priceMinor: 30000 }), oneTime]
+    expect(monthlyTotalMinor(subs, 'RUB')).toBe(30000)
+    expect(yearlyTotalMinor(subs, 'RUB')).toBe(365000)
+  })
+
   it('converts totals into the base currency', () => {
     // 95 USD/month at 95 RUB/USD → 9025 RUB/month
     const total = monthlyTotalMinor([sub({ currency: 'USD', priceMinor: 9500 })], 'RUB')
@@ -60,6 +77,13 @@ describe('stats', () => {
       sub({ id: 2, categoryId: 2, priceMinor: 60000 }),
       sub({ id: 3, categoryId: null, priceMinor: 30000 }),
       sub({ id: 4, categoryId: 1, priceMinor: 5000, isActive: false }),
+      sub({
+        id: 5,
+        categoryId: 2,
+        priceMinor: 500000,
+        isOneTime: true,
+        periodDays: ONE_TIME_PERIOD_DAYS,
+      }),
     ]
     const bd = categoryBreakdown(subs, cats, 'RUB')
     expect(bd[0].category?.id).toBe(2)

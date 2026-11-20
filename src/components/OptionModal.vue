@@ -1,4 +1,5 @@
 <script setup lang="ts" generic="T">
+import AppIcon from './AppIcon.vue'
 import Icon from './Icon.vue'
 import Modal from './Modal.vue'
 
@@ -34,7 +35,7 @@ function pick(o: Option<T>) {
         :class="{ 'bg-app-card': o.value === modelValue }"
         @click="pick(o)"
       >
-        <span v-if="o.icon" class="text-xl">{{ o.icon }}</span>
+        <AppIcon v-if="o.icon" :name="o.icon" :size="20" />
         <span class="flex-1">
           <span class="block">{{ o.label }}</span>
           <span v-if="o.hint" class="block text-xs text-app-text-muted">{{ o.hint }}</span>

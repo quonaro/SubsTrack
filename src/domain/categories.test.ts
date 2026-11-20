@@ -44,7 +44,7 @@ describe('categories (sqlite)', () => {
 
   it('falls back to default icon and the accent color', async () => {
     const c = await createCategory({ name: 'Без всего' })
-    expect(c.icon).toBe('📁')
+    expect(c.icon).toBe('folder')
     expect(c.color).toBe(ACCENTS.orange.value)
   })
 

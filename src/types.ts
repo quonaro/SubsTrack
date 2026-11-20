@@ -16,11 +16,15 @@ export interface Subscription {
   currency: string
   /** Billing period in days (7 / 30 / 90 / 365 / custom). */
   periodDays: number
+  /** One-off purchase: charged once and archived after payment. */
+  isOneTime: boolean
   /** ISO date — initial payment anchor. */
   startDate: string
   /** ISO date — next scheduled payment. */
   nextPaymentDate: string
   icon: string
+  /** Icon tile background; null → inherit the category color. */
+  iconColor: string | null
   isActive: boolean
   reminderEnabled: boolean
   categoryId: number | null

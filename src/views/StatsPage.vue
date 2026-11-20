@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { store, monthlyTotal, yearlyTotal } from '../store'
 import { categoryBreakdown, paymentHistoryByMonth } from '../domain/stats'
 import { formatMoney } from '../domain/currency'
+import AppIcon from '../components/AppIcon.vue'
 import EmptyState from '../components/EmptyState.vue'
 import Icon from '../components/Icon.vue'
 
@@ -59,7 +60,10 @@ const monthLabel = (m: string) => MONTH_SHORT[Number(m.slice(5)) - 1]
       <div v-if="breakdown.length" class="flex flex-col gap-3 rounded-2xl border border-app-border bg-app-card p-4">
         <div v-for="b in breakdown" :key="b.category?.id ?? 'none'">
           <div class="mb-1 flex justify-between text-sm">
-            <span>{{ b.category?.icon ?? '📦' }} {{ b.category?.name ?? 'Без категории' }}</span>
+            <span class="flex items-center gap-1.5">
+              <AppIcon :name="b.category?.icon ?? 'package'" :size="14" />
+              {{ b.category?.name ?? 'Без категории' }}
+            </span>
             <span class="font-medium">{{ formatMoney(b.totalMinor, cur) }}</span>
           </div>
           <div class="h-2 overflow-hidden rounded-full bg-app-bg">

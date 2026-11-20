@@ -64,7 +64,7 @@ const overlayClass = computed(() =>
         <div
           v-if="isMobile"
           :inert="pushedDown || undefined"
-          class="flex max-h-[85dvh] w-full flex-col overflow-hidden rounded-t-2xl border-t border-app-border bg-app-bg2 transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]"
+          class="flex max-h-[85dvh] w-full flex-col overflow-hidden rounded-t-2xl border-t border-app-border bg-app-bg2 transition-[translate,opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]"
           :class="
             pushedDown
               ? 'pointer-events-none translate-y-full opacity-0'
@@ -89,7 +89,7 @@ const overlayClass = computed(() =>
         <div
           v-else
           :inert="pushedDown || undefined"
-          class="max-h-[85vh] w-full max-w-md overflow-y-auto rounded-2xl border border-app-border bg-app-bg2 p-5 transition-[transform,opacity] duration-200 ease-out"
+          class="max-h-[85vh] w-full max-w-md overflow-y-auto rounded-2xl border border-app-border bg-app-bg2 p-5 transition-[translate,scale,opacity] duration-200 ease-out"
           :class="
             pushedDown
               ? 'pointer-events-none translate-y-6 scale-95 opacity-0'

@@ -7,7 +7,7 @@ import { getDb } from '../db'
 import { createCategory, listCategories } from '../domain/categories'
 import { createSubscription } from '../domain/subscriptions'
 import { replaceRules } from '../domain/rules'
-import { addDays, firstPaymentOnOrAfter, todayIso } from '../domain/dates'
+import { addDays, firstPaymentOnOrAfter, ONE_TIME_PERIOD_DAYS, todayIso } from '../domain/dates'
 import { EXTRA_CATEGORIES, SUBS, type SeedSub } from './seed-data'
 import { logger } from '../log'
 
@@ -32,6 +32,7 @@ async function ensureCategory(
  * half of the history is written 20% cheaper — a fake price increase.
  */
 async function seedHistory(subId: number, spec: SeedSub, nextPaymentDate: string): Promise<void> {
+  if (spec.isOneTime) return
   const db = await getDb()
   const count = spec.history ?? 0
   for (let i = 1; i <= count; i++) {
@@ -70,12 +71,15 @@ export async function seedDemoData(): Promise<{ subs: number }> {
     const next =
       spec.nextIn != null
         ? addDays(today, spec.nextIn)
-        : firstPaymentOnOrAfter(start, spec.periodDays, today)
+        : spec.isOneTime
+          ? start
+          : firstPaymentOnOrAfter(start, spec.periodDays, today)
     const sub = await createSubscription({
       name: spec.name,
       priceMinor: spec.priceMinor,
       currency: spec.currency,
-      periodDays: spec.periodDays,
+      periodDays: spec.isOneTime ? ONE_TIME_PERIOD_DAYS : spec.periodDays,
+      isOneTime: spec.isOneTime,
       startDate: start,
       nextPaymentDate: next,
       icon: spec.icon,

@@ -27,15 +27,32 @@ const MONTHS = [
   'Декабрь',
 ]
 
+const MONTHS_GENITIVE = [
+  'января',
+  'февраля',
+  'марта',
+  'апреля',
+  'мая',
+  'июня',
+  'июля',
+  'августа',
+  'сентября',
+  'октября',
+  'ноября',
+  'декабря',
+]
+
 const sub = (over: Partial<Subscription> = {}): Subscription => ({
   id: 1,
   name: 'Netflix',
   priceMinor: 99900,
   currency: 'RUB',
   periodDays: 30,
+  isOneTime: false,
   startDate: '2026-01-01',
   nextPaymentDate: todayIso(),
   icon: '🎬',
+  iconColor: null,
   isActive: true,
   reminderEnabled: true,
   categoryId: null,
@@ -126,6 +143,16 @@ describe('CalendarPage', () => {
     await grid.trigger('scroll')
     await flushPromises()
     expect(w.findAll('section[data-month]').length).toBe(19)
+  })
+
+  it('opens the day sheet with the date spelled out', async () => {
+    store.subscriptions = [sub()]
+    const w = mount(CalendarPage, { global: { plugins: [router()] } })
+    await flushPromises()
+    await w.find('.ring-accent').trigger('click')
+    await flushPromises()
+    const [y, m, d] = todayIso().split('-').map(Number)
+    expect(document.body.textContent).toContain(`${d} ${MONTHS_GENITIVE[m - 1]} ${y}`)
   })
 
   it('fills leading and trailing blanks with disabled dates of adjacent months', async () => {

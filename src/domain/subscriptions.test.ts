@@ -15,6 +15,7 @@ import {
 } from './subscriptions'
 import { listEvents } from './events'
 import { listPayments } from './payments'
+import { ONE_TIME_PERIOD_DAYS } from './dates'
 import { listRules, replaceRules } from './rules'
 import { listCategories, seedCategoriesIfEmpty } from './categories'
 import { getSetting, setSetting } from './settings'
@@ -56,6 +57,16 @@ describe('subscriptions (sqlite)', () => {
     const events = await listEvents()
     expect(events[0].type).toBe('created')
     expect(events[0].subscriptionId).toBe(s.id)
+  })
+
+  it('stores the icon color and clears it back to inherit', async () => {
+    const s = await createSubscription({ ...input(), iconColor: '#a855f7' })
+    expect(s.iconColor).toBe('#a855f7')
+    expect((await getSubscription(s.id))?.iconColor).toBe('#a855f7')
+    const cleared = await updateSubscription(s.id, { iconColor: null })
+    expect(cleared?.iconColor).toBeNull()
+    const ev = (await listEvents()).find((e) => e.type === 'updated')
+    expect(JSON.parse(ev!.payload!).changes.iconColor).toEqual({ from: '#a855f7', to: null })
   })
 
   it('updates a subscription and records changed fields', async () => {
@@ -103,6 +114,31 @@ describe('subscriptions (sqlite)', () => {
     // next candidate strictly after 2026-03-10 stepping 30d from 2026-01-01:
     // 2026-03-02 is before, 2026-04-01 is after.
     expect(next?.nextPaymentDate).toBe('2026-04-01')
+  })
+
+  it('archives a one-time purchase after payment instead of rolling it', async () => {
+    const s = await createSubscription({
+      ...input(),
+      periodDays: ONE_TIME_PERIOD_DAYS,
+      isOneTime: true,
+      nextPaymentDate: '2026-03-15',
+    })
+    expect(s.isOneTime).toBe(true)
+    const after = await markPaid(s.id, '2026-03-15')
+    expect(after?.isActive).toBe(false)
+    // no roll — the paid date stays the anchor
+    expect(after?.nextPaymentDate).toBe('2026-03-15')
+    expect(await listSubscriptions()).toHaveLength(0)
+    expect(await listSubscriptions(true)).toHaveLength(1)
+    expect(await listPayments(s.id)).toHaveLength(1)
+    const ev = (await listEvents()).find((e) => e.type === 'payment')
+    expect(JSON.parse(ev!.payload!).archived).toBe(true)
+  })
+
+  it('clears the one-time flag when a purchase becomes recurring', async () => {
+    const s = await createSubscription({ ...input(), isOneTime: true })
+    const upd = await updateSubscription(s.id, { isOneTime: false, periodDays: 30 })
+    expect(upd?.isOneTime).toBe(false)
   })
 
   it('deletes a subscription and nulls out history references', async () => {

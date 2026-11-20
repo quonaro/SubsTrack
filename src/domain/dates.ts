@@ -68,15 +68,18 @@ export function firstPaymentOnOrAfter(
 
 /**
  * All payment dates of a subscription inside [fromIso, toIso], stepping
- * `periodDays` from `anchorIso` (the start/next_payment anchor). The loop is
- * bounded — a degenerate range or period can't hang the UI.
+ * `periodDays` from `anchorIso` (the start/next_payment anchor). One-time
+ * purchases only ever hit the single anchored date. The loop is bounded — a
+ * degenerate range or period can't hang the UI.
  */
 export function paymentDatesInRange(
   anchorIso: string,
   periodDays: number,
   fromIso: string,
   toIso: string,
+  isOneTime = false,
 ): string[] {
+  if (isOneTime) return anchorIso >= fromIso && anchorIso <= toIso ? [anchorIso] : []
   const step = Math.max(1, periodDays)
   let cursor = anchorIso
   let guard = 0
@@ -100,7 +103,14 @@ export const PERIOD_PRESETS = [
   { label: 'Ежегодно', days: 365 },
 ] as const
 
-export function periodLabel(days: number): string {
+/**
+ * `period_days` stored for one-time purchases (~100 years): builds that don't
+ * know about `is_one_time` read it literally and thus never roll the payment.
+ */
+export const ONE_TIME_PERIOD_DAYS = 36500
+
+export function periodLabel(days: number, isOneTime = false): string {
+  if (isOneTime) return 'Разово'
   const preset = PERIOD_PRESETS.find((p) => p.days === days)
   if (preset) return preset.label
   return `Каждые ${days} дн.`

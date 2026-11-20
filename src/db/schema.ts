@@ -71,6 +71,13 @@ const SCHEMA: string[][] = [
   // v1 -> v2: recolor categories created with the old violet default to the
   // accent color.
   [`UPDATE categories SET color='#f15a24' WHERE color='#8b5cf6'`],
+  // v2 -> v3: one-time purchases. Older builds don't know the flag and read
+  // period_days literally (stored as ~100 years for one-time subs), so they
+  // just treat them as a very long cycle instead of repeating them.
+  [`ALTER TABLE subscriptions ADD COLUMN is_one_time INTEGER NOT NULL DEFAULT 0`],
+  // v3 -> v4: optional tile background for the subscription icon. NULL means
+  // «use the category color»; old builds ignore the extra column.
+  [`ALTER TABLE subscriptions ADD COLUMN icon_color TEXT`],
 ]
 
 export async function migrate(db?: Db): Promise<void> {
@@ -83,7 +90,13 @@ export async function migrate(db?: Db): Promise<void> {
     const statements = SCHEMA[version]
     log.info('applying migration', version, '->', version + 1)
     try {
-      for (const stmt of statements) await conn.execute(stmt)
+      for (const stmt of statements) {
+        // ALTER TABLE has no IF NOT EXISTS: a retry after a crash between the
+        // ALTER and the version bump would fail on the existing column.
+        const added = addedColumn(stmt)
+        if (added && (await hasColumn(conn, added.table, added.column))) continue
+        await conn.execute(stmt)
+      }
     } catch (e) {
       log.error('migration failed', version, e)
       throw e
@@ -91,4 +104,14 @@ export async function migrate(db?: Db): Promise<void> {
     await conn.execute(`PRAGMA user_version = ${version + 1}`)
     version += 1
   }
+}
+
+function addedColumn(stmt: string): { table: string; column: string } | null {
+  const m = /^\s*ALTER\s+TABLE\s+(\w+)\s+ADD\s+COLUMN\s+(\w+)/i.exec(stmt)
+  return m ? { table: m[1], column: m[2] } : null
+}
+
+async function hasColumn(conn: Db, table: string, column: string): Promise<boolean> {
+  const res = await conn.query(`PRAGMA table_info(${table})`)
+  return (res.values ?? []).some((r) => String(r.name) === column)
 }

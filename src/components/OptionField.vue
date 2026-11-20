@@ -4,12 +4,17 @@ import Icon from './Icon.vue'
 import OptionModal from './OptionModal.vue'
 import type { Option } from './OptionModal.vue'
 
-defineProps<{
-  modelValue: T
-  options: Option<T>[]
-  label?: string
-  placeholder?: string
-}>()
+withDefaults(
+  defineProps<{
+    modelValue: T
+    options: Option<T>[]
+    label?: string
+    placeholder?: string
+    /** Surface the field sits on: cards use bg-app-card, so nested ones need bg-app-bg/bg-app-bg2. */
+    bg?: 'card' | 'bg' | 'bg2'
+  }>(),
+  { bg: 'card' },
+)
 const emit = defineEmits<{ 'update:modelValue': [T] }>()
 
 const open = ref(false)
@@ -20,7 +25,8 @@ const open = ref(false)
     <label v-if="label" class="mb-1.5 block text-xs font-medium text-app-text-muted">{{ label }}</label>
     <button
       type="button"
-      class="flex h-9 w-full items-center justify-between rounded-xl border border-app-border bg-app-card px-4 text-left"
+      class="flex h-9 w-full items-center justify-between rounded-xl border border-app-border px-4 text-left"
+      :class="bg === 'bg' ? 'bg-app-bg' : bg === 'bg2' ? 'bg-app-bg2' : 'bg-app-card'"
       @click="open = true"
     >
       <span :class="{ 'text-app-text-muted': modelValue == null }">

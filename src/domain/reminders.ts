@@ -4,6 +4,7 @@ import type { NotifyRule, Subscription } from '../types'
 import { addDays, daysUntilText, diffDays } from './dates'
 import { formatMoney } from './currency'
 import { logger } from '../log'
+import { iconText } from './icons'
 
 const log = logger('reminders')
 
@@ -36,10 +37,12 @@ export function fireDate(dateIso: string, atTime: string | null): Date {
 function reminderBody(sub: Subscription, todayIso: string): string {
   const days = diffDays(sub.nextPaymentDate, todayIso)
   const price = formatMoney(sub.priceMinor, sub.currency)
-  if (days === 0) return `${sub.icon} ${sub.name} — платёж сегодня: ${price}`
+  const icon = iconText(sub.icon)
+  const prefix = icon ? `${icon} ` : ''
+  if (days === 0) return `${prefix}${sub.name} — платёж сегодня: ${price}`
   if (days > 0)
-    return `${sub.icon} ${sub.name} — платёж ${daysUntilText(days)} (${sub.nextPaymentDate}): ${price}`
-  return `${sub.icon} ${sub.name} — платёж просрочен на ${daysUntilText(Math.abs(days))}: ${price}`
+    return `${prefix}${sub.name} — платёж ${daysUntilText(days)} (${sub.nextPaymentDate}): ${price}`
+  return `${prefix}${sub.name} — платёж просрочен на ${daysUntilText(Math.abs(days))}: ${price}`
 }
 
 /**

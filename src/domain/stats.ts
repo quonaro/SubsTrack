@@ -6,19 +6,21 @@ import { monthKey } from './dates'
 
 /** Cost of one active subscription expressed per `days` days, in minor units. */
 export function perPeriodMinor(sub: Subscription, days: number, toCurrency: string): number {
+  // One-time purchases have no run rate — they only show up in payment history.
+  if (sub.isOneTime || sub.periodDays <= 0) return 0
   const perDay = sub.priceMinor / sub.periodDays
   return Math.round(convertMinor(perDay * days, sub.currency, toCurrency))
 }
 
 export function monthlyTotalMinor(subs: Subscription[], toCurrency: string): number {
   return subs
-    .filter((s) => s.isActive)
+    .filter((s) => s.isActive && !s.isOneTime)
     .reduce((acc, s) => acc + perPeriodMinor(s, 30, toCurrency), 0)
 }
 
 export function yearlyTotalMinor(subs: Subscription[], toCurrency: string): number {
   return subs
-    .filter((s) => s.isActive)
+    .filter((s) => s.isActive && !s.isOneTime)
     .reduce((acc, s) => acc + perPeriodMinor(s, 365, toCurrency), 0)
 }
 
@@ -35,7 +37,7 @@ export function categoryBreakdown(
   toCurrency: string,
 ): CategorySlice[] {
   const map = new Map<number | null, CategorySlice>()
-  for (const s of subs.filter((x) => x.isActive)) {
+  for (const s of subs.filter((x) => x.isActive && !x.isOneTime)) {
     const key = s.categoryId
     const slice =
       map.get(key) ??

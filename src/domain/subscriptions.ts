@@ -12,9 +12,11 @@ interface SubRow {
   price_minor: number
   currency: string
   period_days: number
+  is_one_time: number
   start_date: string
   next_payment_date: string
   icon: string
+  icon_color: string | null
   is_active: number
   reminder_enabled: number
   category_id: number | null
@@ -23,8 +25,8 @@ interface SubRow {
   updated_at: string
 }
 
-const SELECT = `SELECT id, name, price_minor, currency, period_days, start_date,
-  next_payment_date, icon, is_active, reminder_enabled, category_id, notes,
+const SELECT = `SELECT id, name, price_minor, currency, period_days, is_one_time, start_date,
+  next_payment_date, icon, icon_color, is_active, reminder_enabled, category_id, notes,
   created_at, updated_at FROM subscriptions`
 
 function toSub(r: SubRow): Subscription {
@@ -34,9 +36,11 @@ function toSub(r: SubRow): Subscription {
     priceMinor: r.price_minor,
     currency: r.currency,
     periodDays: r.period_days,
+    isOneTime: !!r.is_one_time,
     startDate: r.start_date,
     nextPaymentDate: r.next_payment_date,
     icon: r.icon,
+    iconColor: r.icon_color,
     isActive: !!r.is_active,
     reminderEnabled: !!r.reminder_enabled,
     categoryId: r.category_id,
@@ -51,9 +55,11 @@ export interface SubscriptionInput {
   priceMinor: number
   currency: string
   periodDays: number
+  isOneTime?: boolean
   startDate: string
   nextPaymentDate: string
   icon?: string
+  iconColor?: string | null
   isActive?: boolean
   reminderEnabled?: boolean
   categoryId?: number | null
@@ -79,17 +85,19 @@ export async function createSubscription(input: SubscriptionInput): Promise<Subs
   const now = new Date().toISOString()
   const res = await db.run(
     `INSERT INTO subscriptions
-      (name, price_minor, currency, period_days, start_date, next_payment_date,
-       icon, is_active, reminder_enabled, category_id, notes, created_at, updated_at)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      (name, price_minor, currency, period_days, is_one_time, start_date, next_payment_date,
+       icon, icon_color, is_active, reminder_enabled, category_id, notes, created_at, updated_at)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
     [
       input.name,
       input.priceMinor,
       input.currency,
       input.periodDays,
+      input.isOneTime ? 1 : 0,
       input.startDate,
       input.nextPaymentDate,
-      input.icon ?? '📦',
+      input.icon ?? 'package',
+      input.iconColor ?? null,
       input.isActive === false ? 0 : 1,
       input.reminderEnabled === false ? 0 : 1,
       input.categoryId ?? null,
@@ -115,17 +123,19 @@ export async function updateSubscription(
   if (!before) return null
   const merged = { ...before, ...patch }
   await db.run(
-    `UPDATE subscriptions SET name=?, price_minor=?, currency=?, period_days=?,
-       start_date=?, next_payment_date=?, icon=?, is_active=?, reminder_enabled=?,
+    `UPDATE subscriptions SET name=?, price_minor=?, currency=?, period_days=?, is_one_time=?,
+       start_date=?, next_payment_date=?, icon=?, icon_color=?, is_active=?, reminder_enabled=?,
        category_id=?, notes=?, updated_at=? WHERE id=?`,
     [
       merged.name,
       merged.priceMinor,
       merged.currency,
       merged.periodDays,
+      merged.isOneTime ? 1 : 0,
       merged.startDate,
       merged.nextPaymentDate,
       merged.icon,
+      merged.iconColor,
       merged.isActive ? 1 : 0,
       merged.reminderEnabled ? 1 : 0,
       merged.categoryId,
@@ -164,7 +174,8 @@ export async function deleteSubscription(id: number): Promise<void> {
 
 /**
  * Record a payment for `paidIso` (defaults to today) and roll
- * next_payment_date forward past it, skipping any missed periods.
+ * next_payment_date forward past it, skipping any missed periods. A one-time
+ * purchase has nothing to roll: it is archived once paid.
  */
 export async function markPaid(id: number, paidIso?: string): Promise<Subscription | null> {
   const db = await getDb()
@@ -175,18 +186,27 @@ export async function markPaid(id: number, paidIso?: string): Promise<Subscripti
     'INSERT INTO payments (subscription_id, amount_minor, currency, paid_date, created_at) VALUES (?,?,?,?,?)',
     [sub.id, sub.priceMinor, sub.currency, paid, new Date().toISOString()],
   )
-  const next = nextPaymentAfter(sub.nextPaymentDate, sub.periodDays, paid)
-  await db.run('UPDATE subscriptions SET next_payment_date=?, updated_at=? WHERE id=?', [
-    next,
-    new Date().toISOString(),
-    id,
-  ])
-  await recordEvent(id, 'payment', {
+  const details: Record<string, unknown> = {
     amountMinor: sub.priceMinor,
     currency: sub.currency,
     paidDate: paid,
-    nextPaymentDate: next,
-  })
-  log.info('payment recorded', id, paid, '->', next)
+  }
+  if (sub.isOneTime) {
+    await db.run('UPDATE subscriptions SET is_active=0, updated_at=? WHERE id=?', [
+      new Date().toISOString(),
+      id,
+    ])
+    details.archived = true
+  } else {
+    const next = nextPaymentAfter(sub.nextPaymentDate, sub.periodDays, paid)
+    await db.run('UPDATE subscriptions SET next_payment_date=?, updated_at=? WHERE id=?', [
+      next,
+      new Date().toISOString(),
+      id,
+    ])
+    details.nextPaymentDate = next
+  }
+  await recordEvent(id, 'payment', details)
+  log.info('payment recorded', id, paid, sub.isOneTime ? 'one-time → archived' : '')
   return getSubscription(id)
 }

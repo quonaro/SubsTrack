@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { markPaid, store } from '../store'
-import { paymentDatesInRange, todayIso } from '../domain/dates'
+import { categoryOf, markPaid, store } from '../store'
+import { formatDateRuFull, paymentDatesInRange, todayIso } from '../domain/dates'
 import { convertMinor, formatMoney } from '../domain/currency'
+import { iconTileBackground } from '../domain/colors'
 import { type CalendarMonth, monthId, monthWindow, shiftMonth } from '../domain/months'
+import AppIcon from '../components/AppIcon.vue'
 import Modal from '../components/Modal.vue'
 import SubscriptionEditModal from '../components/SubscriptionEditModal.vue'
 import Icon from '../components/Icon.vue'
@@ -69,6 +71,7 @@ function buildCells(year: number, month: number): DayCell[] {
       s.periodDays,
       iso(1),
       iso(daysInMonth),
+      s.isOneTime,
     )) {
       const list = byDay.get(d) ?? []
       list.push(s.id)
@@ -129,6 +132,9 @@ const monthSummary = computed(() => {
 })
 
 const selected = ref<DayCell | null>(null)
+const selectedTitle = computed(() =>
+  selected.value?.date ? formatDateRuFull(selected.value.date) : '',
+)
 const selectedSubs = computed(() =>
   (selected.value?.subs ?? [])
     .map((id) => store.subscriptions.find((s) => s.id === id))
@@ -228,7 +234,7 @@ function onScroll(): void {
 
     <Modal
       :open="!!selected"
-      :title="selected?.date"
+      :title="selectedTitle"
       @update:open="!$event && (selected = null)"
     >
       <div class="flex flex-col gap-2">
@@ -237,7 +243,12 @@ function onScroll(): void {
           :key="s.id"
           class="flex items-center gap-3 rounded-xl border border-app-border bg-app-card p-3"
         >
-          <span class="text-2xl">{{ s.icon }}</span>
+          <span
+            class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
+            :style="{ backgroundColor: iconTileBackground(s.iconColor, categoryOf(s)?.color) }"
+          >
+            <AppIcon :name="s.icon" :size="18" />
+          </span>
           <div class="min-w-0 flex-1">
             <div class="truncate font-medium">{{ s.name }}</div>
             <div class="text-xs text-app-text-muted">

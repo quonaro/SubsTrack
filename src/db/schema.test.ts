@@ -42,6 +42,33 @@ describe('schema migrations', () => {
     )
   })
 
+  it('adds the one-time flag and tolerates old-shape inserts', async () => {
+    await migrate(db)
+    const cols = (await db.query('PRAGMA table_info(subscriptions)')).values!.map((r) =>
+      String(r.name),
+    )
+    expect(cols).toContain('is_one_time')
+    expect(cols).toContain('icon_color')
+    // an old build's INSERT doesn't know the column — the DEFAULT must cover it
+    await db.run(
+      `INSERT INTO subscriptions (name, price_minor, currency, period_days, start_date,
+        next_payment_date, created_at, updated_at) VALUES ('S',100,'RUB',30,'2026-01-01','2026-01-01','t','t')`,
+    )
+    const row = (await db.query('SELECT is_one_time, icon_color FROM subscriptions')).values![0]
+    expect(Number(row.is_one_time)).toBe(0)
+    expect(row.icon_color).toBeNull()
+  })
+
+  it('retries a migration whose ALTER TABLE already ran', async () => {
+    await migrate(db)
+    const version = await userVersion()
+    expect(version).toBeGreaterThanOrEqual(3)
+    // simulate a crash between the ALTER and the version bump
+    await db.execute('PRAGMA user_version = 2')
+    await migrate(db)
+    expect(await userVersion()).toBe(version)
+  })
+
   it('bumps user_version and is idempotent', async () => {
     expect(await userVersion()).toBe(0)
     await migrate(db)

@@ -31,12 +31,12 @@ export const CATEGORY_COLORS = [
 ]
 
 const DEFAULT_CATEGORIES: { name: string; icon: string; color: string }[] = [
-  { name: 'Видео', icon: '🎬', color: '#ef4444' },
-  { name: 'Музыка', icon: '🎵', color: '#22c55e' },
-  { name: 'Игры', icon: '🎮', color: '#f15a24' },
-  { name: 'Облако', icon: '☁️', color: '#3b82f6' },
-  { name: 'Работа', icon: '💼', color: '#eab308' },
-  { name: 'Прочее', icon: '📦', color: '#6b7280' },
+  { name: 'Видео', icon: 'film', color: '#ef4444' },
+  { name: 'Музыка', icon: 'music', color: '#22c55e' },
+  { name: 'Игры', icon: 'gamepad-2', color: '#f15a24' },
+  { name: 'Облако', icon: 'cloud', color: '#3b82f6' },
+  { name: 'Работа', icon: 'briefcase', color: '#eab308' },
+  { name: 'Прочее', icon: 'package', color: '#6b7280' },
 ]
 
 export async function listCategories(): Promise<Category[]> {
@@ -54,7 +54,7 @@ export async function createCategory(input: {
   const accent = ACCENTS[await getSetting('accent')]?.value ?? ACCENTS.orange.value
   const res = await db.run(
     'INSERT INTO categories (name, icon, color, created_at) VALUES (?,?,?,?)',
-    [input.name, input.icon ?? '📁', input.color ?? accent, new Date().toISOString()],
+    [input.name, input.icon ?? 'folder', input.color ?? accent, new Date().toISOString()],
   )
   const id = lastId(res)
   const cats = await listCategories()

@@ -3,6 +3,8 @@ import { computed, ref } from 'vue'
 import type { Subscription } from '../types'
 import { categoryOf } from '../store'
 import { formatMoney } from '../domain/currency'
+import { iconTileBackground } from '../domain/colors'
+import AppIcon from './AppIcon.vue'
 import { daysUntilText, diffDays, formatDateRu, periodLabel, todayIso } from '../domain/dates'
 import Modal from './Modal.vue'
 
@@ -41,10 +43,10 @@ function onPayClick() {
     @click="onCardClick"
   >
     <div
-      class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-2xl"
-      :style="{ backgroundColor: (cat?.color ?? '#6b7280') + '26' }"
+      class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-app-text"
+      :style="{ backgroundColor: iconTileBackground(sub.iconColor, cat?.color) }"
     >
-      {{ sub.icon }}
+      <AppIcon :name="sub.icon" :size="22" />
     </div>
     <div class="min-w-0 flex-1">
       <div class="flex items-baseline justify-between gap-2">
@@ -55,8 +57,10 @@ function onPayClick() {
       </div>
       <div class="mt-0.5 flex items-center justify-between gap-2 text-xs text-app-text-muted">
         <span class="truncate">
-          {{ periodLabel(sub.periodDays) }}
-          <template v-if="cat"> · {{ cat.icon }} {{ cat.name }}</template>
+          {{ periodLabel(sub.periodDays, sub.isOneTime) }}
+          <template v-if="cat">
+            · <AppIcon :name="cat.icon" :size="12" class="inline-block align-[-1px]" /> {{ cat.name }}
+          </template>
           <template v-if="!sub.isActive"> · архив</template>
         </span>
         <span

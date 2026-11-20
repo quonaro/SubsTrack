@@ -15,6 +15,8 @@ export interface SeedSub {
   priceMinor: number
   currency: string
   periodDays: number
+  /** One-off purchase — periodDays is ignored, archived once paid. */
+  isOneTime?: boolean
   /** Days from today to the next payment (negative = overdue). */
   nextIn?: number
   /** Days since the subscription started. */
@@ -31,17 +33,17 @@ export interface SeedSub {
 }
 
 export const EXTRA_CATEGORIES: { name: string; icon: string; color: string }[] = [
-  { name: 'Связь', icon: '📱', color: '#14b8a6' },
-  { name: 'Спорт', icon: '💪', color: '#84cc16' },
-  { name: 'Образование', icon: '📚', color: '#eab308' },
-  { name: 'Финансы', icon: '💳', color: '#3b82f6' },
+  { name: 'Связь', icon: 'smartphone', color: '#14b8a6' },
+  { name: 'Спорт', icon: 'dumbbell', color: '#84cc16' },
+  { name: 'Образование', icon: 'book-open', color: '#eab308' },
+  { name: 'Финансы', icon: 'credit-card', color: '#3b82f6' },
 ]
 
 export const SUBS: SeedSub[] = [
   // --- Обычные подписки ---
   {
     name: 'YouTube Premium',
-    icon: '▶️',
+    icon: 'youtube',
     priceMinor: 29900,
     currency: 'RUB',
     periodDays: 30,
@@ -53,7 +55,7 @@ export const SUBS: SeedSub[] = [
   },
   {
     name: 'Spotify',
-    icon: '🎧',
+    icon: 'headphones',
     priceMinor: 1099,
     currency: 'USD',
     periodDays: 30,
@@ -65,7 +67,7 @@ export const SUBS: SeedSub[] = [
   },
   {
     name: 'Яндекс Плюс',
-    icon: '🟡',
+    icon: 'music',
     priceMinor: 39900,
     currency: 'RUB',
     periodDays: 30,
@@ -77,7 +79,7 @@ export const SUBS: SeedSub[] = [
   },
   {
     name: 'iCloud+ 200 ГБ',
-    icon: '☁️',
+    icon: 'cloud',
     priceMinor: 14900,
     currency: 'RUB',
     periodDays: 30,
@@ -89,7 +91,7 @@ export const SUBS: SeedSub[] = [
   },
   {
     name: 'Кинопоиск',
-    icon: '🍿',
+    icon: 'popcorn',
     priceMinor: 49900,
     currency: 'RUB',
     periodDays: 30,
@@ -100,7 +102,7 @@ export const SUBS: SeedSub[] = [
   },
   {
     name: 'Discord Nitro',
-    icon: '💬',
+    icon: 'message-circle',
     priceMinor: 999,
     currency: 'USD',
     periodDays: 30,
@@ -111,7 +113,7 @@ export const SUBS: SeedSub[] = [
   },
   {
     name: 'PS Plus Extra',
-    icon: '🎮',
+    icon: 'gamepad-2',
     priceMinor: 799900,
     currency: 'RUB',
     periodDays: 365,
@@ -125,7 +127,7 @@ export const SUBS: SeedSub[] = [
   },
   {
     name: 'GitHub Copilot',
-    icon: '🤖',
+    icon: 'bot',
     priceMinor: 10000,
     currency: 'USD',
     periodDays: 365,
@@ -135,7 +137,7 @@ export const SUBS: SeedSub[] = [
   },
   {
     name: 'Notion Plus',
-    icon: '📝',
+    icon: 'notebook-pen',
     priceMinor: 960,
     currency: 'USD',
     periodDays: 30,
@@ -146,7 +148,7 @@ export const SUBS: SeedSub[] = [
   },
   {
     name: 'ChatGPT Plus',
-    icon: '🧠',
+    icon: 'brain',
     priceMinor: 2000,
     currency: 'USD',
     periodDays: 30,
@@ -159,7 +161,7 @@ export const SUBS: SeedSub[] = [
   },
   {
     name: 'VPN',
-    icon: '🛡️',
+    icon: 'shield-check',
     priceMinor: 290000,
     currency: 'KZT',
     periodDays: 31,
@@ -170,7 +172,7 @@ export const SUBS: SeedSub[] = [
   },
   {
     name: 'МТС связь',
-    icon: '📱',
+    icon: 'smartphone',
     priceMinor: 55000,
     currency: 'RUB',
     periodDays: 30,
@@ -181,7 +183,7 @@ export const SUBS: SeedSub[] = [
   },
   {
     name: 'Ростелеком интернет',
-    icon: '🌐',
+    icon: 'globe',
     priceMinor: 65000,
     currency: 'RUB',
     periodDays: 30,
@@ -191,7 +193,7 @@ export const SUBS: SeedSub[] = [
   },
   {
     name: 'World Class',
-    icon: '💪',
+    icon: 'dumbbell',
     priceMinor: 1500000,
     currency: 'RUB',
     periodDays: 90,
@@ -202,7 +204,7 @@ export const SUBS: SeedSub[] = [
   },
   {
     name: 'Duolingo Super',
-    icon: '🦉',
+    icon: 'languages',
     priceMinor: 8999,
     currency: 'USD',
     periodDays: 365,
@@ -212,7 +214,7 @@ export const SUBS: SeedSub[] = [
   },
   {
     name: 'Strava',
-    icon: '🚴',
+    icon: 'bike',
     priceMinor: 899,
     currency: 'EUR',
     periodDays: 365,
@@ -222,7 +224,7 @@ export const SUBS: SeedSub[] = [
   },
   {
     name: 'Белтелеком',
-    icon: '📡',
+    icon: 'satellite',
     priceMinor: 3500,
     currency: 'BYN',
     periodDays: 30,
@@ -232,7 +234,7 @@ export const SUBS: SeedSub[] = [
   },
   {
     name: 'Самокат доставка',
-    icon: '🥦',
+    icon: 'carrot',
     priceMinor: 349000,
     currency: 'RUB',
     periodDays: 7,
@@ -242,7 +244,7 @@ export const SUBS: SeedSub[] = [
   },
   {
     name: 'Облако Mail.ru',
-    icon: '💾',
+    icon: 'hard-drive',
     priceMinor: 19900,
     currency: 'RUB',
     periodDays: 30,
@@ -254,7 +256,7 @@ export const SUBS: SeedSub[] = [
   // --- Просроченные (платёж прошёл, не отмечен) ---
   {
     name: 'Netflix',
-    icon: '🎥',
+    icon: 'video',
     priceMinor: 1549,
     currency: 'EUR',
     periodDays: 30,
@@ -266,7 +268,7 @@ export const SUBS: SeedSub[] = [
   },
   {
     name: 'Xbox Game Pass Ultimate',
-    icon: '🕹️',
+    icon: 'joystick',
     priceMinor: 69900,
     currency: 'RUB',
     periodDays: 30,
@@ -277,7 +279,7 @@ export const SUBS: SeedSub[] = [
   },
   {
     name: 'JetBrains Toolbox',
-    icon: '🧰',
+    icon: 'wrench',
     priceMinor: 28900,
     currency: 'USD',
     periodDays: 365,
@@ -290,7 +292,7 @@ export const SUBS: SeedSub[] = [
   // --- Архив ---
   {
     name: 'Иви',
-    icon: '📺',
+    icon: 'tv',
     priceMinor: 39900,
     currency: 'RUB',
     periodDays: 30,
@@ -302,7 +304,7 @@ export const SUBS: SeedSub[] = [
   },
   {
     name: 'СберПрайм',
-    icon: '🟢',
+    icon: 'sparkles',
     priceMinor: 29900,
     currency: 'RUB',
     periodDays: 30,
@@ -313,7 +315,7 @@ export const SUBS: SeedSub[] = [
   },
   {
     name: 'Okko',
-    icon: '🎞️',
+    icon: 'film',
     priceMinor: 59900,
     currency: 'RUB',
     periodDays: 30,
@@ -326,7 +328,7 @@ export const SUBS: SeedSub[] = [
   // --- Краевые случаи ---
   {
     name: 'Очень длинное название подписки которое не должно ломать вёрстку карточек и списков даже на узком экране телефона 🎉🎉🎉',
-    icon: '📛',
+    icon: 'notebook-pen',
     priceMinor: 12345,
     currency: 'RUB',
     periodDays: 30,
@@ -335,7 +337,7 @@ export const SUBS: SeedSub[] = [
   },
   {
     name: `O'Connor's «Странная» <Подписка> & Co`,
-    icon: '⚠️',
+    icon: 'triangle-alert',
     priceMinor: 77777,
     currency: 'RUB',
     periodDays: 45,
@@ -345,7 +347,7 @@ export const SUBS: SeedSub[] = [
   },
   {
     name: 'Ежедневный сервис',
-    icon: '🔁',
+    icon: 'repeat',
     priceMinor: 99,
     currency: 'RUB',
     periodDays: 1,
@@ -355,7 +357,7 @@ export const SUBS: SeedSub[] = [
   },
   {
     name: 'Десятилетняя лицензия',
-    icon: '🗓️',
+    icon: 'calendar-days',
     priceMinor: 99999900,
     currency: 'RUB',
     periodDays: 3650,
@@ -365,7 +367,7 @@ export const SUBS: SeedSub[] = [
   },
   {
     name: 'Високосный старт',
-    icon: '🐸',
+    icon: 'calendar',
     priceMinor: 29000,
     currency: 'RUB',
     periodDays: 365,
@@ -374,7 +376,7 @@ export const SUBS: SeedSub[] = [
   },
   {
     name: 'Пробный период',
-    icon: '🆓',
+    icon: 'gift',
     priceMinor: 1,
     currency: 'RUB',
     periodDays: 14,
@@ -384,8 +386,31 @@ export const SUBS: SeedSub[] = [
     rules: [{ kind: 'advance', daysBefore: 2, atTime: '21:00' }],
   },
   {
+    name: 'Разовая покупка: домен',
+    icon: 'globe',
+    priceMinor: 129000,
+    currency: 'RUB',
+    periodDays: 30,
+    isOneTime: true,
+    nextIn: 12,
+    startedAgo: 4,
+    notes: 'Продление домена — платим один раз',
+  },
+  {
+    name: 'Разовый аудит',
+    icon: 'receipt',
+    priceMinor: 500000,
+    currency: 'RUB',
+    periodDays: 30,
+    isOneTime: true,
+    nextIn: -6,
+    startedAgo: 30,
+    isActive: false,
+    notes: 'Уже оплачено, лежит в архиве',
+  },
+  {
     name: 'Подписка с длинной заметкой',
-    icon: '📋',
+    icon: 'clipboard-list',
     priceMinor: 45000,
     currency: 'RUB',
     periodDays: 30,
