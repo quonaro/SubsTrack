@@ -152,6 +152,7 @@ export default defineConfig({
   plugins: [vueDevTools(), vue(), tailwindcss(), terminalLogs, devDb],
   server: {
     host: '0.0.0.0',
+    allowedHosts: true,
     port: 7358,
   },
   test: {
