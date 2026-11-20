@@ -1,9 +1,23 @@
 import { describe, expect, it } from 'vitest'
-import { convertMinor, CURRENCIES, CURRENCY_SYMBOLS, formatMoney, parseMoney } from './currency'
+import {
+  convertMinor,
+  CURRENCIES,
+  CURRENCY_FLAGS,
+  CURRENCY_SYMBOLS,
+  formatMoney,
+  parseMoney,
+} from './currency'
 
 describe('currency', () => {
   it('has a symbol for every currency', () => {
     for (const c of CURRENCIES) expect(CURRENCY_SYMBOLS[c]).toBeTruthy()
+  })
+
+  it('maps every currency to a bundled flag asset, not an emoji', () => {
+    for (const c of CURRENCIES) {
+      expect(CURRENCY_FLAGS[c]).toMatch(/^(data:image\/svg\+xml|.+\.svg$)/)
+      expect(CURRENCY_FLAGS[c]).not.toMatch(/\p{Regional_Indicator}/u)
+    }
   })
 
   it('converts between currencies via RUB rates', () => {

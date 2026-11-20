@@ -6,7 +6,7 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["**", "!android", "!public"]
+    "includes": ["**", "!android", "!public", "!src/assets/flags"]
   },
   "css": {
     "parser": {

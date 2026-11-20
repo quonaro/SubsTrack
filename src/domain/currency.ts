@@ -1,3 +1,9 @@
+import byFlag from '../assets/flags/by.svg'
+import euFlag from '../assets/flags/eu.svg'
+import kzFlag from '../assets/flags/kz.svg'
+import ruFlag from '../assets/flags/ru.svg'
+import usFlag from '../assets/flags/us.svg'
+
 // Static exchange rates ported from the old backend — value of one currency
 // unit in RUB. Editable list is a deliberate trade-off: no network dependency.
 export const CURRENCY_RATES: Record<string, number> = {
@@ -18,12 +24,15 @@ export const CURRENCY_SYMBOLS: Record<string, string> = {
   BYN: 'Br',
 }
 
+// Bundled flag SVGs (from lipis/flag-icons, MIT) instead of regional-indicator
+// emoji: Android renders those in wildly different styles and some fonts fall
+// back to bare letters.
 export const CURRENCY_FLAGS: Record<string, string> = {
-  RUB: '🇷🇺',
-  USD: '🇺🇸',
-  EUR: '🇪🇺',
-  KZT: '🇰🇿',
-  BYN: '🇧🇾',
+  RUB: ruFlag,
+  USD: usFlag,
+  EUR: euFlag,
+  KZT: kzFlag,
+  BYN: byFlag,
 }
 
 export const CURRENCY_NAMES: Record<string, string> = {

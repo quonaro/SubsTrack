@@ -251,19 +251,21 @@ const updateLabel = computed(() => {
         <div class="mb-3 text-sm">Основная валюта</div>
         <button
           type="button"
-          class="flex h-9 w-full items-center justify-between rounded-xl border border-app-border bg-app-card px-4 text-left"
+          class="flex h-9 w-full items-center justify-between rounded-xl border border-app-text-muted/40 bg-app-bg px-4 text-left text-app-text transition hover:border-accent"
           @click="currencyOpen = true"
         >
           <span class="flex items-center gap-2">
-            <span class="text-xl leading-none">
-              {{ CURRENCY_FLAGS[store.settings.baseCurrency] }}
-            </span>
+            <img
+              :src="CURRENCY_FLAGS[store.settings.baseCurrency]"
+              :alt="store.settings.baseCurrency"
+              class="h-4 w-[22px] rounded-[2px] object-cover ring-1 ring-black/10"
+            />
             <span class="text-sm font-medium">{{ store.settings.baseCurrency }}</span>
             <span class="text-xs text-app-text-muted">
               {{ CURRENCY_SYMBOLS[store.settings.baseCurrency] }}
             </span>
           </span>
-          <Icon name="chevron-down" :size="16" class="text-app-text-muted" />
+          <Icon name="chevron-down" :size="16" class="text-app-text" />
         </button>
       </div>
     </div>
@@ -417,7 +419,11 @@ const updateLabel = computed(() => {
           "
           @click="pickCurrency(c)"
         >
-          <span class="text-3xl leading-none">{{ CURRENCY_FLAGS[c] }}</span>
+          <img
+            :src="CURRENCY_FLAGS[c]"
+            :alt="c"
+            class="h-8 w-[43px] rounded-[3px] object-cover ring-1 ring-black/10"
+          />
           <span class="text-sm font-semibold">{{ c }}</span>
           <span class="text-xs text-app-text-muted">{{ CURRENCY_NAMES[c] }}</span>
           <Icon
