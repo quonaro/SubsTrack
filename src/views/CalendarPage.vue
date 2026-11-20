@@ -2,17 +2,15 @@
 import { computed, ref } from 'vue'
 import { markPaid, store } from '../store'
 import { paymentDatesInRange, todayIso } from '../domain/dates'
-import { formatMoney } from '../domain/currency'
+import { convertMinor, formatMoney } from '../domain/currency'
+import { type CalendarMonth, monthId, monthWindow, shiftMonth } from '../domain/months'
 import Modal from '../components/Modal.vue'
 import SubscriptionEditModal from '../components/SubscriptionEditModal.vue'
 import Icon from '../components/Icon.vue'
 import { pluralRu } from '../domain/plural'
 
 const editId = ref<number | null>(null)
-
-const now = new Date()
-const year = ref(now.getFullYear())
-const month = ref(now.getMonth()) // 0-based
+const scroller = ref<HTMLElement | null>(null)
 
 const MONTHS = [
   'Январь',
@@ -28,24 +26,18 @@ const MONTHS = [
   'Ноябрь',
   'Декабрь',
 ]
-const MONTHS_PREP = [
-  'январе',
-  'феврале',
-  'марте',
-  'апреле',
-  'мае',
-  'июне',
-  'июле',
-  'августе',
-  'сентябре',
-  'октябре',
-  'ноябре',
-  'декабре',
-]
 const WEEKDAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
 
-const iso = (d: number) =>
-  `${year.value}-${String(month.value + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+const today = todayIso()
+const anchor = new Date()
+const currentMonth: CalendarMonth = { year: anchor.getFullYear(), month: anchor.getMonth() }
+
+const WINDOW_BEFORE = 0
+const WINDOW_AFTER = 12
+const STEP = 6
+const EDGE = 320
+
+const months = ref<CalendarMonth[]>(monthWindow(currentMonth, WINDOW_BEFORE, WINDOW_AFTER))
 
 interface DayCell {
   date: string
@@ -53,27 +45,47 @@ interface DayCell {
   subs: number[]
   isToday: boolean
   overdue: boolean
+  outside: boolean
 }
 
-const cells = computed<DayCell[]>(() => {
-  const first = new Date(year.value, month.value, 1)
-  const daysInMonth = new Date(year.value, month.value + 1, 0).getDate()
+interface MonthBlock extends CalendarMonth {
+  key: string
+  cells: DayCell[]
+  count: number
+  word: string
+}
+
+function buildCells(year: number, month: number): DayCell[] {
+  const first = new Date(year, month, 1)
+  const daysInMonth = new Date(year, month + 1, 0).getDate()
   // Monday-first offset.
   const offset = (first.getDay() + 6) % 7
-  const fromIso = iso(1)
-  const toIso = iso(daysInMonth)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const iso = (d: number) => `${year}-${pad(month + 1)}-${pad(d)}`
   const byDay = new Map<string, number[]>()
   for (const s of store.subscriptions.filter((x) => x.isActive)) {
-    for (const d of paymentDatesInRange(s.nextPaymentDate, s.periodDays, fromIso, toIso)) {
+    for (const d of paymentDatesInRange(
+      s.nextPaymentDate,
+      s.periodDays,
+      iso(1),
+      iso(daysInMonth),
+    )) {
       const list = byDay.get(d) ?? []
       list.push(s.id)
       byDay.set(d, list)
     }
   }
   const out: DayCell[] = []
-  for (let i = 0; i < offset; i++)
-    out.push({ date: '', day: null, subs: [], isToday: false, overdue: false })
-  const today = todayIso()
+  const prevMonthDays = new Date(year, month, 0).getDate()
+  for (let i = offset; i > 0; i--)
+    out.push({
+      date: '',
+      day: prevMonthDays - i + 1,
+      subs: [],
+      isToday: false,
+      overdue: false,
+      outside: true,
+    })
   for (let d = 1; d <= daysInMonth; d++) {
     const date = iso(d)
     const subs = byDay.get(date) ?? []
@@ -83,13 +95,38 @@ const cells = computed<DayCell[]>(() => {
       subs,
       isToday: date === today,
       overdue: subs.length > 0 && date < today,
+      outside: false,
     })
   }
+  for (let d = 1; out.length % 7 !== 0; d++)
+    out.push({ date: '', day: d, subs: [], isToday: false, overdue: false, outside: true })
   return out
-})
+}
 
-const monthPayments = computed(() => cells.value.reduce((n, c) => n + c.subs.length, 0))
-const paymentsWord = computed(() => pluralRu(monthPayments.value, 'платёж', 'платежа', 'платежей'))
+const blocks = computed<MonthBlock[]>(() =>
+  months.value.map((m) => {
+    const cells = buildCells(m.year, m.month)
+    const count = cells.reduce((n, c) => n + c.subs.length, 0)
+    return {
+      ...m,
+      key: monthId(m),
+      cells,
+      count,
+      word: pluralRu(count, 'платёж', 'платежа', 'платежей'),
+    }
+  }),
+)
+
+const monthSummary = computed(() => {
+  const [first] = blocks.value
+  if (!first || first.count === 0) return 'Нет платежей в этом месяце'
+  let total = 0
+  for (const id of new Set(first.cells.flatMap((c) => c.subs))) {
+    const s = store.subscriptions.find((x) => x.id === id)
+    if (s) total += convertMinor(s.priceMinor, s.currency, store.settings.baseCurrency)
+  }
+  return `${first.count} ${first.word} · ${formatMoney(total, store.settings.baseCurrency)}`
+})
 
 const selected = ref<DayCell | null>(null)
 const selectedSubs = computed(() =>
@@ -98,84 +135,95 @@ const selectedSubs = computed(() =>
     .filter((s): s is NonNullable<typeof s> => !!s),
 )
 
-function prev(): void {
-  if (month.value === 0) {
-    month.value = 11
-    year.value -= 1
-  } else month.value -= 1
+let extending = false
+
+async function extend(): Promise<void> {
+  const el = scroller.value
+  if (!el) return
+  extending = true
+  try {
+    const last = months.value[months.value.length - 1]
+    const append: CalendarMonth[] = []
+    for (let i = 1; i <= STEP; i++) append.push(shiftMonth(last, i))
+    months.value = [...months.value, ...append]
+  } finally {
+    extending = false
+  }
 }
-function next(): void {
-  if (month.value === 11) {
-    month.value = 0
-    year.value += 1
-  } else month.value += 1
+
+function onScroll(): void {
+  const el = scroller.value
+  if (!el || extending) return
+  // The current month is the first block, so the top of the list is also the
+  // hard "no further back" limit.
+  if (el.scrollHeight - el.scrollTop - el.clientHeight < EDGE) void extend()
 }
 </script>
 
 <template>
-  <div class="mx-auto w-full max-w-xl px-4 pb-6 pt-6 sm:px-6 lg:max-w-3xl lg:px-8">
-    <header class="mb-4 flex items-center justify-between">
-      <div>
-        <h1 class="flex items-center gap-2 text-2xl font-bold">
-          <Icon name="calendar" :size="22" class="text-accent-hi" />Календарь
-        </h1>
-        <p class="text-sm text-app-text-muted">
-          {{ monthPayments }} {{ paymentsWord }} в {{ MONTHS_PREP[month] }}
-        </p>
-      </div>
-      <div class="flex items-center gap-1">
-        <button
-          type="button"
-          class="flex h-9 w-9 items-center justify-center rounded-full border border-app-border bg-app-card"
-          @click="prev"
-        >
-          <Icon name="chevron-left" :size="16" />
-        </button>
-        <span class="w-28 text-center text-sm font-medium">
-          {{ MONTHS[month] }} {{ year }}
-        </span>
-        <button
-          type="button"
-          class="flex h-9 w-9 items-center justify-center rounded-full border border-app-border bg-app-card"
-          @click="next"
-        >
-          <Icon name="chevron-right" :size="16" />
-        </button>
-      </div>
+  <div class="mx-auto flex h-full min-h-0 w-full max-w-xl flex-col px-4 sm:px-6 lg:max-w-3xl lg:px-8">
+    <header class="pb-2 pt-6">
+      <h1 class="flex items-center gap-2 text-2xl font-bold">
+        <Icon name="calendar" :size="22" class="text-accent-hi" />Календарь
+      </h1>
+      <p class="text-sm text-app-text-muted">{{ monthSummary }}</p>
     </header>
 
-    <div class="grid grid-cols-7 gap-1 text-center text-xs text-app-text-muted">
-      <div v-for="w in WEEKDAYS" :key="w" class="py-1">{{ w }}</div>
-    </div>
-
-    <div class="grid grid-cols-7 gap-1">
-      <button
-        v-for="(c, i) in cells"
-        :key="i"
-        type="button"
-        :disabled="c.day == null"
-        class="relative flex aspect-square flex-col items-center justify-center rounded-xl text-sm transition-colors"
-        :class="[
-          c.day == null
-            ? ''
-            : c.isToday
-              ? 'bg-accent/30 ring-1 ring-accent'
-              : c.subs.length
-                ? 'bg-app-card hover:bg-app-border'
-                : 'hover:bg-app-card/60',
-        ]"
-        @click="c.subs.length && (selected = c)"
+    <div
+      ref="scroller"
+      class="min-h-0 flex-1 overflow-y-auto overflow-x-hidden pb-6"
+      @scroll.passive="onScroll"
+    >
+      <section
+        v-for="b in blocks"
+        :key="b.key"
+        :data-month="b.key"
+        class="pb-6"
       >
-        <span :class="{ 'font-semibold': c.isToday }">{{ c.day ?? '' }}</span>
-        <div v-if="c.subs.length" class="mt-0.5 flex gap-0.5">
-          <span
-            v-for="(_, di) in c.subs.slice(0, 3)"
-            :key="di"
-            class="h-1.5 w-1.5 rounded-full"
-            :class="c.overdue ? 'bg-red-400' : 'bg-accent'"
-          />
+        <div
+          class="sticky top-0 z-10 grid grid-cols-[1fr_auto_1fr] items-center gap-2 bg-app-bg py-2"
+        >
+          <span class="text-xs text-app-text-muted">{{ b.count }} {{ b.word }}</span>
+          <span class="text-base font-bold tracking-[0.2em] uppercase">
+            {{ MONTHS[b.month] }} {{ b.year }}
+          </span>
+          <span />
         </div>
-      </button>
+
+        <div class="grid grid-cols-7 gap-1 text-center text-xs text-app-text-muted">
+          <div v-for="w in WEEKDAYS" :key="w" class="py-1">{{ w }}</div>
+        </div>
+
+        <div class="grid grid-cols-7 gap-1">
+          <button
+            v-for="(c, i) in b.cells"
+            :key="i"
+            type="button"
+            :disabled="c.day == null || c.outside"
+            class="relative flex aspect-square flex-col items-center justify-center rounded-xl text-sm transition-colors disabled:cursor-default"
+            :class="[
+              c.outside || c.day == null
+                ? 'text-app-text-muted/40'
+                : c.isToday
+                  ? 'bg-accent/30 ring-1 ring-accent'
+                  : c.subs.length
+                    ? 'bg-app-card hover:bg-app-border'
+                    : 'hover:bg-app-card/60',
+            ]"
+            @click="c.subs.length && (selected = c)"
+          >
+            <span :class="{ 'font-semibold': c.isToday }">{{ c.day ?? '' }}</span>
+            <div v-if="c.subs.length" class="mt-0.5 flex gap-0.5">
+              <span
+                v-for="(_, di) in c.subs.slice(0, 3)"
+                :key="di"
+                class="h-1.5 w-1.5 rounded-full"
+                :class="c.overdue ? 'bg-red-400' : 'bg-accent'"
+              />
+            </div>
+          </button>
+        </div>
+      </section>
     </div>
 
     <Modal
@@ -198,7 +246,7 @@ function next(): void {
           </div>
           <button
             type="button"
-            class="flex h-9 items-center rounded-full bg-accent/20 px-3 text-xs font-medium text-accent-hi"
+            class="flex h-9 items-center rounded-full bg-accent px-3 text-xs font-medium text-accent-fg"
             @click="markPaid(s.id, selected!.date); selected = null"
           >
             Оплатить

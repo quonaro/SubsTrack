@@ -57,6 +57,23 @@ describe('CalendarPage', () => {
     expect(w.find('h1').text()).toBe('Календарь')
   })
 
+  it('shows a subtitle with the current month payment count and total', async () => {
+    const now = new Date()
+    const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+    store.subscriptions = [
+      sub({ nextPaymentDate: `${ym}-15`, periodDays: 300, priceMinor: 10000, currency: 'RUB' }),
+    ]
+    const w = mount(CalendarPage, { global: { plugins: [router()] } })
+    await flushPromises()
+    expect(w.find('header p').text()).toMatch(/^1 платёж · 100\s₽$/)
+  })
+
+  it('shows an empty subtitle when nothing is due this month', async () => {
+    const w = mount(CalendarPage, { global: { plugins: [router()] } })
+    await flushPromises()
+    expect(w.find('header p').text()).toBe('Нет платежей в этом месяце')
+  })
+
   it('shows the current month and marks today', async () => {
     const now = new Date()
     const w = mount(CalendarPage, { global: { plugins: [router()] } })
@@ -73,16 +90,64 @@ describe('CalendarPage', () => {
     expect(w.find('span[class*="w-1.5"]').exists()).toBe(true)
   })
 
-  it('navigates between months', async () => {
+  it('renders a scrolling window of months starting at the current one', async () => {
     const now = new Date()
     const w = mount(CalendarPage, { global: { plugins: [router()] } })
-    const [prevBtn, nextBtn] = w.findAll('header button')
-    await nextBtn.trigger('click')
+    await flushPromises()
+    const key = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+    const sections = w.findAll('section[data-month]')
+    expect(sections.length).toBe(13)
+    expect(sections[0].attributes('data-month')).toBe(key)
     const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1)
     expect(w.text()).toContain(`${MONTHS[nextMonth.getMonth()]} ${nextMonth.getFullYear()}`)
-    await prevBtn.trigger('click')
-    await prevBtn.trigger('click')
-    const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-    expect(w.text()).toContain(`${MONTHS[prevMonth.getMonth()]} ${prevMonth.getFullYear()}`)
+  })
+
+  it('does not extend the window backwards past the current month', async () => {
+    const w = mount(CalendarPage, { global: { plugins: [router()] } })
+    await flushPromises()
+    const grid = w.find('div[class*="overflow-y-auto"]')
+    const el = grid.element as HTMLElement
+    Object.defineProperty(el, 'clientHeight', { value: 600, configurable: true })
+    Object.defineProperty(el, 'scrollHeight', { value: 1200, configurable: true })
+    el.scrollTop = 0
+    await grid.trigger('scroll')
+    await flushPromises()
+    expect(w.findAll('section[data-month]').length).toBe(13)
+  })
+
+  it('extends the window downwards on scroll', async () => {
+    const w = mount(CalendarPage, { global: { plugins: [router()] } })
+    await flushPromises()
+    const grid = w.find('div[class*="overflow-y-auto"]')
+    const el = grid.element as HTMLElement
+    Object.defineProperty(el, 'clientHeight', { value: 600, configurable: true })
+    Object.defineProperty(el, 'scrollHeight', { value: 1200, configurable: true })
+    el.scrollTop = 1200
+    await grid.trigger('scroll')
+    await flushPromises()
+    expect(w.findAll('section[data-month]').length).toBe(19)
+  })
+
+  it('fills leading and trailing blanks with disabled dates of adjacent months', async () => {
+    const now = new Date()
+    const w = mount(CalendarPage, { global: { plugins: [router()] } })
+    await flushPromises()
+    const key = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+    const offset = (new Date(now.getFullYear(), now.getMonth(), 1).getDay() + 6) % 7
+    const prevDays = new Date(now.getFullYear(), now.getMonth(), 0).getDate()
+    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
+    const section = w.find(`section[data-month="${key}"]`)
+    const cells = section.findAll('div.grid.grid-cols-7 > button')
+    expect(cells.length % 7).toBe(0)
+    const leading = cells.slice(0, offset)
+    expect(leading.map((b) => b.text())).toEqual(
+      Array.from({ length: offset }, (_, i) => String(prevDays - offset + 1 + i)),
+    )
+    for (const b of leading) expect(b.attributes('disabled')).toBeDefined()
+    const trailing = cells.slice(offset + daysInMonth)
+    expect(trailing.map((b) => b.text())).toEqual(
+      Array.from({ length: trailing.length }, (_, i) => String(i + 1)),
+    )
+    for (const b of trailing) expect(b.attributes('disabled')).toBeDefined()
   })
 })
