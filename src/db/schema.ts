@@ -80,6 +80,9 @@ const SCHEMA: string[][] = [
   [`ALTER TABLE subscriptions ADD COLUMN icon_color TEXT`],
 ]
 
+/** Schema version this build creates/expects (see backup.ts). */
+export const SCHEMA_VERSION = SCHEMA.length
+
 export async function migrate(db?: Db): Promise<void> {
   const conn = db ?? (await getDb())
   const res = await conn.query('PRAGMA user_version')

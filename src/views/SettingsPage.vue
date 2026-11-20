@@ -29,6 +29,7 @@ import { runThemeWipe } from '../themeWipe'
 import Icon from '../components/Icon.vue'
 import Modal from '../components/Modal.vue'
 import NotificationHealth from '../components/NotificationHealth.vue'
+import BackupBlock from '../components/BackupBlock.vue'
 import { ref } from 'vue'
 
 const isDev = import.meta.env.DEV
@@ -384,6 +385,13 @@ const updateLabel = computed(() => {
           </p>
         </div>
       </div>
+    </div>
+
+    <div class="mb-6 flex break-inside-avoid flex-col gap-2">
+      <h2 class="mb-1 text-sm font-semibold uppercase tracking-wide text-app-text-muted">
+        Данные
+      </h2>
+      <BackupBlock />
     </div>
 
     <div v-if="isDev" class="mb-6 flex break-inside-avoid flex-col gap-2">

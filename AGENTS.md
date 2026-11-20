@@ -117,6 +117,12 @@ the category color), `payments`, `notify_rules`
   (sound, vibration, `ic_stat_reminder` icon). `recurring` rules repeat
   only inside that window — the plugin has no per-hour repeat.
   `reminderState` (reactive) exposes the last pass's count for Settings.
+- `backup.ts` — backup envelope (versioned JSON, raw table rows, pure
+  build/parse/validate), `backupDb.ts` — `dumpTables`/`replaceTables`
+  against the live schema, `backupFile.ts` — platform IO (browser download
+  on web, system «Сохранить как» picker on Android via the `FileSaver`
+  plugin → `ACTION_CREATE_DOCUMENT`, so the user picks the folder and no
+  storage permission is needed)
 
 `src/store.ts` — reactive store holding all entities; every mutation
 reloads affected slices and triggers `rescheduleAll`.
@@ -143,7 +149,9 @@ manager — `subId` prop: null → create, id → edit; emits
 `SubscriptionEditModal` (edit `Modal` wrapping `SubscriptionForm`;
 `subId` null → closed, emits `close`/`deleted`),
 `NotificationHealth` (Settings block: notification permission,
-exact-alarm/battery status, scheduled count), `PageSkeleton`
+exact-alarm/battery status, scheduled count), `BackupBlock` (Settings
+block: export/import a JSON backup; import names what will be lost in a
+`ConfirmModal` and then replaces every table), `PageSkeleton`
 (animated
 mosaic overlay shown in `App.vue` until `store.ready`; guillotine-cut
 tiles reshuffle on a timer, stays up ≥500ms then fades out). Route
@@ -156,7 +164,8 @@ FAB opens `SubscriptionForm` in a `Modal` for create),
 Calendar (month grid via `paymentDatesInRange` + day sheet), History
 (events feed), Stats (totals/breakdown/monthly), Settings (theme, palette
 presets, accent, base
-currency, notification/install permissions, self-update).
+currency, notification/install permissions, self-update, backup
+export/import).
 
 ## Database
 
@@ -189,6 +198,11 @@ newer schema. Every schema/data change must preserve that:
   new `SCHEMA` entry instead.
 - Keep statements idempotent (`IF NOT EXISTS`, version bump last) — a
   crashed migration is retried on next launch.
+- Backup restore (`domain/backupDb.ts`) filters every row through
+  `PRAGMA table_info`: columns the build doesn't know are dropped, missing
+  ones fall back to their defaults. That keeps a copy made by a newer or
+  older build importable, and it means a new column needs no backup-code
+  change at all.
 
 ## Capacitor
 
@@ -207,6 +221,10 @@ newer schema. Every schema/data change must preserve that:
   exemption (Android 6+) — both are surfaced in Settings through
   `src/alarms.ts`. `src/App.vue` re-runs `rescheduleReminders()` on
   resume.
+- `FileSaverPlugin.java` (registered in `MainActivity`) writes the backup
+  JSON through `ACTION_CREATE_DOCUMENT` — the user picks the folder, the
+  content URI grants one-document write access, so no storage permission
+  is declared.
 - Frontend work is mobile-first: design for touch + small screens first
 
 ## UI

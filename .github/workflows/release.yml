@@ -139,7 +139,21 @@ jobs:
             "$KEYSTORE_PASSWORD" "$KEY_ALIAS" "$KEY_PASSWORD" > android/keystore.properties
 
       - name: Build release APK
-        run: cd android && ./gradlew assembleRelease --no-daemon
+        run: |
+          cd android
+          # services.gradle.org redirects to github.com/gradle/gradle-distributions,
+          # whose anonymous asset downloads intermittently answer 403 (rate limit
+          # on shared runner IPs). The wrapper caches a completed download and
+          # resumes a partial one, so retrying is enough to get past it.
+          for attempt in 1 2 3; do
+            if ./gradlew assembleRelease --no-daemon; then
+              exit 0
+            fi
+            echo "::warning::Gradle attempt ${attempt} failed, retrying in 15s"
+            sleep 15
+          done
+          echo "::error::Gradle build failed after 3 attempts"
+          exit 1
         env:
           VERSION_NAME: ${{ github.ref_name }}
           VERSION_CODE: ${{ github.run_number }}

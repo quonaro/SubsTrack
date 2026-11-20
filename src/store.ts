@@ -10,6 +10,17 @@ import { loadSettings, setSetting } from './domain/settings'
 import { rescheduleAll, requestNotificationPermission } from './domain/reminders'
 import { monthlyTotalMinor, yearlyTotalMinor } from './domain/stats'
 import { seedDemoData as runDemoSeed } from './dev/seed'
+import {
+  backupCounts,
+  backupFileName,
+  buildBackup,
+  parseBackup,
+  serializeBackup,
+  type BackupCounts,
+} from './domain/backup'
+import { dumpTables, replaceTables } from './domain/backupDb'
+import { SCHEMA_VERSION } from './db/schema'
+import { appVersion } from './update'
 import { logger } from './log'
 
 const log = logger('store')
@@ -185,6 +196,25 @@ export async function seedDemoData(): Promise<void> {
   await reload()
   store.categories = await cats.listCategories()
   await refreshReminders()
+}
+
+/** Whole database as a JSON backup (raw rows, see domain/backup.ts). */
+export async function exportBackup(): Promise<{ name: string; text: string }> {
+  const file = buildBackup(await dumpTables(), { appVersion, schemaVersion: SCHEMA_VERSION })
+  return { name: backupFileName(file.createdAt), text: serializeBackup(file) }
+}
+
+/**
+ * Replace every table with the backup's contents and reload the store.
+ * Throws with a user-facing message when the file isn't a valid backup.
+ */
+export async function importBackup(text: string): Promise<BackupCounts> {
+  const parsed = parseBackup(text)
+  if (!parsed.ok) throw new Error(parsed.error)
+  await replaceTables(parsed.backup.tables)
+  await initStore()
+  log.info('backup restored', backupCounts(parsed.backup))
+  return backupCounts(parsed.backup)
 }
 
 export async function updateSetting<K extends keyof Settings>(
