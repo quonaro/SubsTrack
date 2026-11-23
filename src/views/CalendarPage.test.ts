@@ -98,7 +98,7 @@ describe('CalendarPage', () => {
     const w = mount(CalendarPage, { global: { plugins: [router()] } })
     await flushPromises()
     expect(w.text()).toContain(`${MONTHS[now.getMonth()]} ${now.getFullYear()}`)
-    expect(w.find('.ring-accent').exists()).toBe(true)
+    expect(w.find('.inset-ring-accent').exists()).toBe(true)
   })
 
   it('renders payment dots for subscriptions in the month', async () => {
@@ -151,7 +151,7 @@ describe('CalendarPage', () => {
     store.subscriptions = [sub()]
     const w = mount(CalendarPage, { global: { plugins: [router()] } })
     await flushPromises()
-    await w.find('.ring-accent').trigger('click')
+    await w.find('.inset-ring-accent').trigger('click')
     await flushPromises()
     const [y, m, d] = todayIso().split('-').map(Number)
     expect(document.body.textContent).toContain(`${d} ${MONTHS_GENITIVE[m - 1]} ${y}`)

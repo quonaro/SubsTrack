@@ -213,7 +213,7 @@ function onScroll(): void {
               c.outside || c.day == null
                 ? 'text-app-text-muted/40'
                 : c.isToday
-                  ? 'bg-accent/30 ring-1 ring-accent'
+                  ? 'bg-accent/30 inset-ring-1 inset-ring-accent'
                   : c.subs.length
                     ? 'bg-app-card hover:bg-app-border'
                     : 'hover:bg-app-card/60',
