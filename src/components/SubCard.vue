@@ -3,7 +3,7 @@ import { computed, ref } from 'vue'
 import type { Subscription } from '../types'
 import { categoryOf, store } from '../store'
 import { convertMinor, formatMoney } from '../domain/currency'
-import { perPeriodMinor } from '../domain/stats'
+import { monthlyCostMinor } from '../domain/stats'
 import { iconTileBackground } from '../domain/colors'
 import AppIcon from './AppIcon.vue'
 import {
@@ -44,8 +44,9 @@ const amountBase = computed(() =>
       ),
 )
 const monthlyCost = computed(() => {
-  if (props.sub.isOneTime || props.sub.periodDays === 30) return null
-  return formatMoney(perPeriodMinor(props.sub, 30, baseCur.value), baseCur.value)
+  if (props.sub.isOneTime || props.sub.periodMonths === 1 || props.sub.periodDays === 30)
+    return null
+  return formatMoney(monthlyCostMinor(props.sub, baseCur.value), baseCur.value)
 })
 const paidCount = computed(
   () => store.payments.filter((p) => p.subscriptionId === props.sub.id).length,

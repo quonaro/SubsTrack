@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import {
   categoryBreakdown,
+  monthlyCostMinor,
   monthlyTotalMinor,
   paymentHistoryByMonth,
   perPeriodMinor,
   upcomingPayments,
+  yearlyCostMinor,
   yearlyTotalMinor,
 } from './stats'
 import type { Category, Payment, Subscription } from '../types'
@@ -33,6 +35,35 @@ const sub = (over: Partial<Subscription> = {}): Subscription => ({
 })
 
 describe('stats', () => {
+  it('treats calendar periods as exact months, not 30-day slices', () => {
+    // 315 RUB monthly → exactly 315/month, 3780/year (not 315 * 365/30)
+    expect(monthlyCostMinor(sub({ priceMinor: 31500, periodMonths: 1 }), 'RUB')).toBe(31500)
+    expect(yearlyCostMinor(sub({ priceMinor: 31500, periodMonths: 1 }), 'RUB')).toBe(378000)
+    // quarterly 900 RUB → 300/month, 3600/year
+    expect(
+      monthlyCostMinor(sub({ priceMinor: 90000, periodDays: 90, periodMonths: 3 }), 'RUB'),
+    ).toBe(30000)
+    // yearly 1200 RUB → 100/month, 1200/year
+    expect(
+      monthlyCostMinor(sub({ priceMinor: 120000, periodDays: 365, periodMonths: 12 }), 'RUB'),
+    ).toBe(10000)
+    expect(
+      yearlyCostMinor(sub({ priceMinor: 120000, periodDays: 365, periodMonths: 12 }), 'RUB'),
+    ).toBe(120000)
+  })
+
+  it('multiplies monthly subs by 12 without kopecks in the yearly total', () => {
+    // The bug: 47800/month was reported as 581556.66/year (47800 * 365/30).
+    const prices = [
+      3150000, 200000, 170000, 150000, 70000, 40000, 50000, 50000, 60000, 40000, 800000,
+    ]
+    const subs = prices.map((priceMinor, i) =>
+      sub({ id: i + 1, priceMinor, periodDays: 30, periodMonths: 1 }),
+    )
+    expect(monthlyTotalMinor(subs, 'RUB')).toBe(4780000)
+    expect(yearlyTotalMinor(subs, 'RUB')).toBe(4780000 * 12)
+  })
+
   it('normalizes any period to a monthly cost', () => {
     // 300 RUB / 30 days → 300 RUB/month
     expect(perPeriodMinor(sub(), 30, 'RUB')).toBe(30000)

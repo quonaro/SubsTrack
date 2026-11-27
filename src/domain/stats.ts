@@ -12,16 +12,41 @@ export function perPeriodMinor(sub: Subscription, days: number, toCurrency: stri
   return Math.round(convertMinor(perDay * days, sub.currency, toCurrency))
 }
 
+/** Price converted into `toCurrency` (integer minor units). */
+function priceIn(sub: Subscription, toCurrency: string): number {
+  return convertMinor(sub.priceMinor, sub.currency, toCurrency)
+}
+
+/**
+ * Monthly run rate of one subscription, in minor units. Calendar periods
+ * (monthly / quarterly / yearly) divide exactly — a 30-day approximation
+ * would turn «ежемесячно» into 365/30 = 12.17 charges a year and produce
+ * kopecks that don't exist. Day-based periods (weekly, custom) keep the
+ * `periodDays` normalization.
+ */
+export function monthlyCostMinor(sub: Subscription, toCurrency: string): number {
+  if (sub.isOneTime || sub.periodDays <= 0) return 0
+  if (sub.periodMonths > 0) return Math.round(priceIn(sub, toCurrency) / sub.periodMonths)
+  return perPeriodMinor(sub, 30, toCurrency)
+}
+
+/** Yearly run rate of one subscription, in minor units (see `monthlyCostMinor`). */
+export function yearlyCostMinor(sub: Subscription, toCurrency: string): number {
+  if (sub.isOneTime || sub.periodDays <= 0) return 0
+  if (sub.periodMonths > 0) return Math.round((priceIn(sub, toCurrency) * 12) / sub.periodMonths)
+  return perPeriodMinor(sub, 365, toCurrency)
+}
+
 export function monthlyTotalMinor(subs: Subscription[], toCurrency: string): number {
   return subs
     .filter((s) => s.isActive && !s.isOneTime)
-    .reduce((acc, s) => acc + perPeriodMinor(s, 30, toCurrency), 0)
+    .reduce((acc, s) => acc + monthlyCostMinor(s, toCurrency), 0)
 }
 
 export function yearlyTotalMinor(subs: Subscription[], toCurrency: string): number {
   return subs
     .filter((s) => s.isActive && !s.isOneTime)
-    .reduce((acc, s) => acc + perPeriodMinor(s, 365, toCurrency), 0)
+    .reduce((acc, s) => acc + yearlyCostMinor(s, toCurrency), 0)
 }
 
 export interface CategorySlice {
@@ -46,7 +71,7 @@ export function categoryBreakdown(
         totalMinor: 0,
         count: 0,
       } satisfies CategorySlice)
-    slice.totalMinor += perPeriodMinor(s, 30, toCurrency)
+    slice.totalMinor += monthlyCostMinor(s, toCurrency)
     slice.count += 1
     map.set(key, slice)
   }
